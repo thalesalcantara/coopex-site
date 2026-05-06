@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin COOPEX</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-bg">
+  <main class="login-wrap">
+    <form class="login-card" method="post">
+      <img src="{{ url_for('static', filename='img/coopex-transparente.png') }}" alt="COOPEX">
+      <h1>Admin COOPEX</h1>
+      <p>Acesso administrativo para alterar as informações do site.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+      <label>Usuário</label>
+      <input name="usuario" required autocomplete="off">
+      <label>Senha</label>
+      <input name="senha" type="password" required autocomplete="off">
+      <button class="btn primary full" type="submit">Entrar</button>
+      <a class="voltar" href="{{ url_for('index') }}">Voltar para o site</a>
+    </form>
+  </main>
+</body>
+</html>

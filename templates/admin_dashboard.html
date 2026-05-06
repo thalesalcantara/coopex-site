@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel do Site - COOPEX</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-page">
+  <header class="admin-top">
+    <div>
+      <strong>Painel do Site COOPEX</strong>
+      <span>Edite site, imagem principal, baú, documentos, contatos e parceiros</span>
+    </div>
+    <div class="admin-actions">
+      <a class="btn secondary small" href="{{ url_for('index') }}" target="_blank">Ver site</a>
+      <a class="btn danger small" href="{{ url_for('admin_logout') }}">Sair</a>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+    {% endwith %}
+
+    <section class="admin-box">
+      <h2>Informações principais</h2>
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('salvar_configuracoes') }}" class="form-grid">
+        <label>Nome da cooperativa
+          <input name="nome_cooperativa" value="{{ configs.nome_cooperativa }}">
+        </label>
+        <label>WhatsApp somente números com DDD
+          <input name="whatsapp" value="{{ configs.whatsapp }}">
+        </label>
+        <label>Título principal
+          <input name="titulo_principal" value="{{ configs.titulo_principal }}">
+        </label>
+        <label>Subtítulo principal
+          <textarea name="subtitulo_principal">{{ configs.subtitulo_principal }}</textarea>
+        </label>
+        <label>Texto sobre a cooperativa
+          <textarea name="texto_sobre">{{ configs.texto_sobre }}</textarea>
+        </label>
+        <label>Informações sobre fardamento
+          <textarea name="fardamento_info">{{ configs.fardamento_info }}</textarea>
+        </label>
+        <label>Horário de atendimento
+          <textarea name="horario_atendimento">{{ configs.horario_atendimento }}</textarea>
+        </label>
+        <label>Informações sobre o quadro social
+          <textarea name="quadro_social">{{ configs.quadro_social }}</textarea>
+        </label>
+        <label>Telefone
+          <input name="telefone" value="{{ configs.telefone }}">
+        </label>
+        <label>E-mail
+          <input name="email" value="{{ configs.email }}">
+        </label>
+        <label>Endereço
+          <input name="endereco" value="{{ configs.endereco }}">
+        </label>
+        <label>Link do mapa incorporado
+          <input name="mapa_embed_url" value="{{ configs.mapa_embed_url }}">
+          <small>Use o link do Google Maps com final output=embed.</small>
+        </label>
+        <label>Instagram
+          <input name="instagram" value="{{ configs.instagram }}">
+        </label>
+        <label>Link do sistema de solicitar entrega
+          <input name="link_solicitar_entrega" value="{{ configs.link_solicitar_entrega }}">
+        </label>
+        <label>Imagem grande da página inicial (horizontal, recomendada 1600x900 ou maior)
+          <input name="imagem_destaque" type="file" accept="image/*">
+          {% if configs.imagem_destaque %}<small>Imagem atual cadastrada.</small>{% endif %}
+        </label>
+        <button class="btn primary" type="submit">Salvar informações</button>
+
+        <div class="admin-subtitle">Anuncie aqui sua marca</div>
+        <label>Título da aba de anúncio
+          <input name="anuncio_titulo" value="{{ configs.anuncio_titulo }}">
+        </label>
+        <label>Texto de apresentação da propaganda
+          <textarea name="anuncio_texto">{{ configs.anuncio_texto }}</textarea>
+        </label>
+        <label>Foto do baú - frente
+          <input name="anuncio_bau_frente" type="file" accept="image/*">
+          {% if configs.anuncio_bau_frente %}<small>Imagem atual cadastrada.</small>{% endif %}
+        </label>
+        <label>Foto do baú - lateral
+          <input name="anuncio_bau_lado" type="file" accept="image/*">
+          {% if configs.anuncio_bau_lado %}<small>Imagem atual cadastrada.</small>{% endif %}
+        </label>
+        <label>Foto do baú - traseira
+          <input name="anuncio_bau_traseira" type="file" accept="image/*">
+          {% if configs.anuncio_bau_traseira %}<small>Imagem atual cadastrada.</small>{% endif %}
+        </label>
+        <label>Dimensões do adesivo
+          <textarea name="anuncio_dimensoes">{{ configs.anuncio_dimensoes }}</textarea>
+        </label>
+        <label>Pontos mensais
+          <textarea name="anuncio_pontos_mensais">{{ configs.anuncio_pontos_mensais }}</textarea>
+        </label>
+        <label>Abrangência da propaganda
+          <textarea name="anuncio_abrangencia">{{ configs.anuncio_abrangencia }}</textarea>
+        </label>
+
+        <div class="admin-subtitle">Trabalhe conosco</div>
+        <label>Foto do baú
+          <input name="foto_bau" type="file" accept="image/*">
+          {% if configs.foto_bau %}<small>Foto atual cadastrada.</small>{% endif %}
+        </label>
+        <label>Dimensões do baú
+          <textarea name="bau_dimensoes">{{ configs.bau_dimensoes }}</textarea>
+        </label>
+        <label>Cor do baú
+          <input name="bau_cor" value="{{ configs.bau_cor }}">
+        </label>
+        <label>Documentos necessários para entrevista
+          <textarea name="documentos_entrevista">{{ configs.documentos_entrevista }}</textarea>
+        </label>
+      </form>
+    </section>
+
+    <section class="admin-box">
+      <h2>Cadastrar novo parceiro</h2>
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('parceiro_novo') }}" class="partner-form">
+        <input name="nome" placeholder="Nome do parceiro" required>
+        <input name="link" placeholder="Link de destino ao clicar na logo">
+        <input name="ordem" type="number" placeholder="Ordem" value="0">
+        <label class="check"><input type="checkbox" name="ativo" checked> Ativo no site</label>
+        <input name="logo" type="file" accept="image/*">
+        <button class="btn primary" type="submit">Cadastrar parceiro</button>
+      </form>
+    </section>
+
+    <section class="admin-box">
+      <h2>Parceiros cadastrados</h2>
+      <div class="admin-list">
+        {% for p in parceiros %}
+        <div class="admin-partner">
+          <div class="admin-thumb">
+            {% if p.logo %}<img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">{% else %}<span>{{ p.nome[:2].upper() }}</span>{% endif %}
+          </div>
+          <form method="post" enctype="multipart/form-data" action="{{ url_for('parceiro_editar', partner_id=p.id) }}" class="edit-row">
+            <input name="nome" value="{{ p.nome }}">
+            <input name="link" value="{{ p.link }}">
+            <input name="ordem" type="number" value="{{ p.ordem }}">
+            <label class="check"><input type="checkbox" name="ativo" {% if p.ativo %}checked{% endif %}> Ativo</label>
+            <input name="logo" type="file" accept="image/*">
+            <button class="btn secondary small" type="submit">Salvar</button>
+          </form>
+          <form method="post" action="{{ url_for('parceiro_excluir', partner_id=p.id) }}" onsubmit="return confirm('Excluir este parceiro?')">
+            <button class="btn danger small" type="submit">Excluir</button>
+          </form>
+        </div>
+        {% else %}
+        <p>Nenhum parceiro cadastrado.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="admin-box">
+      <h2>Avaliações estilo Google</h2>
+      <p class="admin-help">Cadastre aqui os depoimentos que aparecerão na aba Início. O visual fica parecido com avaliação do Google, mas é controlado por você no painel.</p>
+
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('avaliacao_nova') }}" class="review-form-admin">
+        <input name="nome" placeholder="Nome do cliente" required>
+        <input name="empresa" placeholder="Empresa / estabelecimento">
+        <input name="nota" type="number" min="1" max="5" value="5" placeholder="Nota">
+        <input name="data_avaliacao" placeholder="Ex: há 2 semanas">
+        <input name="link" placeholder="Link da avaliação no Google, se tiver">
+        <input name="ordem" type="number" value="0" placeholder="Ordem">
+        <input name="foto" type="file" accept="image/*" title="Foto da pessoa">
+        <label class="check"><input type="checkbox" name="ativo" checked> Ativo</label>
+        <textarea name="comentario" placeholder="Comentário da avaliação" required></textarea>
+        <button class="btn primary" type="submit">Cadastrar avaliação</button>
+      </form>
+
+      <div class="admin-list">
+        {% for a in avaliacoes %}
+        <div class="admin-review">
+          <form method="post" enctype="multipart/form-data" action="{{ url_for('avaliacao_editar', review_id=a.id) }}" class="review-edit-row">
+            <input name="nome" value="{{ a.nome }}">
+            <input name="empresa" value="{{ a.empresa or '' }}">
+            <input name="nota" type="number" min="1" max="5" value="{{ a.nota }}">
+            <input name="data_avaliacao" value="{{ a.data_avaliacao or '' }}">
+            <input name="link" value="{{ a.link or '' }}">
+            <input name="ordem" type="number" value="{{ a.ordem }}">
+            <input name="foto" type="file" accept="image/*" title="Trocar foto da pessoa">
+            <label class="check"><input type="checkbox" name="ativo" {% if a.ativo %}checked{% endif %}> Ativo</label>
+            {% if a.foto %}
+            <div class="foto-atual-avaliacao">
+              <img src="{{ url_for('static', filename='uploads/' ~ a.foto) }}" alt="{{ a.nome }}">
+              <span>Foto atual</span>
+            </div>
+            {% endif %}
+            <textarea name="comentario">{{ a.comentario }}</textarea>
+            <button class="btn secondary small" type="submit">Salvar</button>
+          </form>
+          <form method="post" action="{{ url_for('avaliacao_excluir', review_id=a.id) }}" onsubmit="return confirm('Excluir esta avaliação?')">
+            <button class="btn danger small" type="submit">Excluir</button>
+          </form>
+        </div>
+        {% else %}
+        <p>Nenhuma avaliação cadastrada.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="admin-box">
+      <h2>Currículos recebidos</h2>
+      <div class="admin-list">
+        {% for c in candidatos %}
+        <div class="candidate-row">
+          <div>
+            <strong>{{ c.nome_completo }}</strong>
+            <span>{{ c.idade }} anos • {{ c.escolaridade }} • {{ c.email }}</span>
+            <small>Enviado em {{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</small>
+          </div>
+          {% if c.curriculo %}
+          <a class="btn secondary small" target="_blank" href="{{ url_for('static', filename='uploads/' ~ c.curriculo) }}">Abrir currículo</a>
+          {% endif %}
+        </div>
+        {% else %}
+        <p>Nenhum currículo recebido ainda.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>
