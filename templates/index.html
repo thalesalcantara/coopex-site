@@ -202,8 +202,8 @@
           </div>
 
           {% if parceiros %}
-          <div class="partner-carousel-wrap" aria-label="Parceiros COOPEX">
-            <button class="partner-arrow partner-arrow-left" type="button" onclick="moverParceiros(-1)" aria-label="Voltar parceiros">‹</button>
+          <div class="partner-carousel-area" aria-label="Parceiros COOPEX">
+            <button class="partner-arrow partner-arrow-left" type="button" aria-label="Voltar parceiros">‹</button>
 
             <div class="carousel-shell partner-carousel" id="partnerCarousel">
               <div class="partner-track" id="partnerTrack">
@@ -222,7 +222,7 @@
               </div>
             </div>
 
-            <button class="partner-arrow partner-arrow-right" type="button" onclick="moverParceiros(1)" aria-label="Avançar parceiros">›</button>
+            <button class="partner-arrow partner-arrow-right" type="button" aria-label="Avançar parceiros">›</button>
           </div>
           {% else %}
           <p class="empty">Nenhum parceiro cadastrado ainda.</p>
@@ -435,58 +435,63 @@
   <script src="{{ url_for('static', filename='site.js') }}"></script>
 
   <style>
-    /* Ajuste exclusivo da área de parceiros: maior, com setas e arraste lateral */
-    .partner-carousel-wrap{
+    .partner-carousel-area{
       position:relative;
-      display:flex;
+      display:grid;
+      grid-template-columns:60px minmax(0,1fr) 60px;
       align-items:center;
-      gap:14px;
+      gap:12px;
+      margin-top:24px;
       width:100%;
-      margin-top:22px;
     }
 
     .partner-carousel{
-      flex:1;
       overflow-x:auto !important;
       overflow-y:hidden !important;
       scroll-behavior:smooth;
-      cursor:grab;
       scrollbar-width:none;
       -ms-overflow-style:none;
-      padding:28px 18px !important;
+      padding:30px 18px !important;
+      cursor:grab;
+      user-select:none;
     }
 
     .partner-carousel::-webkit-scrollbar{
       display:none;
     }
 
-    .partner-carousel.arrastando{
+    .partner-carousel.dragging{
       cursor:grabbing;
       scroll-behavior:auto;
     }
 
     .partner-carousel .partner-track{
       animation:none !important;
-      display:flex;
-      align-items:stretch;
-      gap:30px !important;
-      width:max-content;
       transform:none !important;
+      display:flex !important;
+      flex-wrap:nowrap !important;
+      gap:30px !important;
+      width:max-content !important;
+      min-width:max-content !important;
     }
 
     .partner-carousel .partner{
-      width:380px !important;
-      min-height:280px !important;
-      padding:28px !important;
-      border-radius:30px !important;
       flex:0 0 380px !important;
-      box-shadow:0 16px 34px rgba(3,37,92,.12) !important;
+      width:380px !important;
+      min-width:380px !important;
+      min-height:280px !important;
+      padding:30px !important;
+      border-radius:30px !important;
+      display:flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      box-shadow:0 16px 34px rgba(3,37,92,.14) !important;
       transition:transform .18s ease, box-shadow .18s ease;
     }
 
     .partner-carousel .partner:hover{
       transform:translateY(-5px) scale(1.02);
-      box-shadow:0 24px 48px rgba(3,37,92,.18) !important;
+      box-shadow:0 24px 48px rgba(3,37,92,.20) !important;
     }
 
     .partner-carousel .partner img{
@@ -495,6 +500,7 @@
       width:auto !important;
       height:auto !important;
       object-fit:contain !important;
+      pointer-events:none;
     }
 
     .partner-carousel .partner-placeholder{
@@ -502,6 +508,7 @@
       height:150px !important;
       border-radius:32px !important;
       font-size:44px !important;
+      pointer-events:none;
     }
 
     .partner-carousel .partner span{
@@ -509,16 +516,17 @@
       font-weight:900 !important;
       margin-top:12px;
       text-align:center;
+      pointer-events:none;
     }
 
     .partner-arrow{
-      width:54px;
-      height:54px;
+      width:56px;
+      height:56px;
       border-radius:50%;
       border:1px solid #dbeafe;
-      background:#ffffff;
+      background:#fff;
       color:#0047b8;
-      font-size:38px;
+      font-size:40px;
       line-height:1;
       font-weight:900;
       cursor:pointer;
@@ -526,19 +534,20 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      z-index:2;
-      transition:transform .15s ease, background .15s ease;
+      z-index:20;
+      transition:transform .15s ease, background .15s ease, color .15s ease;
     }
 
     .partner-arrow:hover{
       background:#0047b8;
-      color:#ffffff;
-      transform:scale(1.06);
+      color:#fff;
+      transform:scale(1.07);
     }
 
     @media(max-width:760px){
-      .partner-carousel-wrap{
-        gap:8px;
+      .partner-carousel-area{
+        grid-template-columns:44px minmax(0,1fr) 44px;
+        gap:6px;
       }
 
       .partner-carousel{
@@ -546,9 +555,10 @@
       }
 
       .partner-carousel .partner{
-        width:260px !important;
-        min-height:210px !important;
         flex-basis:260px !important;
+        width:260px !important;
+        min-width:260px !important;
+        min-height:210px !important;
         padding:20px !important;
       }
 
@@ -570,104 +580,133 @@
   </style>
 
   <script>
-    let carouselParceirosAuto = null;
+    (function(){
+      let autoParceiros = null;
 
-    function getCarouselParceiros(){
-      return document.getElementById('partnerCarousel');
-    }
-
-    function moverParceiros(direcao){
-      const carousel = getCarouselParceiros();
-      if (!carousel) return;
-
-      const card = carousel.querySelector('.partner');
-      const passo = card ? card.offsetWidth + 30 : 420;
-
-      carousel.scrollBy({
-        left: direcao * passo,
-        behavior: 'smooth'
-      });
-    }
-
-    function iniciarParceirosArraste(){
-      const carousel = getCarouselParceiros();
-      if (!carousel) return;
-
-      let pressionado = false;
-      let inicioX = 0;
-      let scrollInicial = 0;
-
-      carousel.addEventListener('mousedown', function(e){
-        pressionado = true;
-        carousel.classList.add('arrastando');
-        inicioX = e.pageX - carousel.offsetLeft;
-        scrollInicial = carousel.scrollLeft;
-      });
-
-      window.addEventListener('mouseup', function(){
-        pressionado = false;
-        carousel.classList.remove('arrastando');
-      });
-
-      carousel.addEventListener('mouseleave', function(){
-        pressionado = false;
-        carousel.classList.remove('arrastando');
-      });
-
-      carousel.addEventListener('mousemove', function(e){
-        if (!pressionado) return;
-        e.preventDefault();
-
-        const x = e.pageX - carousel.offsetLeft;
-        const distancia = (x - inicioX) * 1.3;
-        carousel.scrollLeft = scrollInicial - distancia;
-      });
-
-      carousel.addEventListener('touchstart', function(e){
-        inicioX = e.touches[0].pageX - carousel.offsetLeft;
-        scrollInicial = carousel.scrollLeft;
-      }, {passive:true});
-
-      carousel.addEventListener('touchmove', function(e){
-        const x = e.touches[0].pageX - carousel.offsetLeft;
-        const distancia = (x - inicioX) * 1.15;
-        carousel.scrollLeft = scrollInicial - distancia;
-      }, {passive:true});
-    }
-
-    function iniciarParceirosAuto(){
-      const carousel = getCarouselParceiros();
-      const track = document.getElementById('partnerTrack');
-
-      if (!carousel || !track) return;
-
-      if (carouselParceirosAuto) {
-        clearInterval(carouselParceirosAuto);
+      function carousel(){
+        return document.getElementById('partnerCarousel');
       }
 
-      carouselParceirosAuto = setInterval(function(){
-        const metade = track.scrollWidth / 2;
+      function track(){
+        return document.getElementById('partnerTrack');
+      }
 
-        if (carousel.scrollLeft >= metade - carousel.clientWidth) {
-          carousel.scrollLeft = 0;
-        } else {
-          carousel.scrollLeft += 1.2;
+      function passo(){
+        const car = carousel();
+        if (!car) return 420;
+
+        const card = car.querySelector('.partner');
+        if (!card) return 420;
+
+        const gap = 30;
+        return card.getBoundingClientRect().width + gap;
+      }
+
+      function mover(direcao){
+        const car = carousel();
+        if (!car) return;
+
+        pararAuto();
+        car.scrollBy({
+          left: direcao * passo(),
+          behavior: 'smooth'
+        });
+
+        setTimeout(iniciarAuto, 2500);
+      }
+
+      function pararAuto(){
+        if (autoParceiros) {
+          clearInterval(autoParceiros);
+          autoParceiros = null;
         }
-      }, 24);
+      }
 
-      carousel.addEventListener('mouseenter', function(){
-        clearInterval(carouselParceirosAuto);
+      function iniciarAuto(){
+        const car = carousel();
+        const tr = track();
+        if (!car || !tr) return;
+
+        pararAuto();
+
+        autoParceiros = setInterval(function(){
+          const metade = tr.scrollWidth / 2;
+
+          if (metade > 0 && car.scrollLeft >= metade - car.clientWidth - 5) {
+            car.scrollLeft = 0;
+          } else {
+            car.scrollLeft += 1;
+          }
+        }, 25);
+      }
+
+      function iniciarArraste(){
+        const car = carousel();
+        if (!car) return;
+
+        let down = false;
+        let startX = 0;
+        let startScroll = 0;
+        let moved = false;
+
+        car.addEventListener('mousedown', function(e){
+          down = true;
+          moved = false;
+          startX = e.pageX;
+          startScroll = car.scrollLeft;
+          car.classList.add('dragging');
+          pararAuto();
+        });
+
+        window.addEventListener('mousemove', function(e){
+          if (!down) return;
+          const dx = e.pageX - startX;
+          if (Math.abs(dx) > 5) moved = true;
+          car.scrollLeft = startScroll - dx;
+        });
+
+        window.addEventListener('mouseup', function(){
+          if (!down) return;
+          down = false;
+          car.classList.remove('dragging');
+          setTimeout(iniciarAuto, 2500);
+        });
+
+        car.addEventListener('click', function(e){
+          if (moved) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }, true);
+
+        car.addEventListener('mouseenter', pararAuto);
+        car.addEventListener('mouseleave', iniciarAuto);
+      }
+
+      document.addEventListener('DOMContentLoaded', function(){
+        const left = document.querySelector('.partner-arrow-left');
+        const right = document.querySelector('.partner-arrow-right');
+
+        if (left) {
+          left.addEventListener('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            mover(-1);
+          });
+        }
+
+        if (right) {
+          right.addEventListener('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            mover(1);
+          });
+        }
+
+        iniciarArraste();
+        iniciarAuto();
       });
-
-      carousel.addEventListener('mouseleave', function(){
-        iniciarParceirosAuto();
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', function(){
-      iniciarParceirosArraste();
-      iniciarParceirosAuto();
-    });
+    })();
   </script>
 
 </body>
