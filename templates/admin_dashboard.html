@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Painel do Site - COOPEX</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .admin-stats-site{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:14px;
+    }
+    .admin-stats-site div{
+      background:#f7fbff;
+      border:1px solid #dbeafe;
+      border-radius:18px;
+      padding:18px;
+    }
+    .admin-stats-site strong{
+      display:block;
+      font-size:34px;
+      color:#0047b8;
+    }
+    .admin-stats-site span,
+    .admin-clicks-info small{
+      color:#64748b;
+      font-weight:800;
+    }
+    .admin-clicks-info{
+      align-self:center;
+      min-width:130px;
+    }
+  </style>
 </head>
 <body class="admin-page">
   <header class="admin-top">
@@ -25,10 +52,10 @@
 
     <section class="admin-box">
       <h2>Estatísticas do site</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
-        <div style="background:#f7fbff;border:1px solid #dbeafe;border-radius:18px;padding:18px;">
-          <strong style="display:block;font-size:34px;color:#0047b8;">{{ total_acessos_site or 0 }}</strong>
-          <span style="color:#64748b;font-weight:800;">Acessos ao site</span>
+      <div class="admin-stats-site">
+        <div>
+          <strong>{{ total_acessos_site or 0 }}</strong>
+          <span>Acessos ao site</span>
         </div>
       </div>
     </section>
@@ -147,12 +174,12 @@
       <h2>Parceiros cadastrados</h2>
       <div class="admin-list">
         {% for p in parceiros %}
-        <div class="admin-partner" style="grid-template-columns:80px 150px 1fr auto;">
+        <div class="admin-partner">
           <div class="admin-thumb">
             {% if p.logo %}<img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">{% else %}<span>{{ p.nome[:2].upper() }}</span>{% endif %}
           </div>
-          <div style="font-weight:800;color:#334155;">
-            <small style="display:block;color:#64748b;">Cliques na logo: {{ p.cliques or 0 }}</small>
+          <div class="admin-clicks-info">
+            <small>Cliques na logo: {{ p.cliques or 0 }}</small>
           </div>
           <form method="post" enctype="multipart/form-data" action="{{ url_for('parceiro_editar', partner_id=p.id) }}" class="edit-row">
             <input name="nome" value="{{ p.nome }}">
