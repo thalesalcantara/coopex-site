@@ -24,6 +24,16 @@
     {% endwith %}
 
     <section class="admin-box">
+      <h2>Estatísticas do site</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+        <div style="background:#f7fbff;border:1px solid #dbeafe;border-radius:18px;padding:18px;">
+          <strong style="display:block;font-size:34px;color:#0047b8;">{{ total_acessos_site or 0 }}</strong>
+          <span style="color:#64748b;font-weight:800;">Acessos ao site</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-box">
       <h2>Informações principais</h2>
       <form method="post" enctype="multipart/form-data" action="{{ url_for('salvar_configuracoes') }}" class="form-grid">
         <label>Nome da cooperativa
@@ -137,9 +147,12 @@
       <h2>Parceiros cadastrados</h2>
       <div class="admin-list">
         {% for p in parceiros %}
-        <div class="admin-partner">
+        <div class="admin-partner" style="grid-template-columns:80px 150px 1fr auto;">
           <div class="admin-thumb">
             {% if p.logo %}<img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">{% else %}<span>{{ p.nome[:2].upper() }}</span>{% endif %}
+          </div>
+          <div style="font-weight:800;color:#334155;">
+            <small style="display:block;color:#64748b;">Cliques na logo: {{ p.cliques or 0 }}</small>
           </div>
           <form method="post" enctype="multipart/form-data" action="{{ url_for('parceiro_editar', partner_id=p.id) }}" class="edit-row">
             <input name="nome" value="{{ p.nome }}">
