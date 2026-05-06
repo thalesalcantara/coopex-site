@@ -46,7 +46,7 @@
         <div class="container hero-container">
           <div class="hero-banner">
             {% if cfg.imagem_destaque %}
-              <img class="hero-bg" src="{{ url_for('static', filename='uploads/' ~ cfg.imagem_destaque) }}" alt="Imagem principal COOPEX">
+              <img class="hero-bg" src="{{ arquivo_url(cfg.imagem_destaque) }}" alt="Imagem principal COOPEX">
             {% else %}
               <div class="hero-bg hero-placeholder-bg">
                 <strong>Espaço para imagem principal grande</strong>
@@ -84,7 +84,7 @@
             <a class="review-card" {% if a.link and a.link != '#' %}href="{{ a.link }}" target="_blank" rel="noopener"{% else %}href="javascript:void(0)"{% endif %}>
               <div class="review-top">
                 {% if a.foto %}
-                <img class="avatar-google-img" src="{{ url_for('static', filename='uploads/' ~ a.foto) }}" alt="{{ a.nome }}">
+                <img class="avatar-google-img" src="{{ arquivo_url(a.foto) }}" alt="{{ a.nome }}">
                 {% else %}
                 <div class="avatar-google">{{ a.nome[:1].upper() }}</div>
                 {% endif %}
@@ -208,7 +208,7 @@
                 {% for p in parceiros %}
                 <a class="partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">
                   {% if p.logo %}
-                  <img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">
+                  <img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}">
                   {% else %}
                   <div class="partner-placeholder">{{ p.nome[:2].upper() }}</div>
                   {% endif %}
@@ -238,7 +238,7 @@
           <div class="bau-ads-grid">
             <article class="bau-ad-card">
               {% if cfg.anuncio_bau_frente %}
-                <img src="{{ url_for('static', filename='uploads/' ~ cfg.anuncio_bau_frente) }}" alt="Baú frente">
+                <img src="{{ arquivo_url(cfg.anuncio_bau_frente) }}" alt="Baú frente">
               {% else %}
                 <div class="bau-ad-placeholder">Foto do baú - Esquerda</div>
               {% endif %}
@@ -247,7 +247,7 @@
 
             <article class="bau-ad-card">
               {% if cfg.anuncio_bau_lado %}
-                <img src="{{ url_for('static', filename='uploads/' ~ cfg.anuncio_bau_lado) }}" alt="Baú lateral">
+                <img src="{{ arquivo_url(cfg.anuncio_bau_lado) }}" alt="Baú lateral">
               {% else %}
                 <div class="bau-ad-placeholder">Foto do baú - Traseira</div>
               {% endif %}
@@ -256,7 +256,7 @@
 
             <article class="bau-ad-card">
               {% if cfg.anuncio_bau_traseira %}
-                <img src="{{ url_for('static', filename='uploads/' ~ cfg.anuncio_bau_traseira) }}" alt="Baú traseira">
+                <img src="{{ arquivo_url(cfg.anuncio_bau_traseira) }}" alt="Baú traseira">
               {% else %}
                 <div class="bau-ad-placeholder">Foto do baú - Direita</div>
               {% endif %}
@@ -299,7 +299,7 @@
             <div class="bau-box">
               <h3>Baú recomendado</h3>
               {% if cfg.foto_bau %}
-                <img class="bau-img" src="{{ url_for('static', filename='uploads/' ~ cfg.foto_bau) }}" alt="Foto do baú recomendado">
+                <img class="bau-img" src="{{ arquivo_url(cfg.foto_bau) }}" alt="Foto do baú recomendado">
               {% else %}
                 <div class="bau-placeholder">Espaço para foto do baú</div>
               {% endif %}
@@ -415,17 +415,16 @@
   </div>
 
   <footer>
-  <div class="container footer-grid">
-    <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-      <a href="{{ url_for('politica_privacidade') }}" style="color:#0047b8; font-weight:900;">
-        Política de Privacidade e Segurança
-      </a>
-      <span>© {{ cfg.nome_cooperativa }} Entregas</span>
+    <div class="container footer-grid">
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+        <a href="{{ url_for('politica_privacidade') }}" style="color:#0047b8; font-weight:900;">
+          Política de Privacidade, Segurança e Responsabilidade
+        </a>
+        <span>© {{ cfg.nome_cooperativa }} Entregas</span>
+      </div>
+      <span>Cooperativa de entregas em Natal/RN</span>
     </div>
-
-    <span>Desde 2002</span>
-  </div>
-</footer>
+  </footer>
 
   <script src="{{ url_for('static', filename='site.js') }}"></script>
 </body>
