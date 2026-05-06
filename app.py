@@ -292,7 +292,7 @@ def index():
 
 @app.route('/politica-de-privacidade')
 def politica_privacidade():
-    return render_template('politica_privacidade.html'
+    return render_template('politica_privacidade.html')
 
 
 @app.route('/trabalhe-conosco/enviar', methods=['POST'])
