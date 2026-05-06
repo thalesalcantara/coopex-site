@@ -202,21 +202,27 @@
           </div>
 
           {% if parceiros %}
-          <div class="carousel-shell" aria-label="Parceiros COOPEX">
-            <div class="partner-track">
-              {% for i in range(2) %}
-                {% for p in parceiros %}
-                <a class="partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">
-                  {% if p.logo %}
-                  <img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}">
-                  {% else %}
-                  <div class="partner-placeholder">{{ p.nome[:2].upper() }}</div>
-                  {% endif %}
-                  <span>{{ p.nome }}</span>
-                </a>
+          <div class="partner-carousel-wrap" aria-label="Parceiros COOPEX">
+            <button class="partner-arrow partner-arrow-left" type="button" onclick="moverParceiros(-1)" aria-label="Voltar parceiros">‹</button>
+
+            <div class="carousel-shell partner-carousel" id="partnerCarousel">
+              <div class="partner-track" id="partnerTrack">
+                {% for i in range(2) %}
+                  {% for p in parceiros %}
+                  <a class="partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">
+                    {% if p.logo %}
+                    <img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}">
+                    {% else %}
+                    <div class="partner-placeholder">{{ p.nome[:2].upper() }}</div>
+                    {% endif %}
+                    <span>{{ p.nome }}</span>
+                  </a>
+                  {% endfor %}
                 {% endfor %}
-              {% endfor %}
+              </div>
             </div>
+
+            <button class="partner-arrow partner-arrow-right" type="button" onclick="moverParceiros(1)" aria-label="Avançar parceiros">›</button>
           </div>
           {% else %}
           <p class="empty">Nenhum parceiro cadastrado ainda.</p>
@@ -427,5 +433,242 @@
   </footer>
 
   <script src="{{ url_for('static', filename='site.js') }}"></script>
+
+  <style>
+    /* Ajuste exclusivo da área de parceiros: maior, com setas e arraste lateral */
+    .partner-carousel-wrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      width:100%;
+      margin-top:22px;
+    }
+
+    .partner-carousel{
+      flex:1;
+      overflow-x:auto !important;
+      overflow-y:hidden !important;
+      scroll-behavior:smooth;
+      cursor:grab;
+      scrollbar-width:none;
+      -ms-overflow-style:none;
+      padding:28px 18px !important;
+    }
+
+    .partner-carousel::-webkit-scrollbar{
+      display:none;
+    }
+
+    .partner-carousel.arrastando{
+      cursor:grabbing;
+      scroll-behavior:auto;
+    }
+
+    .partner-carousel .partner-track{
+      animation:none !important;
+      display:flex;
+      align-items:stretch;
+      gap:30px !important;
+      width:max-content;
+      transform:none !important;
+    }
+
+    .partner-carousel .partner{
+      width:380px !important;
+      min-height:280px !important;
+      padding:28px !important;
+      border-radius:30px !important;
+      flex:0 0 380px !important;
+      box-shadow:0 16px 34px rgba(3,37,92,.12) !important;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+
+    .partner-carousel .partner:hover{
+      transform:translateY(-5px) scale(1.02);
+      box-shadow:0 24px 48px rgba(3,37,92,.18) !important;
+    }
+
+    .partner-carousel .partner img{
+      max-width:320px !important;
+      max-height:170px !important;
+      width:auto !important;
+      height:auto !important;
+      object-fit:contain !important;
+    }
+
+    .partner-carousel .partner-placeholder{
+      width:150px !important;
+      height:150px !important;
+      border-radius:32px !important;
+      font-size:44px !important;
+    }
+
+    .partner-carousel .partner span{
+      font-size:18px !important;
+      font-weight:900 !important;
+      margin-top:12px;
+      text-align:center;
+    }
+
+    .partner-arrow{
+      width:54px;
+      height:54px;
+      border-radius:50%;
+      border:1px solid #dbeafe;
+      background:#ffffff;
+      color:#0047b8;
+      font-size:38px;
+      line-height:1;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 12px 28px rgba(3,37,92,.16);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:2;
+      transition:transform .15s ease, background .15s ease;
+    }
+
+    .partner-arrow:hover{
+      background:#0047b8;
+      color:#ffffff;
+      transform:scale(1.06);
+    }
+
+    @media(max-width:760px){
+      .partner-carousel-wrap{
+        gap:8px;
+      }
+
+      .partner-carousel{
+        padding:20px 8px !important;
+      }
+
+      .partner-carousel .partner{
+        width:260px !important;
+        min-height:210px !important;
+        flex-basis:260px !important;
+        padding:20px !important;
+      }
+
+      .partner-carousel .partner img{
+        max-width:220px !important;
+        max-height:120px !important;
+      }
+
+      .partner-carousel .partner span{
+        font-size:15px !important;
+      }
+
+      .partner-arrow{
+        width:42px;
+        height:42px;
+        font-size:30px;
+      }
+    }
+  </style>
+
+  <script>
+    let carouselParceirosAuto = null;
+
+    function getCarouselParceiros(){
+      return document.getElementById('partnerCarousel');
+    }
+
+    function moverParceiros(direcao){
+      const carousel = getCarouselParceiros();
+      if (!carousel) return;
+
+      const card = carousel.querySelector('.partner');
+      const passo = card ? card.offsetWidth + 30 : 420;
+
+      carousel.scrollBy({
+        left: direcao * passo,
+        behavior: 'smooth'
+      });
+    }
+
+    function iniciarParceirosArraste(){
+      const carousel = getCarouselParceiros();
+      if (!carousel) return;
+
+      let pressionado = false;
+      let inicioX = 0;
+      let scrollInicial = 0;
+
+      carousel.addEventListener('mousedown', function(e){
+        pressionado = true;
+        carousel.classList.add('arrastando');
+        inicioX = e.pageX - carousel.offsetLeft;
+        scrollInicial = carousel.scrollLeft;
+      });
+
+      window.addEventListener('mouseup', function(){
+        pressionado = false;
+        carousel.classList.remove('arrastando');
+      });
+
+      carousel.addEventListener('mouseleave', function(){
+        pressionado = false;
+        carousel.classList.remove('arrastando');
+      });
+
+      carousel.addEventListener('mousemove', function(e){
+        if (!pressionado) return;
+        e.preventDefault();
+
+        const x = e.pageX - carousel.offsetLeft;
+        const distancia = (x - inicioX) * 1.3;
+        carousel.scrollLeft = scrollInicial - distancia;
+      });
+
+      carousel.addEventListener('touchstart', function(e){
+        inicioX = e.touches[0].pageX - carousel.offsetLeft;
+        scrollInicial = carousel.scrollLeft;
+      }, {passive:true});
+
+      carousel.addEventListener('touchmove', function(e){
+        const x = e.touches[0].pageX - carousel.offsetLeft;
+        const distancia = (x - inicioX) * 1.15;
+        carousel.scrollLeft = scrollInicial - distancia;
+      }, {passive:true});
+    }
+
+    function iniciarParceirosAuto(){
+      const carousel = getCarouselParceiros();
+      const track = document.getElementById('partnerTrack');
+
+      if (!carousel || !track) return;
+
+      if (carouselParceirosAuto) {
+        clearInterval(carouselParceirosAuto);
+      }
+
+      carouselParceirosAuto = setInterval(function(){
+        const metade = track.scrollWidth / 2;
+
+        if (carousel.scrollLeft >= metade - carousel.clientWidth) {
+          carousel.scrollLeft = 0;
+        } else {
+          carousel.scrollLeft += 1.2;
+        }
+      }, 24);
+
+      carousel.addEventListener('mouseenter', function(){
+        clearInterval(carouselParceirosAuto);
+      });
+
+      carousel.addEventListener('mouseleave', function(){
+        iniciarParceirosAuto();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      iniciarParceirosArraste();
+      iniciarParceirosAuto();
+    });
+  </script>
+
 </body>
 </html>
