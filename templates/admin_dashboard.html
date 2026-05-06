@@ -3,269 +3,424 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Painel do Site - COOPEX</title>
+  <title>{{ cfg.nome_cooperativa }} Entregas</title>
+  <meta name="description" content="Site institucional da COOPEX Entregas. Soluções de entrega para empresas, restaurantes, farmácias e estabelecimentos.">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    .admin-stats-site{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:14px;
-    }
-    .admin-stats-site div{
-      background:#f7fbff;
-      border:1px solid #dbeafe;
-      border-radius:18px;
-      padding:18px;
-    }
-    .admin-stats-site strong{
-      display:block;
-      font-size:34px;
-      color:#0047b8;
-    }
-    .admin-stats-site span,
-    .admin-clicks-info small{
-      color:#64748b;
-      font-weight:800;
-    }
-    .admin-clicks-info{
-      align-self:center;
-      min-width:130px;
-    }
-  </style>
 </head>
-<body class="admin-page">
-  <header class="admin-top">
-    <div>
-      <strong>Painel do Site COOPEX</strong>
-      <span>Edite site, imagem principal, baú, documentos, contatos e parceiros</span>
-    </div>
-    <div class="admin-actions">
-      <a class="btn secondary small" href="{{ url_for('index') }}" target="_blank">Ver site</a>
-      <a class="btn danger small" href="{{ url_for('admin_logout') }}">Sair</a>
+<body>
+  <header class="topo">
+    <div class="container nav">
+      <button class="brand tab-link active" type="button" data-page="inicio" aria-label="COOPEX Entregas">
+        <img src="{{ url_for('static', filename='img/coopex-nome-entregas.png') }}" alt="COOPEX Entregas">
+      </button>
+
+      <div class="somos-wrap">
+        <img src="{{ url_for('static', filename='img/somos-coop.png') }}" alt="Somos Coop">
+      </div>
+
+      <button class="menu-btn" type="button" onclick="document.body.classList.toggle('menu-open')" aria-label="Abrir menu">☰</button>
+
+      <nav class="links" aria-label="Menu principal">
+        <button class="tab-link active" type="button" data-page="inicio">Início</button>
+        <button class="tab-link" type="button" data-page="sobre">Sobre</button>
+        <button class="tab-link" type="button" data-page="servicos">Serviços</button>
+        <button class="tab-link" type="button" data-page="parceiros">Parceiros</button>
+        <button class="tab-link" type="button" data-page="anuncie">Divulgue sua marca</button>
+        <button class="tab-link" type="button" data-page="trabalhe">Trabalhe conosco</button>
+        <button class="tab-link" type="button" data-page="contato">Contato</button>
+      </nav>
     </div>
   </header>
 
-  <main class="admin-container">
+  <main>
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+      {% if messages %}
+      <div class="container site-flashes">
+        {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+      </div>
+      {% endif %}
     {% endwith %}
 
-    <section class="admin-box">
-      <h2>Estatísticas do site</h2>
-      <div class="admin-stats-site">
-        <div>
-          <strong>{{ total_acessos_site or 0 }}</strong>
-          <span>Acessos ao site</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="admin-box">
-      <h2>Informações principais</h2>
-      <form method="post" enctype="multipart/form-data" action="{{ url_for('salvar_configuracoes') }}" class="form-grid">
-        <label>Nome da cooperativa
-          <input name="nome_cooperativa" value="{{ configs.nome_cooperativa }}">
-        </label>
-        <label>WhatsApp somente números com DDD
-          <input name="whatsapp" value="{{ configs.whatsapp }}">
-        </label>
-        <label>Título principal
-          <input name="titulo_principal" value="{{ configs.titulo_principal }}">
-        </label>
-        <label>Subtítulo principal
-          <textarea name="subtitulo_principal">{{ configs.subtitulo_principal }}</textarea>
-        </label>
-        <label>Texto sobre a cooperativa
-          <textarea name="texto_sobre">{{ configs.texto_sobre }}</textarea>
-        </label>
-        <label>Informações sobre fardamento
-          <textarea name="fardamento_info">{{ configs.fardamento_info }}</textarea>
-        </label>
-        <label>Horário de atendimento
-          <textarea name="horario_atendimento">{{ configs.horario_atendimento }}</textarea>
-        </label>
-        <label>Informações sobre o quadro social
-          <textarea name="quadro_social">{{ configs.quadro_social }}</textarea>
-        </label>
-        <label>Telefone
-          <input name="telefone" value="{{ configs.telefone }}">
-        </label>
-        <label>E-mail
-          <input name="email" value="{{ configs.email }}">
-        </label>
-        <label>Endereço
-          <input name="endereco" value="{{ configs.endereco }}">
-        </label>
-        <label>Link do mapa incorporado
-          <input name="mapa_embed_url" value="{{ configs.mapa_embed_url }}">
-          <small>Use o link do Google Maps com final output=embed.</small>
-        </label>
-        <label>Instagram
-          <input name="instagram" value="{{ configs.instagram }}">
-        </label>
-        <label>Link do sistema de solicitar entrega
-          <input name="link_solicitar_entrega" value="{{ configs.link_solicitar_entrega }}">
-        </label>
-        <label>Imagem grande da página inicial (horizontal, recomendada 1600x900 ou maior)
-          <input name="imagem_destaque" type="file" accept="image/*">
-          {% if configs.imagem_destaque %}<small>Imagem atual cadastrada.</small>{% endif %}
-        </label>
-        <button class="btn primary" type="submit">Salvar informações</button>
-
-        <div class="admin-subtitle">Anuncie aqui sua marca</div>
-        <label>Título da aba de anúncio
-          <input name="anuncio_titulo" value="{{ configs.anuncio_titulo }}">
-        </label>
-        <label>Texto de apresentação da propaganda
-          <textarea name="anuncio_texto">{{ configs.anuncio_texto }}</textarea>
-        </label>
-        <label>Foto do baú - frente
-          <input name="anuncio_bau_frente" type="file" accept="image/*">
-          {% if configs.anuncio_bau_frente %}<small>Imagem atual cadastrada.</small>{% endif %}
-        </label>
-        <label>Foto do baú - lateral
-          <input name="anuncio_bau_lado" type="file" accept="image/*">
-          {% if configs.anuncio_bau_lado %}<small>Imagem atual cadastrada.</small>{% endif %}
-        </label>
-        <label>Foto do baú - traseira
-          <input name="anuncio_bau_traseira" type="file" accept="image/*">
-          {% if configs.anuncio_bau_traseira %}<small>Imagem atual cadastrada.</small>{% endif %}
-        </label>
-        <label>Dimensões do adesivo
-          <textarea name="anuncio_dimensoes">{{ configs.anuncio_dimensoes }}</textarea>
-        </label>
-        <label>Pontos mensais
-          <textarea name="anuncio_pontos_mensais">{{ configs.anuncio_pontos_mensais }}</textarea>
-        </label>
-        <label>Abrangência da propaganda
-          <textarea name="anuncio_abrangencia">{{ configs.anuncio_abrangencia }}</textarea>
-        </label>
-
-        <div class="admin-subtitle">Trabalhe conosco</div>
-        <label>Foto do baú
-          <input name="foto_bau" type="file" accept="image/*">
-          {% if configs.foto_bau %}<small>Foto atual cadastrada.</small>{% endif %}
-        </label>
-        <label>Dimensões do baú
-          <textarea name="bau_dimensoes">{{ configs.bau_dimensoes }}</textarea>
-        </label>
-        <label>Cor do baú
-          <input name="bau_cor" value="{{ configs.bau_cor }}">
-        </label>
-        <label>Documentos necessários para entrevista
-          <textarea name="documentos_entrevista">{{ configs.documentos_entrevista }}</textarea>
-        </label>
-      </form>
-    </section>
-
-    <section class="admin-box">
-      <h2>Cadastrar novo parceiro</h2>
-      <form method="post" enctype="multipart/form-data" action="{{ url_for('parceiro_novo') }}" class="partner-form">
-        <input name="nome" placeholder="Nome do parceiro" required>
-        <input name="link" placeholder="Link de destino ao clicar na logo">
-        <input name="ordem" type="number" placeholder="Ordem" value="0">
-        <label class="check"><input type="checkbox" name="ativo" checked> Ativo no site</label>
-        <input name="logo" type="file" accept="image/*">
-        <button class="btn primary" type="submit">Cadastrar parceiro</button>
-      </form>
-    </section>
-
-    <section class="admin-box">
-      <h2>Parceiros cadastrados</h2>
-      <div class="admin-list">
-        {% for p in parceiros %}
-        <div class="admin-partner">
-          <div class="admin-thumb">
-            {% if p.logo %}<img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">{% else %}<span>{{ p.nome[:2].upper() }}</span>{% endif %}
-          </div>
-          <div class="admin-clicks-info">
-            <small>Cliques na logo: {{ p.cliques or 0 }}</small>
-          </div>
-          <form method="post" enctype="multipart/form-data" action="{{ url_for('parceiro_editar', partner_id=p.id) }}" class="edit-row">
-            <input name="nome" value="{{ p.nome }}">
-            <input name="link" value="{{ p.link }}">
-            <input name="ordem" type="number" value="{{ p.ordem }}">
-            <label class="check"><input type="checkbox" name="ativo" {% if p.ativo %}checked{% endif %}> Ativo</label>
-            <input name="logo" type="file" accept="image/*">
-            <button class="btn secondary small" type="submit">Salvar</button>
-          </form>
-          <form method="post" action="{{ url_for('parceiro_excluir', partner_id=p.id) }}" onsubmit="return confirm('Excluir este parceiro?')">
-            <button class="btn danger small" type="submit">Excluir</button>
-          </form>
-        </div>
-        {% else %}
-        <p>Nenhum parceiro cadastrado.</p>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="admin-box">
-      <h2>Avaliações estilo Google</h2>
-      <p class="admin-help">Cadastre aqui os depoimentos que aparecerão na aba Início. O visual fica parecido com avaliação do Google, mas é controlado por você no painel.</p>
-
-      <form method="post" enctype="multipart/form-data" action="{{ url_for('avaliacao_nova') }}" class="review-form-admin">
-        <input name="nome" placeholder="Nome do cliente" required>
-        <input name="empresa" placeholder="Empresa / estabelecimento">
-        <input name="nota" type="number" min="1" max="5" value="5" placeholder="Nota">
-        <input name="data_avaliacao" placeholder="Ex: há 2 semanas">
-        <input name="link" placeholder="Link da avaliação no Google, se tiver">
-        <input name="ordem" type="number" value="0" placeholder="Ordem">
-        <input name="foto" type="file" accept="image/*" title="Foto da pessoa">
-        <label class="check"><input type="checkbox" name="ativo" checked> Ativo</label>
-        <textarea name="comentario" placeholder="Comentário da avaliação" required></textarea>
-        <button class="btn primary" type="submit">Cadastrar avaliação</button>
-      </form>
-
-      <div class="admin-list">
-        {% for a in avaliacoes %}
-        <div class="admin-review">
-          <form method="post" enctype="multipart/form-data" action="{{ url_for('avaliacao_editar', review_id=a.id) }}" class="review-edit-row">
-            <input name="nome" value="{{ a.nome }}">
-            <input name="empresa" value="{{ a.empresa or '' }}">
-            <input name="nota" type="number" min="1" max="5" value="{{ a.nota }}">
-            <input name="data_avaliacao" value="{{ a.data_avaliacao or '' }}">
-            <input name="link" value="{{ a.link or '' }}">
-            <input name="ordem" type="number" value="{{ a.ordem }}">
-            <input name="foto" type="file" accept="image/*" title="Trocar foto da pessoa">
-            <label class="check"><input type="checkbox" name="ativo" {% if a.ativo %}checked{% endif %}> Ativo</label>
-            {% if a.foto %}
-            <div class="foto-atual-avaliacao">
-              <img src="{{ url_for('static', filename='uploads/' ~ a.foto) }}" alt="{{ a.nome }}">
-              <span>Foto atual</span>
-            </div>
+    <section id="inicio" class="page-section active">
+      <div class="hero">
+        <div class="container hero-container">
+          <div class="hero-banner">
+            {% if cfg.imagem_destaque %}
+              <img class="hero-bg" src="{{ url_for('static', filename='uploads/' ~ cfg.imagem_destaque) }}" alt="Imagem principal COOPEX">
+            {% else %}
+              <div class="hero-bg hero-placeholder-bg">
+                <strong>Espaço para imagem principal grande</strong>
+                <span>Use no painel uma imagem horizontal de boa qualidade, de preferência 1600x900 ou maior.</span>
+              </div>
             {% endif %}
-            <textarea name="comentario">{{ a.comentario }}</textarea>
-            <button class="btn secondary small" type="submit">Salvar</button>
-          </form>
-          <form method="post" action="{{ url_for('avaliacao_excluir', review_id=a.id) }}" onsubmit="return confirm('Excluir esta avaliação?')">
-            <button class="btn danger small" type="submit">Excluir</button>
-          </form>
+
+            <div class="hero-shade"></div>
+
+            <div class="hero-copy">
+              <span class="tag">Cooperativa desde 2002 • Natal/RN</span>
+              <h1>{{ cfg.titulo_principal }}</h1>
+              <p>{{ cfg.subtitulo_principal }}</p>
+              <div class="actions">
+                <button class="btn primary" type="button" onclick="abrirSolicitacao()">Solicitar entrega</button>
+                <a class="btn secondary" target="_blank" rel="noopener" href="https://wa.me/55{{ cfg.whatsapp|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '') }}">Falar no WhatsApp</a>
+              </div>
+            </div>
+          </div>
         </div>
-        {% else %}
-        <p>Nenhuma avaliação cadastrada.</p>
-        {% endfor %}
       </div>
     </section>
 
-    <section class="admin-box">
-      <h2>Currículos recebidos</h2>
-      <div class="admin-list">
-        {% for c in candidatos %}
-        <div class="candidate-row">
-          <div>
-            <strong>{{ c.nome_completo }}</strong>
-            <span>{{ c.idade }} anos • {{ c.escolaridade }} • {{ c.email }}</span>
-            <small>Enviado em {{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</small>
-          </div>
-          {% if c.curriculo %}
-          <a class="btn secondary small" target="_blank" href="{{ url_for('static', filename='uploads/' ~ c.curriculo) }}">Abrir currículo</a>
+    <section id="avaliacoesGoogle" class="home-reviews" aria-label="Avaliações dos clientes">
+      <div class="container reviews-grid">
+        <div class="reviews-title">
+          <span class="google-pill"><strong>G</strong> Avaliações no Google</span>
+          <h2>O que os clientes dizem</h2>
+          <p>Depoimentos cadastrados pela administração com aparência organizada para destacar a confiança dos clientes.</p>
+        </div>
+
+        <div class="reviews-cards">
+          {% if avaliacoes %}
+            {% for a in avaliacoes[:3] %}
+            <a class="review-card" {% if a.link and a.link != '#' %}href="{{ a.link }}" target="_blank" rel="noopener"{% else %}href="javascript:void(0)"{% endif %}>
+              <div class="review-top">
+                {% if a.foto %}
+                <img class="avatar-google-img" src="{{ url_for('static', filename='uploads/' ~ a.foto) }}" alt="{{ a.nome }}">
+                {% else %}
+                <div class="avatar-google">{{ a.nome[:1].upper() }}</div>
+                {% endif %}
+                <div>
+                  <strong>{{ a.nome }}</strong>
+                  {% if a.empresa %}<small>{{ a.empresa }}</small>{% endif %}
+                </div>
+                <span class="g-mark">G</span>
+              </div>
+              <div class="stars">
+                {% for i in range(a.nota) %}★{% endfor %}{% for i in range(5 - a.nota) %}☆{% endfor %}
+              </div>
+              <p>{{ a.comentario }}</p>
+              {% if a.data_avaliacao %}<small class="review-date">{{ a.data_avaliacao }}</small>{% endif %}
+            </a>
+            {% endfor %}
+          {% else %}
+            <div class="review-card">
+              <div class="review-top">
+                <div class="avatar-google">C</div>
+                <div><strong>Cliente COOPEX</strong><small>Avaliação</small></div>
+                <span class="g-mark">G</span>
+              </div>
+              <div class="stars">★★★★★</div>
+              <p>Cadastre avaliações no painel administrativo para exibir aqui.</p>
+            </div>
           {% endif %}
         </div>
-        {% else %}
-        <p>Nenhum currículo recebido ainda.</p>
-        {% endfor %}
+      </div>
+    </section>
+
+    <section id="sobre" class="page-section">
+      <div class="secao">
+        <div class="container two-col">
+          <div>
+            <span class="tag azul">Quem somos</span>
+            <h2>Mais de 20 anos atuando com entregas</h2>
+            <p>{{ cfg.texto_sobre }}</p>
+          </div>
+          <div class="stats">
+            <div><strong>2002</strong><span>Fundação</span></div>
+            <div><strong>RN</strong><span>Atuação local</span></div>
+            <div><strong>COOP</strong><span>Modelo cooperativo</span></div>
+          </div>
+        </div>
+
+        <div class="info-grid-site">
+          <article>
+            <h3>Fardamento</h3>
+            <p>{{ cfg.fardamento_info }}</p>
+          </article>
+          <article>
+            <h3>Horário de atendimento</h3>
+            <p>{{ cfg.horario_atendimento }}</p>
+          </article>
+          <article>
+            <h3>Quadro social</h3>
+            <p>{{ cfg.quadro_social }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="servicos" class="page-section">
+      <div class="secao soft">
+        <div class="container">
+          <div class="center">
+            <span class="tag verde">Soluções</span>
+            <h2>Serviços profissionais</h2>
+            <p>Escolha a aba de serviços para entender como a COOPEX atende empresas, restaurantes, farmácias e escritórios.</p>
+          </div>
+          <div class="cards">
+            <article class="card">
+              <div class="card-icon">🏢</div>
+              <h3>Serviço Office</h3>
+              <ul>
+                <li>Bancários, cartórios e escritórios</li>
+                <li>Coleta de malotes e documentos</li>
+                <li>Serviços empresariais</li>
+                <li>Serviços avulsos em geral</li>
+              </ul>
+            </article>
+            <article class="card">
+              <div class="card-icon">🛵</div>
+              <h3>Serviço Delivery</h3>
+              <ul>
+                <li>Pizzarias e hamburguerias</li>
+                <li>Restaurantes e farmácias</li>
+                <li>Mercados e bancos de sangue</li>
+                <li>Distribuidoras e empresas</li>
+              </ul>
+            </article>
+            <article class="card destaque">
+              <div class="card-icon">✅</div>
+              <h3>Por que contratar?</h3>
+              <ul>
+                <li>Cooperados fardados</li>
+                <li>Suporte operacional</li>
+                <li>Substituição em caso de ausência</li>
+                <li>Entregador fixo ou entrega avulsa</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="parceiros" class="page-section">
+      <div class="secao soft">
+        <div class="container">
+          <div class="center">
+            <span class="tag verde">Clientes e parceiros</span>
+            <h2>Parceiros COOPEX</h2>
+            <p>As logos ficam em rolagem infinita. Ao clicar na logo, o visitante é direcionado para o site ou página do parceiro.</p>
+          </div>
+
+          {% if parceiros %}
+          <div class="carousel-shell" aria-label="Parceiros COOPEX">
+            <div class="partner-track">
+              {% for i in range(2) %}
+                {% for p in parceiros %}
+                <a class="partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">
+                  {% if p.logo %}
+                  <img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">
+                  {% else %}
+                  <div class="partner-placeholder">{{ p.nome[:2].upper() }}</div>
+                  {% endif %}
+                  <span>{{ p.nome }}</span>
+                </a>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <p class="empty">Nenhum parceiro cadastrado ainda.</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+
+    <section id="anuncie" class="page-section">
+      <div class="secao soft anuncie-section">
+        <div class="container">
+          <div class="center">
+            <span class="tag verde">Publicidade nos baús</span>
+            <h2>{{ cfg.anuncio_titulo }}</h2>
+            <p>{{ cfg.anuncio_texto }}</p>
+          </div>
+
+          <div class="bau-ads-grid">
+            <article class="bau-ad-card">
+              {% if cfg.anuncio_bau_frente %}
+                <img src="{{ url_for('static', filename='uploads/' ~ cfg.anuncio_bau_frente) }}" alt="Baú frente">
+              {% else %}
+                <div class="bau-ad-placeholder">Foto do baú - Esquerda</div>
+              {% endif %}
+              <strong>Lateral esquerda do baú</strong>
+            </article>
+
+            <article class="bau-ad-card">
+              {% if cfg.anuncio_bau_lado %}
+                <img src="{{ url_for('static', filename='uploads/' ~ cfg.anuncio_bau_lado) }}" alt="Baú lateral">
+              {% else %}
+                <div class="bau-ad-placeholder">Foto do baú - Traseira</div>
+              {% endif %}
+              <strong>Traseira do baú</strong>
+            </article>
+
+            <article class="bau-ad-card">
+              {% if cfg.anuncio_bau_traseira %}
+                <img src="{{ url_for('static', filename='uploads/' ~ cfg.anuncio_bau_traseira) }}" alt="Baú traseira">
+              {% else %}
+                <div class="bau-ad-placeholder">Foto do baú - Direita</div>
+              {% endif %}
+              <strong>Lateral direita do baú</strong>
+            </article>
+          </div>
+
+          <div class="anuncio-info-grid">
+            <article>
+              <h3>Dimensões do adesivo</h3>
+              <p>{{ cfg.anuncio_dimensoes }}</p>
+            </article>
+            <article>
+              <h3>Pontos mensais</h3>
+              <p>{{ cfg.anuncio_pontos_mensais }}</p>
+            </article>
+            <article>
+              <h3>Abrangência da propaganda</h3>
+              <p>{{ cfg.anuncio_abrangencia }}</p>
+            </article>
+          </div>
+
+          <div class="anuncio-cta">
+            <h3>Coloque sua marca em movimento</h3>
+            <p>A COOPEX pode divulgar sua empresa nos baús dos cooperados, aumentando a exposição da sua marca nas rotas de entrega.</p>
+            <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/55{{ cfg.whatsapp|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '') }}">Quero anunciar minha marca</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="trabalhe" class="page-section">
+      <div class="secao">
+        <div class="container trabalhe-grid">
+          <div class="work-info">
+            <span class="tag azul">Trabalhe conosco</span>
+            <h2>Envie seu currículo para a COOPEX</h2>
+            <p>Para realizar o cadastro, o candidato deve ter <strong>21 anos ou mais</strong> e possuir <strong>CNH definitiva há, no mínimo, 2 anos</strong>, com observação de <strong>atividade remunerada (EAR)</strong>. <strong>Não serão aceitas permissões para dirigir.</strong></p>
+
+            <div class="bau-box">
+              <h3>Baú recomendado</h3>
+              {% if cfg.foto_bau %}
+                <img class="bau-img" src="{{ url_for('static', filename='uploads/' ~ cfg.foto_bau) }}" alt="Foto do baú recomendado">
+              {% else %}
+                <div class="bau-placeholder">Espaço para foto do baú</div>
+              {% endif %}
+              <div class="bau-details">
+                <p><strong>Dimensões:</strong> {{ cfg.bau_dimensoes }}</p>
+                <p><strong>Cor:</strong> {{ cfg.bau_cor }}</p>
+              </div>
+            </div>
+
+            <div class="docs-box">
+              <h3>Documentos necessários para entrevista</h3>
+              <ul class="docs-list">
+                {% set docs = cfg.documentos_entrevista.replace(';', '\n') %}
+                {% for doc in docs.split('\n') if doc.strip() %}
+                  <li>{{ doc.strip() }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+
+          <form class="work-form" method="post" enctype="multipart/form-data" action="{{ url_for('enviar_curriculo') }}">
+            <h3>Cadastro do candidato</h3>
+
+            <label>Nome completo
+              <input name="nome_completo" required autocomplete="name">
+            </label>
+
+            <label>Data de nascimento
+              <input name="data_nascimento" type="date" required>
+            </label>
+
+            <label>Grau de escolaridade
+              <select name="escolaridade" required>
+                <option value="">Selecione</option>
+                <option>Ensino fundamental incompleto</option>
+                <option>Ensino fundamental completo</option>
+                <option>Ensino médio incompleto</option>
+                <option>Ensino médio completo</option>
+                <option>Ensino superior incompleto</option>
+                <option>Ensino superior completo</option>
+              </select>
+            </label>
+
+            <label>E-mail
+              <input name="email" type="email" required autocomplete="email">
+            </label>
+
+            <label>Currículo
+              <input name="curriculo" type="file" accept=".pdf,.doc,.docx,image/*" required>
+            </label>
+
+            <label class="check-line">
+              <input name="atividade_remunerada" type="checkbox" required>
+              <span>Confirmo que possuo atividade remunerada na CNH.</span>
+            </label>
+
+            <button class="btn primary full" type="submit">Enviar currículo</button>
+            <small class="form-note">O sistema bloqueia envio para menor de 21 anos ou sem atividade remunerada marcada.</small>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="contato" class="page-section">
+      <div class="secao contato">
+        <div class="container contato-grid">
+          <div>
+            <span class="tag azul">Contato</span>
+            <h2>Fale com a COOPEX</h2>
+            <p>Todos os canais ficam organizados para o cliente entrar em contato rapidamente.</p>
+            <div class="contact-list">
+              <a href="https://wa.me/55{{ cfg.whatsapp|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '') }}" target="_blank" rel="noopener"><span>☎</span><strong>WhatsApp</strong><small>{{ cfg.telefone }}</small></a>
+              <a href="https://instagram.com/{{ cfg.instagram|replace('@','') }}" target="_blank" rel="noopener"><span>◎</span><strong>Instagram</strong><small>@{{ cfg.instagram|replace('@','') }}</small></a>
+              <a href="mailto:{{ cfg.email }}"><span>✉</span><strong>E-mail</strong><small>{{ cfg.email }}</small></a>
+              <div><span>📍</span><strong>Endereço</strong><small>{{ cfg.endereco }}</small></div>
+            </div>
+          </div>
+          <div class="contato-card">
+            <h3>Atendimento comercial</h3>
+            <p>Solicite uma proposta para entregas avulsas, entregador fixo ou operação personalizada.</p>
+            <button class="btn primary full" type="button" onclick="abrirSolicitacao()">Solicitar entrega agora</button>
+          </div>
+
+          <div class="mapa-card">
+            <iframe
+              src="{{ cfg.mapa_embed_url }}"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Mapa da COOPEX">
+            </iframe>
+          </div>
+        </div>
       </div>
     </section>
   </main>
+
+  <button class="floating-delivery" type="button" onclick="abrirSolicitacao()" aria-label="Solicitar entrega">
+    <span>🛵</span>
+    <strong>Solicitar entrega</strong>
+  </button>
+
+  <div id="modalSolicitacao" class="modal-solicitacao" aria-hidden="true">
+    <div class="modal-card">
+      <div class="iframe-top">
+        <strong>Sistema de solicitação COOPEX</strong>
+        <div>
+          <a class="mini-link" target="_blank" rel="noopener" href="{{ cfg.link_solicitar_entrega }}">Abrir em nova aba</a>
+          <button class="mini-btn" type="button" onclick="fecharSolicitacao()">Fechar</button>
+        </div>
+      </div>
+      <iframe id="iframeSolicitacao" data-src="{{ cfg.link_solicitar_entrega }}" title="Solicitar entrega COOPEX"></iframe>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container footer-grid">
+      <span>© {{ cfg.nome_cooperativa }} Entregas</span>
+      <span>Cooperativa de entregas em Natal/RN</span>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='site.js') }}"></script>
 </body>
 </html>
