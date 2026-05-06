@@ -176,7 +176,7 @@
         {% for p in parceiros %}
         <div class="admin-partner">
           <div class="admin-thumb">
-            {% if p.logo %}<img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">{% else %}<span>{{ p.nome[:2].upper() }}</span>{% endif %}
+            {% if p.logo %}<img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}">{% else %}<span>{{ p.nome[:2].upper() }}</span>{% endif %}
           </div>
           <div class="admin-clicks-info">
             <small>Cliques na logo: {{ p.cliques or 0 }}</small>
@@ -230,7 +230,7 @@
             <label class="check"><input type="checkbox" name="ativo" {% if a.ativo %}checked{% endif %}> Ativo</label>
             {% if a.foto %}
             <div class="foto-atual-avaliacao">
-              <img src="{{ url_for('static', filename='uploads/' ~ a.foto) }}" alt="{{ a.nome }}">
+              <img src="{{ arquivo_url(a.foto) }}" alt="{{ a.nome }}">
               <span>Foto atual</span>
             </div>
             {% endif %}
@@ -258,7 +258,7 @@
             <small>Enviado em {{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</small>
           </div>
           {% if c.curriculo %}
-          <a class="btn secondary small" target="_blank" href="{{ url_for('static', filename='uploads/' ~ c.curriculo) }}">Abrir currículo</a>
+          <a class="btn secondary small" target="_blank" href="{{ arquivo_url(c.curriculo) }}">Abrir currículo</a>
           {% endif %}
         </div>
         {% else %}
