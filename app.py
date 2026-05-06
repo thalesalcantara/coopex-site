@@ -52,7 +52,16 @@ class Partner(db.Model):
     logo = db.Column(db.String(255), nullable=True)
     ativo = db.Column(db.Boolean, default=True)
     ordem = db.Column(db.Integer, default=0)
+    cliques = db.Column(db.Integer, default=0)
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class SiteAccess(db.Model):
+    __tablename__ = 'site_access'
+
+    id = db.Column(db.Integer, primary_key=True)
+    total_acessos = db.Column(db.Integer, default=0)
+    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Review(db.Model):
@@ -141,14 +150,50 @@ def calcular_idade(nascimento):
 
 
 def garantir_colunas_extras():
-    """Garante compatibilidade com banco SQLite já criado antes do campo foto existir."""
+    """Garante compatibilidade com bancos já criados antes das novas colunas existirem."""
     try:
         engine_name = db.engine.url.get_backend_name()
+
+        # SQLite local
         if engine_name.startswith('sqlite'):
-            colunas = [row[1] for row in db.session.execute(db.text("PRAGMA table_info(review)")).fetchall()]
-            if 'foto' not in colunas:
+            colunas_review = [
+                row[1] for row in db.session.execute(db.text("PRAGMA table_info(review)")).fetchall()
+            ]
+            if 'foto' not in colunas_review:
                 db.session.execute(db.text("ALTER TABLE review ADD COLUMN foto VARCHAR(255)"))
                 db.session.commit()
+
+            colunas_partner = [
+                row[1] for row in db.session.execute(db.text("PRAGMA table_info(partner)")).fetchall()
+            ]
+            if 'cliques' not in colunas_partner:
+                db.session.execute(db.text("ALTER TABLE partner ADD COLUMN cliques INTEGER DEFAULT 0"))
+                db.session.commit()
+
+        # PostgreSQL no Render
+        elif engine_name.startswith('postgresql'):
+            colunas_partner = {
+                row[0] for row in db.session.execute(db.text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = 'partner'"
+                )).fetchall()
+            }
+
+            if 'cliques' not in colunas_partner:
+                db.session.execute(db.text("ALTER TABLE partner ADD COLUMN cliques INTEGER DEFAULT 0"))
+                db.session.commit()
+
+            colunas_review = {
+                row[0] for row in db.session.execute(db.text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = 'review'"
+                )).fetchall()
+            }
+
+            if 'foto' not in colunas_review:
+                db.session.execute(db.text("ALTER TABLE review ADD COLUMN foto VARCHAR(255)"))
+                db.session.commit()
+
     except Exception:
         db.session.rollback()
 
@@ -200,6 +245,17 @@ def login_required():
 
 @app.route('/')
 def index():
+    if not session.get('site_visitou'):
+        contador = SiteAccess.query.first()
+
+        if not contador:
+            contador = SiteAccess(total_acessos=0)
+            db.session.add(contador)
+
+        contador.total_acessos = (contador.total_acessos or 0) + 1
+        session['site_visitou'] = True
+        db.session.commit()
+
     parceiros = Partner.query.filter_by(ativo=True).order_by(Partner.ordem.asc(), Partner.nome.asc()).all()
     avaliacoes = Review.query.filter_by(ativo=True).order_by(Review.ordem.asc(), Review.criado_em.desc()).all()
     return render_template('index.html', parceiros=parceiros, avaliacoes=avaliacoes)
@@ -283,12 +339,17 @@ def admin_dashboard():
     parceiros = Partner.query.order_by(Partner.ordem.asc(), Partner.nome.asc()).all()
     avaliacoes = Review.query.order_by(Review.ordem.asc(), Review.criado_em.desc()).all()
     candidatos = Candidato.query.order_by(Candidato.criado_em.desc()).limit(100).all()
+
+    contador_site = SiteAccess.query.first()
+    total_acessos_site = contador_site.total_acessos if contador_site else 0
+
     return render_template(
         'admin_dashboard.html',
         parceiros=parceiros,
         avaliacoes=avaliacoes,
         candidatos=candidatos,
-        configs=config_dict()
+        configs=config_dict(),
+        total_acessos_site=total_acessos_site
     )
 
 
@@ -376,6 +437,19 @@ def parceiro_editar(partner_id):
     db.session.commit()
     flash('Parceiro atualizado.', 'ok')
     return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/parceiro/<int:partner_id>/ir')
+def parceiro_ir(partner_id):
+    parceiro = Partner.query.get_or_404(partner_id)
+
+    parceiro.cliques = (parceiro.cliques or 0) + 1
+    db.session.commit()
+
+    if parceiro.link and parceiro.link != '#':
+        return redirect(parceiro.link)
+
+    return redirect(url_for('index') + '#parceiros')
 
 
 @app.route('/admin-coopex/parceiros/<int:partner_id>/excluir', methods=['POST'])
