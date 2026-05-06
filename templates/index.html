@@ -206,7 +206,7 @@
             <div class="partner-track">
               {% for i in range(2) %}
                 {% for p in parceiros %}
-                <a class="partner" href="{{ p.link }}" target="_blank" rel="noopener" title="{{ p.nome }}">
+                <a class="partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">
                   {% if p.logo %}
                   <img src="{{ url_for('static', filename='uploads/' ~ p.logo) }}" alt="{{ p.nome }}">
                   {% else %}
