@@ -1,9 +1,10 @@
 import os
 from datetime import datetime, date
 from pathlib import Path
+from io import BytesIO
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -31,12 +32,51 @@ def allowed_file(filename, allowed):
 
 
 def salvar_upload(arquivo, prefixo, allowed):
+    """
+    Salva o arquivo no banco de dados para não sumir em deploy/reinício do Render.
+    Retorna 'db:ID'. Mantém compatibilidade com arquivos antigos salvos em static/uploads.
+    """
     if not arquivo or not arquivo.filename or not allowed_file(arquivo.filename, allowed):
         return None
+
     safe = secure_filename(arquivo.filename)
     filename = f"{prefixo}_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}_{safe}"
-    arquivo.save(UPLOAD_FOLDER / filename)
-    return filename
+
+    arquivo.stream.seek(0)
+    dados = arquivo.read()
+
+    if not dados:
+        return None
+
+    upload = FileUpload(
+        filename=filename,
+        original_filename=safe,
+        mimetype=arquivo.mimetype or 'application/octet-stream',
+        categoria=prefixo,
+        data=dados
+    )
+    db.session.add(upload)
+    db.session.flush()
+
+    try:
+        with open(UPLOAD_FOLDER / filename, 'wb') as f:
+            f.write(dados)
+    except Exception:
+        pass
+
+    return f"db:{upload.id}"
+
+
+class FileUpload(db.Model):
+    __tablename__ = 'file_upload'
+
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=True)
+    mimetype = db.Column(db.String(120), nullable=False, default='application/octet-stream')
+    categoria = db.Column(db.String(80), nullable=True)
+    data = db.Column(db.LargeBinary, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class SiteConfig(db.Model):
@@ -141,48 +181,111 @@ def set_config(chave, valor):
         item.valor = valor or ''
 
 
-def pegar_ultimo_upload(prefixo):
-    """
-    Procura automaticamente em static/uploads o arquivo mais recente
-    que começa com o prefixo informado.
-    Exemplo: destaque_, bau_, anuncio_frente_, anuncio_lado_, anuncio_traseira_
-    """
-    try:
-        arquivos = [
-            f for f in UPLOAD_FOLDER.iterdir()
-            if f.is_file() and f.name.startswith(prefixo)
-        ]
+def config_dict():
+    return {k: get_config(k, v) for k, v in DEFAULTS.items()}
 
-        if not arquivos:
-            return ''
 
-        arquivos.sort(key=lambda f: f.stat().st_mtime, reverse=True)
-        return arquivos[0].name
+def is_db_file(valor):
+    return bool(valor and isinstance(valor, str) and valor.startswith('db:'))
 
-    except Exception:
+
+def arquivo_url(valor):
+    """Gera URL para arquivo salvo no banco ou antigo arquivo salvo em static/uploads."""
+    if not valor:
         return ''
 
+    valor = str(valor)
 
-def config_dict():
-    cfg = {k: get_config(k, v) for k, v in DEFAULTS.items()}
+    if valor.startswith('db:'):
+        try:
+            file_id = int(valor.split(':', 1)[1])
+            return url_for('arquivo_db', file_id=file_id)
+        except Exception:
+            return ''
 
-    # Se o banco não tiver imagem salva, tenta puxar direto da pasta static/uploads
-    if not cfg.get('imagem_destaque'):
-        cfg['imagem_destaque'] = pegar_ultimo_upload('destaque_')
+    return url_for('static', filename='uploads/' + valor)
 
-    if not cfg.get('foto_bau'):
-        cfg['foto_bau'] = pegar_ultimo_upload('bau_')
 
-    if not cfg.get('anuncio_bau_frente'):
-        cfg['anuncio_bau_frente'] = pegar_ultimo_upload('anuncio_frente_')
+def _salvar_arquivo_local_no_banco(filename, categoria='migrado'):
+    """Migra arquivo antigo de static/uploads para o banco e retorna db:ID."""
+    if not filename or is_db_file(filename):
+        return filename
 
-    if not cfg.get('anuncio_bau_lado'):
-        cfg['anuncio_bau_lado'] = pegar_ultimo_upload('anuncio_lado_')
+    safe_name = secure_filename(str(filename))
+    path = UPLOAD_FOLDER / safe_name
 
-    if not cfg.get('anuncio_bau_traseira'):
-        cfg['anuncio_bau_traseira'] = pegar_ultimo_upload('anuncio_traseira_')
+    if not path.exists() or not path.is_file():
+        return filename
 
-    return cfg
+    try:
+        dados = path.read_bytes()
+        if not dados:
+            return filename
+
+        mimetype = 'application/octet-stream'
+        ext = safe_name.rsplit('.', 1)[-1].lower() if '.' in safe_name else ''
+        if ext == 'png':
+            mimetype = 'image/png'
+        elif ext in {'jpg', 'jpeg'}:
+            mimetype = 'image/jpeg'
+        elif ext == 'webp':
+            mimetype = 'image/webp'
+        elif ext == 'gif':
+            mimetype = 'image/gif'
+        elif ext == 'pdf':
+            mimetype = 'application/pdf'
+        elif ext == 'doc':
+            mimetype = 'application/msword'
+        elif ext == 'docx':
+            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+        upload = FileUpload(
+            filename=safe_name,
+            original_filename=safe_name,
+            mimetype=mimetype,
+            categoria=categoria,
+            data=dados
+        )
+        db.session.add(upload)
+        db.session.flush()
+        return f"db:{upload.id}"
+
+    except Exception:
+        db.session.rollback()
+        return filename
+
+
+def migrar_uploads_antigos_para_banco():
+    """Converte referências antigas de static/uploads para arquivos persistentes no banco."""
+    try:
+        chaves_upload = {
+            'imagem_destaque',
+            'foto_bau',
+            'anuncio_bau_frente',
+            'anuncio_bau_lado',
+            'anuncio_bau_traseira',
+        }
+
+        for chave in chaves_upload:
+            item = SiteConfig.query.filter_by(chave=chave).first()
+            if item and item.valor and not is_db_file(item.valor):
+                item.valor = _salvar_arquivo_local_no_banco(item.valor, chave)
+
+        for parceiro in Partner.query.all():
+            if parceiro.logo and not is_db_file(parceiro.logo):
+                parceiro.logo = _salvar_arquivo_local_no_banco(parceiro.logo, 'parceiro')
+
+        for avaliacao in Review.query.all():
+            if avaliacao.foto and not is_db_file(avaliacao.foto):
+                avaliacao.foto = _salvar_arquivo_local_no_banco(avaliacao.foto, 'avaliacao')
+
+        for candidato in Candidato.query.all():
+            if candidato.curriculo and not is_db_file(candidato.curriculo):
+                candidato.curriculo = _salvar_arquivo_local_no_banco(candidato.curriculo, 'curriculo')
+
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def calcular_idade(nascimento):
@@ -267,11 +370,24 @@ def init_db():
 
 @app.context_processor
 def inject_global():
-    return {'cfg': config_dict()}
+    return {
+        'cfg': config_dict(),
+        'arquivo_url': arquivo_url
+    }
 
 
 def login_required():
     return session.get('site_admin_logado') is True
+
+
+@app.route('/arquivo/<int:file_id>')
+def arquivo_db(file_id):
+    arquivo = FileUpload.query.get_or_404(file_id)
+    return send_file(
+        BytesIO(arquivo.data),
+        mimetype=arquivo.mimetype or 'application/octet-stream',
+        download_name=arquivo.original_filename or arquivo.filename
+    )
 
 
 @app.route('/')
@@ -289,10 +405,6 @@ def index():
     parceiros = Partner.query.filter_by(ativo=True).order_by(Partner.ordem.asc(), Partner.nome.asc()).all()
     avaliacoes = Review.query.filter_by(ativo=True).order_by(Review.ordem.asc(), Review.criado_em.desc()).all()
     return render_template('index.html', parceiros=parceiros, avaliacoes=avaliacoes)
-
-@app.route('/politica-de-privacidade')
-def politica_privacidade():
-    return render_template('politica_privacidade.html')
 
 
 @app.route('/trabalhe-conosco/enviar', methods=['POST'])
@@ -341,6 +453,11 @@ def enviar_curriculo():
     db.session.commit()
     flash('Currículo enviado com sucesso. A COOPEX analisará as informações.', 'ok')
     return redirect(url_for('index') + '#trabalhe')
+
+
+@app.route('/politica-de-privacidade')
+def politica_privacidade():
+    return render_template('politica_privacidade.html')
 
 
 @app.route('/admin-coopex', methods=['GET', 'POST'])
@@ -592,7 +709,7 @@ def api_parceiros():
             {
                 'nome': p.nome,
                 'link': p.link,
-                'logo': url_for('static', filename=f'uploads/{p.logo}', _external=True) if p.logo else None,
+                'logo': arquivo_url(p.logo) if p.logo else None,
             }
             for p in parceiros
         ]
