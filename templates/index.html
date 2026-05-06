@@ -415,11 +415,15 @@
   </div>
 
   <footer>
-    <div class="container footer-grid">
+  <div class="container footer-grid">
+    <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+      <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a>
       <span>© {{ cfg.nome_cooperativa }} Entregas</span>
-      <span>Cooperativa de entregas em Natal/RN</span>
     </div>
-  </footer>
+
+    <span>Cooperativa de entregas em Natal/RN</span>
+  </div>
+</footer>
 
   <script src="{{ url_for('static', filename='site.js') }}"></script>
 </body>
