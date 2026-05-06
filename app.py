@@ -56,6 +56,7 @@ class Partner(db.Model):
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+
 class SiteAccess(db.Model):
     __tablename__ = 'site_access'
 
@@ -154,44 +155,34 @@ def garantir_colunas_extras():
     try:
         engine_name = db.engine.url.get_backend_name()
 
-        # SQLite local
         if engine_name.startswith('sqlite'):
-            colunas_review = [
-                row[1] for row in db.session.execute(db.text("PRAGMA table_info(review)")).fetchall()
-            ]
+            colunas_review = [row[1] for row in db.session.execute(db.text("PRAGMA table_info(review)")).fetchall()]
             if 'foto' not in colunas_review:
                 db.session.execute(db.text("ALTER TABLE review ADD COLUMN foto VARCHAR(255)"))
                 db.session.commit()
 
-            colunas_partner = [
-                row[1] for row in db.session.execute(db.text("PRAGMA table_info(partner)")).fetchall()
-            ]
+            colunas_partner = [row[1] for row in db.session.execute(db.text("PRAGMA table_info(partner)")).fetchall()]
             if 'cliques' not in colunas_partner:
                 db.session.execute(db.text("ALTER TABLE partner ADD COLUMN cliques INTEGER DEFAULT 0"))
                 db.session.commit()
 
-        # PostgreSQL no Render
         elif engine_name.startswith('postgresql'):
-            colunas_partner = {
-                row[0] for row in db.session.execute(db.text(
-                    "SELECT column_name FROM information_schema.columns "
-                    "WHERE table_name = 'partner'"
-                )).fetchall()
-            }
-
-            if 'cliques' not in colunas_partner:
-                db.session.execute(db.text("ALTER TABLE partner ADD COLUMN cliques INTEGER DEFAULT 0"))
-                db.session.commit()
-
             colunas_review = {
                 row[0] for row in db.session.execute(db.text(
-                    "SELECT column_name FROM information_schema.columns "
-                    "WHERE table_name = 'review'"
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = 'review'"
                 )).fetchall()
             }
-
             if 'foto' not in colunas_review:
                 db.session.execute(db.text("ALTER TABLE review ADD COLUMN foto VARCHAR(255)"))
+                db.session.commit()
+
+            colunas_partner = {
+                row[0] for row in db.session.execute(db.text(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = 'partner'"
+                )).fetchall()
+            }
+            if 'cliques' not in colunas_partner:
+                db.session.execute(db.text("ALTER TABLE partner ADD COLUMN cliques INTEGER DEFAULT 0"))
                 db.session.commit()
 
     except Exception:
@@ -247,7 +238,6 @@ def login_required():
 def index():
     if not session.get('site_visitou'):
         contador = SiteAccess.query.first()
-
         if not contador:
             contador = SiteAccess(total_acessos=0)
             db.session.add(contador)
