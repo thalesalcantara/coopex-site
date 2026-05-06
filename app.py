@@ -141,8 +141,48 @@ def set_config(chave, valor):
         item.valor = valor or ''
 
 
+def pegar_ultimo_upload(prefixo):
+    """
+    Procura automaticamente em static/uploads o arquivo mais recente
+    que começa com o prefixo informado.
+    Exemplo: destaque_, bau_, anuncio_frente_, anuncio_lado_, anuncio_traseira_
+    """
+    try:
+        arquivos = [
+            f for f in UPLOAD_FOLDER.iterdir()
+            if f.is_file() and f.name.startswith(prefixo)
+        ]
+
+        if not arquivos:
+            return ''
+
+        arquivos.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+        return arquivos[0].name
+
+    except Exception:
+        return ''
+
+
 def config_dict():
-    return {k: get_config(k, v) for k, v in DEFAULTS.items()}
+    cfg = {k: get_config(k, v) for k, v in DEFAULTS.items()}
+
+    # Se o banco não tiver imagem salva, tenta puxar direto da pasta static/uploads
+    if not cfg.get('imagem_destaque'):
+        cfg['imagem_destaque'] = pegar_ultimo_upload('destaque_')
+
+    if not cfg.get('foto_bau'):
+        cfg['foto_bau'] = pegar_ultimo_upload('bau_')
+
+    if not cfg.get('anuncio_bau_frente'):
+        cfg['anuncio_bau_frente'] = pegar_ultimo_upload('anuncio_frente_')
+
+    if not cfg.get('anuncio_bau_lado'):
+        cfg['anuncio_bau_lado'] = pegar_ultimo_upload('anuncio_lado_')
+
+    if not cfg.get('anuncio_bau_traseira'):
+        cfg['anuncio_bau_traseira'] = pegar_ultimo_upload('anuncio_traseira_')
+
+    return cfg
 
 
 def calcular_idade(nascimento):
