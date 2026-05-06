@@ -290,6 +290,10 @@ def index():
     avaliacoes = Review.query.filter_by(ativo=True).order_by(Review.ordem.asc(), Review.criado_em.desc()).all()
     return render_template('index.html', parceiros=parceiros, avaliacoes=avaliacoes)
 
+@app.route('/politica-de-privacidade')
+def politica_privacidade():
+    return render_template('politica_privacidade.html'
+
 
 @app.route('/trabalhe-conosco/enviar', methods=['POST'])
 def enviar_curriculo():
