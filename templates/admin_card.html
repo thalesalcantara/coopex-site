@@ -358,6 +358,7 @@
     <section class="admin-box preview-wrap">
       <div>
         <h2>Prévia do card</h2>
+
         <p class="help">
           Use este link na bio do Instagram:
           <strong>{{ request.url_root.rstrip('/') }}{{ url_for('card_instagram') }}</strong>
@@ -427,7 +428,7 @@
           </label>
 
           <div class="whatsapp-box">
-            <div class="whatsapp-box-title">Botão fixo do WhatsApp</div>
+            <div class="whatsapp-box-title">Botão do WhatsApp</div>
 
             <label>Texto do botão WhatsApp
               <input name="card_botao_whatsapp" value="{{ card.card_botao_whatsapp or 'Falar no WhatsApp' }}" placeholder="Ex: Falar no WhatsApp">
@@ -437,9 +438,9 @@
               <input name="card_subtitulo_whatsapp" value="{{ card.card_subtitulo_whatsapp or 'Atendimento COOPEX' }}" placeholder="Ex: Atendimento COOPEX">
             </label>
 
-            <label class="full">Link do WhatsApp
-              <input name="card_link_whatsapp" value="{{ card.card_link_whatsapp }}" placeholder="https://wa.me/5584981110706">
-              <span class="help">Se deixar vazio, o sistema usa o WhatsApp cadastrado no site.</span>
+            <label>Ordem do botão WhatsApp
+              <input name="card_ordem_whatsapp" type="number" value="{{ card.card_ordem_whatsapp or 0 }}" placeholder="Ex: 0">
+              <span class="help">Use número menor para aparecer primeiro. Exemplo: 0, 1, 2, 3.</span>
             </label>
 
             <label>Ícone do botão WhatsApp
@@ -447,10 +448,14 @@
               {% if card.card_icone_whatsapp %}
                 <span class="current">Ícone atual cadastrado</span>
               {% endif %}
-              <span class="help">Use um ícone simples, em azul, para combinar com os outros botões.</span>
             </label>
 
-            <div class="mini-color-row">
+            <label class="full">Link do WhatsApp
+              <input name="card_link_whatsapp" value="{{ card.card_link_whatsapp }}" placeholder="https://wa.me/5584981110706">
+              <span class="help">Se deixar vazio, o sistema usa o WhatsApp cadastrado no site.</span>
+            </label>
+
+            <div class="mini-color-row full">
               <label>Cor do círculo do ícone
                 <input type="color" name="card_cor_fundo_icone_whatsapp" value="{{ card.card_cor_fundo_icone_whatsapp or '#EAF2FF' }}">
               </label>
@@ -508,11 +513,11 @@
 
       <form method="post" enctype="multipart/form-data" action="{{ url_for('card_link_novo') }}" class="link-form">
         <label>Título
-          <input name="titulo" placeholder="Ex: Portfólio" required>
+          <input name="titulo" placeholder="Ex: Instagram" required>
         </label>
 
         <label>Subtítulo
-          <input name="subtitulo" placeholder="Opcional">
+          <input name="subtitulo" placeholder="Ex: Siga a COOPEX">
         </label>
 
         <label>Link/URL
@@ -520,7 +525,7 @@
         </label>
 
         <label>Ordem
-          <input name="ordem" type="number" value="0">
+          <input name="ordem" type="number" value="1">
         </label>
 
         <label class="check">
