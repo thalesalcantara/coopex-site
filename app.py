@@ -19,11 +19,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
 ).replace('postgres://', 'postgresql://')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
-app.config['MAX_CONTENT_LENGTH'] = 12 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 80 * 1024 * 1024
 
 db = SQLAlchemy(app)
 
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov'}
 ALLOWED_CURRICULO_EXTENSIONS = {'pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp'}
 
 
@@ -97,6 +98,22 @@ class Partner(db.Model):
 
 
 
+
+
+class CardLink(db.Model):
+    __tablename__ = 'card_link'
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(120), nullable=False)
+    subtitulo = db.Column(db.String(180), nullable=True)
+    url = db.Column(db.String(600), nullable=False, default='#')
+    icone = db.Column(db.String(255), nullable=True)
+    ativo = db.Column(db.Boolean, default=True)
+    ordem = db.Column(db.Integer, default=0)
+    cliques = db.Column(db.Integer, default=0)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class SiteAccess(db.Model):
     __tablename__ = 'site_access'
 
@@ -168,6 +185,28 @@ DEFAULTS = {
 }
 
 
+CARD_DEFAULTS = {
+    'card_nome': 'COOPEX Entregas',
+    'card_descricao': 'Cooperativa de Motofretistas',
+    'card_bio': 'Entregas organizadas para empresas e pessoas físicas em Natal/RN.',
+    'card_localizacao': 'Natal/RN',
+    'card_mapa_link': 'https://www.google.com/maps?q=Rua%20Jos%C3%A9%20Freire%20de%20Souza%2022%20Lagoa%20Nova%20Natal%20RN',
+    'card_cor_primaria': '#0047B8',
+    'card_cor_secundaria': '#FFFFFF',
+    'card_cor_texto': '#FFFFFF',
+    'card_cor_botao': '#FFFFFF',
+    'card_cor_texto_botao': '#0047B8',
+    'card_estilo': 'ondas',
+    'card_foto': '',
+    'card_logo': '',
+    'card_fundo_imagem': '',
+    'card_video': '',
+    'card_botao_whatsapp': 'Falar no WhatsApp',
+    'card_link_whatsapp': '',
+    'card_mostrar_video': '0',
+}
+
+
 def get_config(chave, default=''):
     item = SiteConfig.query.filter_by(chave=chave).first()
     return item.valor if item else default
@@ -183,6 +222,10 @@ def set_config(chave, valor):
 
 def config_dict():
     return {k: get_config(k, v) for k, v in DEFAULTS.items()}
+
+
+def card_config_dict():
+    return {k: get_config(k, v) for k, v in CARD_DEFAULTS.items()}
 
 
 def is_db_file(valor):
@@ -344,6 +387,13 @@ def init_db():
             elif chave in DEFAULTS and item.valor is None:
                 item.valor = valor
 
+        for chave, valor in CARD_DEFAULTS.items():
+            item = SiteConfig.query.filter_by(chave=chave).first()
+            if not item:
+                db.session.add(SiteConfig(chave=chave, valor=valor))
+            elif item.valor is None:
+                item.valor = valor
+
         admin_user = os.getenv('SITE_ADMIN_USER', 'coopex')
         admin_pass = os.getenv('SITE_ADMIN_PASS', 'coopex05289')
         admin = AdminUser.query.filter_by(usuario=admin_user).first()
@@ -365,6 +415,14 @@ def init_db():
                 Review(nome='Estabelecimento cliente', empresa='Farmácia', comentario='Equipe responsável, boa comunicação e entregadores fardados. Recomendo para operação fixa.', nota=5, data_avaliacao='há 2 meses', link='#', ativo=True, ordem=3),
             ])
 
+
+        if CardLink.query.count() == 0:
+            db.session.add_all([
+                CardLink(titulo='Solicitar entrega', subtitulo='Atendimento COOPEX', url=get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), ativo=True, ordem=1),
+                CardLink(titulo='Instagram', subtitulo='Acompanhe a COOPEX', url='https://instagram.com/coopex.entregas', ativo=True, ordem=2),
+                CardLink(titulo='Contato', subtitulo='Fale conosco', url='https://wa.me/5584981110706', ativo=True, ordem=3),
+            ])
+
         db.session.commit()
 
 
@@ -372,6 +430,7 @@ def init_db():
 def inject_global():
     return {
         'cfg': config_dict(),
+        'card_cfg': card_config_dict(),
         'arquivo_url': arquivo_url
     }
 
@@ -502,6 +561,128 @@ def admin_dashboard():
         configs=config_dict(),
         total_acessos_site=total_acessos_site
     )
+
+
+
+@app.route('/instagram')
+@app.route('/card-instagram')
+def card_instagram():
+    links = CardLink.query.filter_by(ativo=True).order_by(CardLink.ordem.asc(), CardLink.criado_em.asc()).all()
+    return render_template('instagram_card.html', card=card_config_dict(), links=links)
+
+
+@app.route('/card-link/<int:link_id>/ir')
+def card_link_ir(link_id):
+    link = CardLink.query.get_or_404(link_id)
+    link.cliques = (link.cliques or 0) + 1
+    db.session.commit()
+    if link.url and link.url != '#':
+        return redirect(link.url)
+    return redirect(url_for('card_instagram'))
+
+
+@app.route('/admin-coopex/card')
+@app.route('/admin-site/card')
+def admin_card():
+    if not login_required():
+        return redirect(url_for('admin_login'))
+    links = CardLink.query.order_by(CardLink.ordem.asc(), CardLink.criado_em.asc()).all()
+    return render_template('admin_card.html', card=card_config_dict(), links=links)
+
+
+@app.route('/admin-coopex/card/salvar', methods=['POST'])
+@app.route('/admin-site/card/salvar', methods=['POST'])
+def salvar_card_configuracoes():
+    if not login_required():
+        return redirect(url_for('admin_login'))
+
+    campos_texto = [
+        'card_nome', 'card_descricao', 'card_bio', 'card_localizacao', 'card_mapa_link', 'card_cor_primaria', 'card_cor_secundaria',
+        'card_cor_texto', 'card_cor_botao', 'card_cor_texto_botao', 'card_estilo',
+        'card_botao_whatsapp', 'card_link_whatsapp'
+    ]
+    for chave in campos_texto:
+        set_config(chave, request.form.get(chave, CARD_DEFAULTS.get(chave, '')))
+
+    set_config('card_mostrar_video', '1' if request.form.get('card_mostrar_video') == 'on' else '0')
+
+    foto = salvar_upload(request.files.get('card_foto'), 'card_foto', ALLOWED_IMAGE_EXTENSIONS)
+    if foto:
+        set_config('card_foto', foto)
+
+    logo = salvar_upload(request.files.get('card_logo'), 'card_logo', ALLOWED_IMAGE_EXTENSIONS)
+    if logo:
+        set_config('card_logo', logo)
+
+    fundo = salvar_upload(request.files.get('card_fundo_imagem'), 'card_fundo', ALLOWED_IMAGE_EXTENSIONS)
+    if fundo:
+        set_config('card_fundo_imagem', fundo)
+
+    video = salvar_upload(request.files.get('card_video'), 'card_video', ALLOWED_VIDEO_EXTENSIONS)
+    if video:
+        set_config('card_video', video)
+
+    db.session.commit()
+    flash('Card do Instagram atualizado com sucesso.', 'ok')
+    return redirect(url_for('admin_card'))
+
+
+@app.route('/admin-coopex/card/link/novo', methods=['POST'])
+@app.route('/admin-site/card/link/novo', methods=['POST'])
+def card_link_novo():
+    if not login_required():
+        return redirect(url_for('admin_login'))
+
+    titulo = request.form.get('titulo', '').strip()
+    subtitulo = request.form.get('subtitulo', '').strip()
+    url = request.form.get('url', '').strip() or '#'
+    ativo = request.form.get('ativo') == 'on'
+    ordem = int(request.form.get('ordem') or 0)
+
+    if not titulo:
+        flash('Informe o título do botão/link.', 'erro')
+        return redirect(url_for('admin_card'))
+
+    icone = salvar_upload(request.files.get('icone'), 'card_icone', ALLOWED_IMAGE_EXTENSIONS)
+    db.session.add(CardLink(titulo=titulo, subtitulo=subtitulo, url=url, icone=icone, ativo=ativo, ordem=ordem))
+    db.session.commit()
+    flash('Link cadastrado no card.', 'ok')
+    return redirect(url_for('admin_card'))
+
+
+@app.route('/admin-coopex/card/link/<int:link_id>/editar', methods=['POST'])
+@app.route('/admin-site/card/link/<int:link_id>/editar', methods=['POST'])
+def card_link_editar(link_id):
+    if not login_required():
+        return redirect(url_for('admin_login'))
+
+    link = CardLink.query.get_or_404(link_id)
+    link.titulo = request.form.get('titulo', link.titulo).strip()
+    link.subtitulo = request.form.get('subtitulo', link.subtitulo or '').strip()
+    link.url = request.form.get('url', link.url).strip() or '#'
+    link.ordem = int(request.form.get('ordem') or 0)
+    link.ativo = request.form.get('ativo') == 'on'
+
+    icone = salvar_upload(request.files.get('icone'), 'card_icone', ALLOWED_IMAGE_EXTENSIONS)
+    if icone:
+        link.icone = icone
+
+    db.session.commit()
+    flash('Link atualizado.', 'ok')
+    return redirect(url_for('admin_card'))
+
+
+@app.route('/admin-coopex/card/link/<int:link_id>/excluir', methods=['POST'])
+@app.route('/admin-site/card/link/<int:link_id>/excluir', methods=['POST'])
+def card_link_excluir(link_id):
+    if not login_required():
+        return redirect(url_for('admin_login'))
+
+    link = CardLink.query.get_or_404(link_id)
+    db.session.delete(link)
+    db.session.commit()
+    flash('Link excluído do card.', 'ok')
+    return redirect(url_for('admin_card'))
 
 
 @app.route('/admin-coopex/configuracoes', methods=['POST'])
