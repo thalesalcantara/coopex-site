@@ -17,9 +17,7 @@
       --danger:#dc2626;
     }
 
-    *{
-      box-sizing:border-box;
-    }
+    *{box-sizing:border-box}
 
     body.admin-page{
       margin:0;
@@ -214,16 +212,9 @@
       gap:10px;
     }
 
-    .color-row input[type=color],
-    .mini-color-row input[type=color]{
+    .color-row input[type=color]{
       height:44px;
       padding:4px;
-    }
-
-    .mini-color-row{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:10px;
     }
 
     .link-card{
@@ -290,25 +281,6 @@
       font-weight:800;
     }
 
-    .whatsapp-box{
-      grid-column:1/-1;
-      border:1px solid #dbeafe;
-      background:#f8fbff;
-      border-radius:18px;
-      padding:14px;
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:14px;
-    }
-
-    .whatsapp-box-title{
-      grid-column:1/-1;
-      color:var(--royal);
-      font-weight:900;
-      font-size:14px;
-      margin-bottom:-2px;
-    }
-
     @media(max-width:900px){
       .preview-wrap{
         grid-template-columns:1fr;
@@ -316,9 +288,7 @@
 
       .form-grid,
       .link-form,
-      .color-row,
-      .mini-color-row,
-      .whatsapp-box{
+      .color-row{
         grid-template-columns:1fr;
       }
 
@@ -427,45 +397,6 @@
             </select>
           </label>
 
-          <div class="whatsapp-box">
-            <div class="whatsapp-box-title">Botão do WhatsApp</div>
-
-            <label>Texto do botão WhatsApp
-              <input name="card_botao_whatsapp" value="{{ card.card_botao_whatsapp or 'Falar no WhatsApp' }}" placeholder="Ex: Falar no WhatsApp">
-            </label>
-
-            <label>Subtítulo do botão WhatsApp
-              <input name="card_subtitulo_whatsapp" value="{{ card.card_subtitulo_whatsapp or 'Atendimento COOPEX' }}" placeholder="Ex: Atendimento COOPEX">
-            </label>
-
-            <label>Ordem do botão WhatsApp
-              <input name="card_ordem_whatsapp" type="number" value="{{ card.card_ordem_whatsapp or 0 }}" placeholder="Ex: 0">
-              <span class="help">Use número menor para aparecer primeiro. Exemplo: 0, 1, 2, 3.</span>
-            </label>
-
-            <label>Ícone do botão WhatsApp
-              <input type="file" name="card_icone_whatsapp" accept="image/*">
-              {% if card.card_icone_whatsapp %}
-                <span class="current">Ícone atual cadastrado</span>
-              {% endif %}
-            </label>
-
-            <label class="full">Link do WhatsApp
-              <input name="card_link_whatsapp" value="{{ card.card_link_whatsapp }}" placeholder="https://wa.me/5584981110706">
-              <span class="help">Se deixar vazio, o sistema usa o WhatsApp cadastrado no site.</span>
-            </label>
-
-            <div class="mini-color-row full">
-              <label>Cor do círculo do ícone
-                <input type="color" name="card_cor_fundo_icone_whatsapp" value="{{ card.card_cor_fundo_icone_whatsapp or '#EAF2FF' }}">
-              </label>
-
-              <label>Cor do ícone WhatsApp
-                <input type="color" name="card_cor_icone_whatsapp" value="{{ card.card_cor_icone_whatsapp or '#0057FF' }}">
-              </label>
-            </div>
-          </div>
-
           <div class="admin-subtitle">Imagens, logo e vídeo</div>
 
           <label>Foto principal/perfil
@@ -513,19 +444,19 @@
 
       <form method="post" enctype="multipart/form-data" action="{{ url_for('card_link_novo') }}" class="link-form">
         <label>Título
-          <input name="titulo" placeholder="Ex: Instagram" required>
+          <input name="titulo" placeholder="Ex: WhatsApp" required>
         </label>
 
         <label>Subtítulo
-          <input name="subtitulo" placeholder="Ex: Siga a COOPEX">
+          <input name="subtitulo" placeholder="Ex: Atendimento COOPEX">
         </label>
 
         <label>Link/URL
-          <input name="url" placeholder="https://...">
+          <input name="url" placeholder="https://wa.me/5584981110706">
         </label>
 
         <label>Ordem
-          <input name="ordem" type="number" value="1">
+          <input name="ordem" type="number" value="0">
         </label>
 
         <label class="check">
@@ -546,7 +477,7 @@
     <section class="admin-box">
       <h2>Botões/links cadastrados</h2>
 
-      {% for l in links %}
+      {% for l in links|sort(attribute='ordem') %}
         <div class="link-card">
           <div class="thumb">
             {% if l.icone %}
