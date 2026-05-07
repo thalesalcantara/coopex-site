@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuração do Card Instagram - COOPEX</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    :root{--royal:#0047b8;--blue:#063f99;--light:#f5f9ff;--border:#dbeafe;--text:#0f172a;--muted:#64748b;--danger:#dc2626;}
+    *{box-sizing:border-box}
+    body.admin-page{margin:0;background:linear-gradient(180deg,#eef6ff,#fff);font-family:Arial,Helvetica,sans-serif;color:var(--text)}
+    .admin-top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+    .admin-top strong{display:block;color:var(--royal);font-size:20px}.admin-top span{display:block;color:var(--muted);font-size:13px;margin-top:3px}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.admin-container{max-width:1220px;margin:0 auto;padding:22px}.admin-box{background:#fff;border:1px solid var(--border);border-radius:22px;padding:20px;margin-bottom:18px;box-shadow:0 12px 35px rgba(15,23,42,.07)}
+    .admin-box h2{margin:0 0 12px;color:var(--royal)}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.form-grid label,.link-form label{display:flex;flex-direction:column;gap:7px;font-weight:800;font-size:13px;color:#334155}.form-grid input,.form-grid textarea,.form-grid select,.link-form input,.link-form textarea{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:11px 12px;font-size:14px;background:#fff}.form-grid textarea{min-height:92px;resize:vertical}.full{grid-column:1/-1}.help{font-size:12px;color:var(--muted);font-weight:600;line-height:1.45}.btn{border:none;border-radius:999px;padding:10px 16px;text-decoration:none;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}.btn.primary{background:var(--royal);color:#fff}.btn.secondary{background:#eaf2ff;color:var(--royal);border:1px solid #bfdbfe}.btn.danger{background:#fee2e2;color:#991b1b}.btn.small{padding:8px 12px;font-size:13px}.flash{padding:12px 14px;border-radius:14px;margin-bottom:12px;font-weight:800}.flash.ok{background:#dcfce7;color:#166534}.flash.erro{background:#fee2e2;color:#991b1b}
+    .preview-wrap{display:grid;grid-template-columns:390px 1fr;gap:20px;align-items:start}.phone-preview{width:360px;max-width:100%;border-radius:34px;padding:10px;background:#0f172a;box-shadow:0 24px 55px rgba(15,23,42,.25);margin:auto}.phone-screen{height:700px;border-radius:26px;overflow:hidden;background:#fff;border:4px solid #111827}.phone-screen iframe{width:100%;height:100%;border:0}.color-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.color-row input[type=color]{height:44px;padding:4px}.link-card{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;border:1px solid var(--border);border-radius:18px;padding:12px;margin-top:12px;background:#f8fbff}.thumb{width:60px;height:60px;border-radius:18px;background:#eaf2ff;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--royal);font-weight:900}.thumb img{width:100%;height:100%;object-fit:cover}.link-form{display:grid;grid-template-columns:1.1fr 1fr 1.7fr .45fr .7fr;gap:10px;align-items:end}.check{flex-direction:row!important;align-items:center!important;gap:8px!important}.check input{width:auto!important}.admin-subtitle{grid-column:1/-1;margin-top:6px;padding:12px 14px;border-radius:16px;background:#f1f7ff;color:var(--royal);font-weight:900}.current{font-size:12px;color:#166534;font-weight:800}@media(max-width:900px){.preview-wrap{grid-template-columns:1fr}.form-grid,.link-form,.color-row{grid-template-columns:1fr}.admin-top{align-items:flex-start;flex-direction:column}.phone-screen{height:640px}}
+  </style>
+</head>
+<body class="admin-page">
+  <header class="admin-top">
+    <div>
+      <strong>Configuração do Card Instagram</strong>
+      <span>Página separada do site: foto, logo, cores, links, ícones, localização e vídeo de apresentação.</span>
+    </div>
+    <div class="admin-actions">
+      <a class="btn secondary small" href="{{ url_for('admin_dashboard') }}">Voltar para configurar o site</a>
+      <a class="btn secondary small" href="{{ url_for('card_instagram') }}" target="_blank">Ver card</a>
+      <a class="btn danger small" href="{{ url_for('admin_logout') }}">Sair</a>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+    {% endwith %}
+
+    <section class="admin-box preview-wrap">
+      <div>
+        <h2>Prévia do card</h2>
+        <p class="help">Use este link na bio do Instagram: <strong>{{ request.url_root.rstrip('/') }}{{ url_for('card_instagram') }}</strong></p>
+        <div class="phone-preview"><div class="phone-screen"><iframe src="{{ url_for('card_instagram') }}"></iframe></div></div>
+      </div>
+      <div>
+        <h2>Dados principais</h2>
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('salvar_card_configuracoes') }}" class="form-grid">
+          <label>Nome principal
+            <input name="card_nome" value="{{ card.card_nome }}" placeholder="Ex: COOPEX Entregas">
+          </label>
+          <label>Descrição curta
+            <input name="card_descricao" value="{{ card.card_descricao }}" placeholder="Ex: Cooperativa de Motofretistas">
+          </label>
+          <label class="full">Bio / apresentação
+            <textarea name="card_bio" placeholder="Texto curto que aparece abaixo do nome">{{ card.card_bio }}</textarea>
+          </label>
+          <label>Localização da cooperativa
+            <input name="card_localizacao" value="{{ card.card_localizacao }}" placeholder="Ex: Natal/RN">
+          </label>
+          <label>Link da localização no Google Maps
+            <input name="card_mapa_link" value="{{ card.card_mapa_link }}" placeholder="Cole aqui o link do mapa">
+          </label>
+          <div class="admin-subtitle">Cores e estilo</div>
+          <div class="color-row full">
+            <label>Cor principal <input type="color" name="card_cor_primaria" value="{{ card.card_cor_primaria or '#0047B8' }}"></label>
+            <label>Cor secundária <input type="color" name="card_cor_secundaria" value="{{ card.card_cor_secundaria or '#FFFFFF' }}"></label>
+            <label>Cor dos textos <input type="color" name="card_cor_texto" value="{{ card.card_cor_texto or '#FFFFFF' }}"></label>
+            <label>Cor dos botões <input type="color" name="card_cor_botao" value="{{ card.card_cor_botao or '#FFFFFF' }}"></label>
+            <label>Texto do botão <input type="color" name="card_cor_texto_botao" value="{{ card.card_cor_texto_botao or '#0047B8' }}"></label>
+          </div>
+          <label>Estilo visual
+            <select name="card_estilo">
+              <option value="ondas" {% if card.card_estilo == 'ondas' %}selected{% endif %}>Ondas moderno</option>
+              <option value="limpo" {% if card.card_estilo == 'limpo' %}selected{% endif %}>Limpo institucional</option>
+              <option value="vidro" {% if card.card_estilo == 'vidro' %}selected{% endif %}>Vidro / glass</option>
+            </select>
+          </label>
+          <label>Texto do botão WhatsApp
+            <input name="card_botao_whatsapp" value="{{ card.card_botao_whatsapp }}">
+          </label>
+          <label class="full">Link do WhatsApp
+            <input name="card_link_whatsapp" value="{{ card.card_link_whatsapp }}" placeholder="https://wa.me/5584981110706">
+            <span class="help">Se deixar vazio, o sistema usa o WhatsApp cadastrado no site.</span>
+          </label>
+          <div class="admin-subtitle">Imagens, logo e vídeo</div>
+          <label>Foto principal/perfil
+            <input type="file" name="card_foto" accept="image/*">
+            {% if card.card_foto %}<span class="current">Foto atual cadastrada</span>{% endif %}
+          </label>
+          <label>Logo
+            <input type="file" name="card_logo" accept="image/*">
+            {% if card.card_logo %}<span class="current">Logo atual cadastrada</span>{% endif %}
+          </label>
+          <label>Imagem de fundo opcional
+            <input type="file" name="card_fundo_imagem" accept="image/*">
+            {% if card.card_fundo_imagem %}<span class="current">Fundo atual cadastrado</span>{% endif %}
+          </label>
+          <label>Vídeo de apresentação opcional
+            <input type="file" name="card_video" accept="video/mp4,video/webm,video/quicktime">
+            {% if card.card_video %}<span class="current">Vídeo atual cadastrado</span>{% endif %}
+          </label>
+          <label class="check full"><input type="checkbox" name="card_mostrar_video" {% if card.card_mostrar_video == '1' %}checked{% endif %}> Mostrar vídeo de apresentação no card</label>
+          <div class="full"><button class="btn primary" type="submit">Salvar configuração do card</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="admin-box">
+      <h2>Cadastrar novo botão/link</h2>
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('card_link_novo') }}" class="link-form">
+        <label>Título<input name="titulo" placeholder="Ex: Portfólio" required></label>
+        <label>Subtítulo<input name="subtitulo" placeholder="Opcional"></label>
+        <label>Link/URL<input name="url" placeholder="https://..."></label>
+        <label>Ordem<input name="ordem" type="number" value="0"></label>
+        <label class="check"><input type="checkbox" name="ativo" checked> Ativo</label>
+        <label class="full">Ícone ou logo do botão<input name="icone" type="file" accept="image/*"></label>
+        <div class="full"><button class="btn primary" type="submit">Cadastrar botão</button></div>
+      </form>
+    </section>
+
+    <section class="admin-box">
+      <h2>Botões/links cadastrados</h2>
+      {% for l in links %}
+      <div class="link-card">
+        <div class="thumb">{% if l.icone %}<img src="{{ arquivo_url(l.icone) }}" alt="{{ l.titulo }}">{% else %}↗{% endif %}</div>
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('card_link_editar', link_id=l.id) }}" class="link-form">
+          <label>Título<input name="titulo" value="{{ l.titulo }}"></label>
+          <label>Subtítulo<input name="subtitulo" value="{{ l.subtitulo or '' }}"></label>
+          <label>Link<input name="url" value="{{ l.url }}"></label>
+          <label>Ordem<input name="ordem" type="number" value="{{ l.ordem }}"></label>
+          <label class="check"><input type="checkbox" name="ativo" {% if l.ativo %}checked{% endif %}> Ativo</label>
+          <label class="full">Trocar ícone/logo<input name="icone" type="file" accept="image/*"><span class="help">Cliques: {{ l.cliques or 0 }}</span></label>
+          <div class="full"><button class="btn secondary small" type="submit">Salvar este botão</button></div>
+        </form>
+        <form method="post" action="{{ url_for('card_link_excluir', link_id=l.id) }}" onsubmit="return confirm('Excluir este botão do card?')">
+          <button class="btn danger small" type="submit">Excluir</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="help">Nenhum botão cadastrado ainda.</p>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>
