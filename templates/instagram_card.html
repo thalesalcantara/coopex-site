@@ -386,8 +386,14 @@
       {% endif %}
 
       <div class="footer">
-        {{ card.card_nome }}{% if card.card_localizacao %} • {{ card.card_localizacao }}{% endif %}
-      </div>
+      {{ card.card_nome }} • <span class="ano-atual"></span>
+    </div>
+
+    <script>
+      document.querySelectorAll(".ano-atual").forEach(function(el) {
+        el.textContent = new Date().getFullYear();
+      });
+    </script>
     </section>
 
   </main>
