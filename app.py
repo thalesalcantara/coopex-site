@@ -1,5 +1,6 @@
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from io import BytesIO
 from werkzeug.utils import secure_filename
@@ -27,6 +28,54 @@ ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov'}
 ALLOWED_CURRICULO_EXTENSIONS = {'pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp'}
 
+# Natal/RN usa o mesmo horário de Fortaleza.
+# O banco salva em UTC e o painel mostra convertido para o horário local.
+FUSO_NATAL = ZoneInfo('America/Fortaleza')
+
+
+def agora_utc():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def formatar_data_hora_br(data_hora):
+    """Exibe data/hora no horário de Natal/RN."""
+    if not data_hora:
+        return ''
+
+    if data_hora.tzinfo is None:
+        data_hora = data_hora.replace(tzinfo=timezone.utc)
+
+    data_local = data_hora.astimezone(FUSO_NATAL)
+    return data_local.strftime('%d/%m/%Y %H:%M')
+
+
+def excluir_arquivo_referencia(valor):
+    """
+    Exclui arquivo salvo no banco no formato db:ID.
+    Também tenta excluir arquivo antigo salvo em static/uploads, caso exista.
+    """
+    if not valor:
+        return
+
+    valor = str(valor)
+
+    if valor.startswith('db:'):
+        try:
+            file_id = int(valor.split(':', 1)[1])
+            arquivo = FileUpload.query.get(file_id)
+            if arquivo:
+                db.session.delete(arquivo)
+        except Exception:
+            pass
+        return
+
+    try:
+        caminho = UPLOAD_FOLDER / secure_filename(valor)
+        if caminho.exists() and caminho.is_file():
+            caminho.unlink()
+    except Exception:
+        pass
+
 
 def allowed_file(filename, allowed):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
@@ -41,7 +90,7 @@ def salvar_upload(arquivo, prefixo, allowed):
         return None
 
     safe = secure_filename(arquivo.filename)
-    filename = f"{prefixo}_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}_{safe}"
+    filename = f"{prefixo}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}_{safe}"
 
     arquivo.stream.seek(0)
     dados = arquivo.read()
@@ -77,7 +126,7 @@ class FileUpload(db.Model):
     mimetype = db.Column(db.String(120), nullable=False, default='application/octet-stream')
     categoria = db.Column(db.String(80), nullable=True)
     data = db.Column(db.LargeBinary, nullable=False)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=agora_utc)
 
 
 class SiteConfig(db.Model):
@@ -94,7 +143,7 @@ class Partner(db.Model):
     ativo = db.Column(db.Boolean, default=True)
     ordem = db.Column(db.Integer, default=0)
     cliques = db.Column(db.Integer, default=0)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=agora_utc)
 
 
 
@@ -111,7 +160,7 @@ class CardLink(db.Model):
     ativo = db.Column(db.Boolean, default=True)
     ordem = db.Column(db.Integer, default=0)
     cliques = db.Column(db.Integer, default=0)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=agora_utc)
 
 
 class SiteAccess(db.Model):
@@ -119,7 +168,7 @@ class SiteAccess(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     total_acessos = db.Column(db.Integer, default=0)
-    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    atualizado_em = db.Column(db.DateTime, default=agora_utc, onupdate=agora_utc)
 
 
 class Review(db.Model):
@@ -133,7 +182,7 @@ class Review(db.Model):
     foto = db.Column(db.String(255), nullable=True)
     ativo = db.Column(db.Boolean, default=True)
     ordem = db.Column(db.Integer, default=0)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=agora_utc)
 
 
 class Candidato(db.Model):
@@ -145,7 +194,7 @@ class Candidato(db.Model):
     email = db.Column(db.String(180), nullable=False)
     atividade_remunerada = db.Column(db.Boolean, default=False)
     curriculo = db.Column(db.String(255), nullable=True)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=agora_utc)
 
 
 class AdminUser(db.Model):
@@ -431,7 +480,8 @@ def inject_global():
     return {
         'cfg': config_dict(),
         'card_cfg': card_config_dict(),
-        'arquivo_url': arquivo_url
+        'arquivo_url': arquivo_url,
+        'formatar_data_hora_br': formatar_data_hora_br
     }
 
 
@@ -562,6 +612,26 @@ def admin_dashboard():
         total_acessos_site=total_acessos_site
     )
 
+
+
+@app.route('/admin-coopex/candidatos/<int:candidato_id>/excluir', methods=['POST'])
+@app.route('/admin-site/candidatos/<int:candidato_id>/excluir', methods=['POST'])
+def candidato_excluir(candidato_id):
+    if not login_required():
+        return redirect(url_for('admin_login'))
+
+    candidato = Candidato.query.get_or_404(candidato_id)
+
+    try:
+        excluir_arquivo_referencia(candidato.curriculo)
+        db.session.delete(candidato)
+        db.session.commit()
+        flash('Currículo excluído com sucesso.', 'ok')
+    except Exception:
+        db.session.rollback()
+        flash('Erro ao excluir o currículo. Tente novamente.', 'erro')
+
+    return redirect(url_for('admin_dashboard'))
 
 
 @app.route('/instagram')
