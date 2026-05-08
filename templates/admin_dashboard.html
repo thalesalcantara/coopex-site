@@ -31,6 +31,17 @@
       align-self:center;
       min-width:130px;
     }
+
+    .candidate-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .candidate-row{
+      align-items:center;
+    }
   </style>
 </head>
 <body class="admin-page">
@@ -250,17 +261,28 @@
 
     <section class="admin-box">
       <h2>Currículos recebidos</h2>
+      <p class="admin-help">
+        Aqui ficam os currículos enviados pelo site. Após analisar ou baixar, você pode excluir para não acumular arquivos no banco de dados.
+      </p>
+
       <div class="admin-list">
         {% for c in candidatos %}
         <div class="candidate-row">
           <div>
             <strong>{{ c.nome_completo }}</strong>
             <span>{{ c.idade }} anos • {{ c.escolaridade }} • {{ c.email }}</span>
-            <small>Enviado em {{ c.criado_em.strftime('%d/%m/%Y %H:%M') }}</small>
+            <small>Enviado em {{ formatar_data_hora_br(c.criado_em) }}</small>
           </div>
-          {% if c.curriculo %}
-          <a class="btn secondary small" target="_blank" href="{{ arquivo_url(c.curriculo) }}">Abrir currículo</a>
-          {% endif %}
+
+          <div class="candidate-actions">
+            {% if c.curriculo %}
+            <a class="btn secondary small" target="_blank" href="{{ arquivo_url(c.curriculo) }}">Abrir currículo</a>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('candidato_excluir', candidato_id=c.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir este currículo? Esta ação removerá o candidato e o arquivo enviado.');">
+              <button class="btn danger small" type="submit">Excluir</button>
+            </form>
+          </div>
         </div>
         {% else %}
         <p>Nenhum currículo recebido ainda.</p>
