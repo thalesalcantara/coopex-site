@@ -1,207 +1,26 @@
-import os
 from datetime import datetime, date, timezone
-from zoneinfo import ZoneInfo
-from pathlib import Path
 from io import BytesIO
-from werkzeug.utils import secure_filename
+from types import SimpleNamespace
+from zoneinfo import ZoneInfo
+
+from flask import (
+    Flask, Response, abort, flash, jsonify, redirect, render_template_string,
+    request, send_file, session, url_for
+)
+from pyodide.ffi import run_sync
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
-from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
+from workers import wsgi
 
-BASE_DIR = Path(__file__).resolve().parent
-UPLOAD_FOLDER = BASE_DIR / 'static' / 'uploads'
-UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'troque-esta-chave-no-render')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL',
-    'sqlite:///' + str(BASE_DIR / 'coopex_site.db')
-).replace('postgres://', 'postgresql://')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
+app = Flask(__name__, static_folder=None)
+app.config['SECRET_KEY'] = 'troque-esta-chave-no-cloudflare'
 app.config['MAX_CONTENT_LENGTH'] = 80 * 1024 * 1024
-
-db = SQLAlchemy(app)
 
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov'}
 ALLOWED_CURRICULO_EXTENSIONS = {'pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp'}
-
-# Natal/RN usa o mesmo horário de Fortaleza.
-# O banco salva em UTC e o painel mostra convertido para o horário local.
+CHUNK_SIZE = 1_500_000
 FUSO_NATAL = ZoneInfo('America/Fortaleza')
-
-
-def agora_utc():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
-
-
-def formatar_data_hora_br(data_hora):
-    """Exibe data/hora no horário de Natal/RN."""
-    if not data_hora:
-        return ''
-
-    if data_hora.tzinfo is None:
-        data_hora = data_hora.replace(tzinfo=timezone.utc)
-
-    data_local = data_hora.astimezone(FUSO_NATAL)
-    return data_local.strftime('%d/%m/%Y %H:%M')
-
-
-def excluir_arquivo_referencia(valor):
-    """
-    Exclui arquivo salvo no banco no formato db:ID.
-    Também tenta excluir arquivo antigo salvo em static/uploads, caso exista.
-    """
-    if not valor:
-        return
-
-    valor = str(valor)
-
-    if valor.startswith('db:'):
-        try:
-            file_id = int(valor.split(':', 1)[1])
-            arquivo = FileUpload.query.get(file_id)
-            if arquivo:
-                db.session.delete(arquivo)
-        except Exception:
-            pass
-        return
-
-    try:
-        caminho = UPLOAD_FOLDER / secure_filename(valor)
-        if caminho.exists() and caminho.is_file():
-            caminho.unlink()
-    except Exception:
-        pass
-
-
-def allowed_file(filename, allowed):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
-
-
-def salvar_upload(arquivo, prefixo, allowed):
-    """
-    Salva o arquivo no banco de dados para não sumir em deploy/reinício do Render.
-    Retorna 'db:ID'. Mantém compatibilidade com arquivos antigos salvos em static/uploads.
-    """
-    if not arquivo or not arquivo.filename or not allowed_file(arquivo.filename, allowed):
-        return None
-
-    safe = secure_filename(arquivo.filename)
-    filename = f"{prefixo}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}_{safe}"
-
-    arquivo.stream.seek(0)
-    dados = arquivo.read()
-
-    if not dados:
-        return None
-
-    upload = FileUpload(
-        filename=filename,
-        original_filename=safe,
-        mimetype=arquivo.mimetype or 'application/octet-stream',
-        categoria=prefixo,
-        data=dados
-    )
-    db.session.add(upload)
-    db.session.flush()
-
-    try:
-        with open(UPLOAD_FOLDER / filename, 'wb') as f:
-            f.write(dados)
-    except Exception:
-        pass
-
-    return f"db:{upload.id}"
-
-
-class FileUpload(db.Model):
-    __tablename__ = 'file_upload'
-
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(255), nullable=False)
-    original_filename = db.Column(db.String(255), nullable=True)
-    mimetype = db.Column(db.String(120), nullable=False, default='application/octet-stream')
-    categoria = db.Column(db.String(80), nullable=True)
-    data = db.Column(db.LargeBinary, nullable=False)
-    criado_em = db.Column(db.DateTime, default=agora_utc)
-
-
-class SiteConfig(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    chave = db.Column(db.String(80), unique=True, nullable=False)
-    valor = db.Column(db.Text, nullable=False, default='')
-
-
-class Partner(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(150), nullable=False)
-    link = db.Column(db.String(500), nullable=False, default='#')
-    logo = db.Column(db.String(255), nullable=True)
-    ativo = db.Column(db.Boolean, default=True)
-    ordem = db.Column(db.Integer, default=0)
-    cliques = db.Column(db.Integer, default=0)
-    criado_em = db.Column(db.DateTime, default=agora_utc)
-
-
-
-
-
-class CardLink(db.Model):
-    __tablename__ = 'card_link'
-
-    id = db.Column(db.Integer, primary_key=True)
-    titulo = db.Column(db.String(120), nullable=False)
-    subtitulo = db.Column(db.String(180), nullable=True)
-    url = db.Column(db.String(600), nullable=False, default='#')
-    icone = db.Column(db.String(255), nullable=True)
-    ativo = db.Column(db.Boolean, default=True)
-    ordem = db.Column(db.Integer, default=0)
-    cliques = db.Column(db.Integer, default=0)
-    criado_em = db.Column(db.DateTime, default=agora_utc)
-
-
-class SiteAccess(db.Model):
-    __tablename__ = 'site_access'
-
-    id = db.Column(db.Integer, primary_key=True)
-    total_acessos = db.Column(db.Integer, default=0)
-    atualizado_em = db.Column(db.DateTime, default=agora_utc, onupdate=agora_utc)
-
-
-class Review(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(150), nullable=False)
-    empresa = db.Column(db.String(180), nullable=True)
-    comentario = db.Column(db.Text, nullable=False)
-    nota = db.Column(db.Integer, default=5)
-    data_avaliacao = db.Column(db.String(40), nullable=True)
-    link = db.Column(db.String(500), nullable=True)
-    foto = db.Column(db.String(255), nullable=True)
-    ativo = db.Column(db.Boolean, default=True)
-    ordem = db.Column(db.Integer, default=0)
-    criado_em = db.Column(db.DateTime, default=agora_utc)
-
-
-class Candidato(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome_completo = db.Column(db.String(180), nullable=False)
-    data_nascimento = db.Column(db.Date, nullable=False)
-    idade = db.Column(db.Integer, nullable=False)
-    escolaridade = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(180), nullable=False)
-    atividade_remunerada = db.Column(db.Boolean, default=False)
-    curriculo = db.Column(db.String(255), nullable=True)
-    criado_em = db.Column(db.DateTime, default=agora_utc)
-
-
-class AdminUser(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    usuario = db.Column(db.String(80), unique=True, nullable=False)
-    senha_hash = db.Column(db.String(255), nullable=False)
-
 
 DEFAULTS = {
     'nome_cooperativa': 'COOPEX',
@@ -233,7 +52,6 @@ DEFAULTS = {
     'anuncio_abrangencia': 'Informe a abrangência da propaganda, como Natal/RN, bairros atendidos, contratos e rotas de circulação.',
 }
 
-
 CARD_DEFAULTS = {
     'card_nome': 'COOPEX Entregas',
     'card_descricao': 'Cooperativa de Motofretistas',
@@ -256,128 +74,156 @@ CARD_DEFAULTS = {
 }
 
 
+def agora_utc_iso():
+    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+
+def _env():
+    return request.environ['workers.env']
+
+
+def _to_py(value):
+    if value is None:
+        return None
+    try:
+        return value.to_py()
+    except Exception:
+        return value
+
+
+def _db_run(sql, *params):
+    stmt = _env().DB.prepare(sql)
+    if params:
+        stmt = stmt.bind(*params)
+    return run_sync(stmt.run())
+
+
+def _rows(sql, *params):
+    result = _db_run(sql, *params)
+    data = _to_py(result.results)
+    if data is None:
+        return []
+    return list(data)
+
+
+def _one(sql, *params):
+    rows = _rows(sql, *params)
+    return rows[0] if rows else None
+
+
+def _insert(sql, *params):
+    result = _db_run(sql, *params)
+    meta = _to_py(result.meta) or {}
+    return int(meta.get('last_row_id') or 0)
+
+
+def _obj(row):
+    if row is None:
+        return None
+    if not isinstance(row, dict):
+        row = _to_py(row)
+    if row is None:
+        return None
+    return SimpleNamespace(**row)
+
+
+def _objs(rows):
+    return [_obj(r) for r in rows]
+
+
+def _asset_response(asset_path):
+    asset = run_sync(_env().ASSETS.fetch(f'https://assets.local/{asset_path.lstrip("/")}'))
+    body = run_sync(asset.bytes())
+    return Response(body, status=asset.status, headers=_to_py(asset.headers) or {})
+
+
+def render_cf(template_name, **context):
+    asset = run_sync(_env().ASSETS.fetch(f'https://assets.local/templates/{template_name}'))
+    if asset.status != 200:
+        abort(500, description=f'Template não encontrado: {template_name}')
+    html = run_sync(asset.text())
+    return render_template_string(html, **context)
+
+
+def allowed_file(filename, allowed):
+    return bool(filename and '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed)
+
+
+def salvar_upload(arquivo, prefixo, allowed):
+    if not arquivo or not arquivo.filename or not allowed_file(arquivo.filename, allowed):
+        return None
+
+    safe = secure_filename(arquivo.filename)
+    filename = f'{prefixo}_{datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")}_{safe}'
+    arquivo.stream.seek(0)
+    dados = arquivo.read()
+    if not dados:
+        return None
+
+    file_id = _insert(
+        '''INSERT INTO file_upload
+           (filename, original_filename, mimetype, categoria, tamanho, criado_em)
+           VALUES (?, ?, ?, ?, ?, ?)''',
+        filename, safe, arquivo.mimetype or 'application/octet-stream', prefixo,
+        len(dados), agora_utc_iso()
+    )
+
+    for parte, inicio in enumerate(range(0, len(dados), CHUNK_SIZE)):
+        pedaco = dados[inicio:inicio + CHUNK_SIZE]
+        _db_run(
+            'INSERT INTO file_chunk (file_id, parte, data) VALUES (?, ?, ?)',
+            file_id, parte, pedaco
+        )
+
+    return f'db:{file_id}'
+
+
+def excluir_arquivo_referencia(valor):
+    if not valor or not str(valor).startswith('db:'):
+        return
+    try:
+        file_id = int(str(valor).split(':', 1)[1])
+    except Exception:
+        return
+    _db_run('DELETE FROM file_chunk WHERE file_id = ?', file_id)
+    _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
+
+
 def get_config(chave, default=''):
-    item = SiteConfig.query.filter_by(chave=chave).first()
-    return item.valor if item else default
+    row = _one('SELECT valor FROM site_config WHERE chave = ? LIMIT 1', chave)
+    return row['valor'] if row else default
 
 
 def set_config(chave, valor):
-    item = SiteConfig.query.filter_by(chave=chave).first()
-    if not item:
-        db.session.add(SiteConfig(chave=chave, valor=valor or ''))
-    else:
-        item.valor = valor or ''
+    _db_run(
+        '''INSERT INTO site_config (chave, valor) VALUES (?, ?)
+           ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor''',
+        chave, valor or ''
+    )
 
 
 def config_dict():
-    return {k: get_config(k, v) for k, v in DEFAULTS.items()}
+    rows = _rows('SELECT chave, valor FROM site_config')
+    valores = {r['chave']: r['valor'] for r in rows}
+    return {k: valores.get(k, v) for k, v in DEFAULTS.items()}
 
 
 def card_config_dict():
-    return {k: get_config(k, v) for k, v in CARD_DEFAULTS.items()}
-
-
-def is_db_file(valor):
-    return bool(valor and isinstance(valor, str) and valor.startswith('db:'))
+    rows = _rows('SELECT chave, valor FROM site_config')
+    valores = {r['chave']: r['valor'] for r in rows}
+    return {k: valores.get(k, v) for k, v in CARD_DEFAULTS.items()}
 
 
 def arquivo_url(valor):
-    """Gera URL para arquivo salvo no banco ou antigo arquivo salvo em static/uploads."""
     if not valor:
         return ''
-
     valor = str(valor)
-
     if valor.startswith('db:'):
         try:
-            file_id = int(valor.split(':', 1)[1])
-            return url_for('arquivo_db', file_id=file_id)
+            return url_for('arquivo_db', file_id=int(valor.split(':', 1)[1]))
         except Exception:
             return ''
-
-    return url_for('static', filename='uploads/' + valor)
-
-
-def _salvar_arquivo_local_no_banco(filename, categoria='migrado'):
-    """Migra arquivo antigo de static/uploads para o banco e retorna db:ID."""
-    if not filename or is_db_file(filename):
-        return filename
-
-    safe_name = secure_filename(str(filename))
-    path = UPLOAD_FOLDER / safe_name
-
-    if not path.exists() or not path.is_file():
-        return filename
-
-    try:
-        dados = path.read_bytes()
-        if not dados:
-            return filename
-
-        mimetype = 'application/octet-stream'
-        ext = safe_name.rsplit('.', 1)[-1].lower() if '.' in safe_name else ''
-        if ext == 'png':
-            mimetype = 'image/png'
-        elif ext in {'jpg', 'jpeg'}:
-            mimetype = 'image/jpeg'
-        elif ext == 'webp':
-            mimetype = 'image/webp'
-        elif ext == 'gif':
-            mimetype = 'image/gif'
-        elif ext == 'pdf':
-            mimetype = 'application/pdf'
-        elif ext == 'doc':
-            mimetype = 'application/msword'
-        elif ext == 'docx':
-            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-
-        upload = FileUpload(
-            filename=safe_name,
-            original_filename=safe_name,
-            mimetype=mimetype,
-            categoria=categoria,
-            data=dados
-        )
-        db.session.add(upload)
-        db.session.flush()
-        return f"db:{upload.id}"
-
-    except Exception:
-        db.session.rollback()
-        return filename
-
-
-def migrar_uploads_antigos_para_banco():
-    """Converte referências antigas de static/uploads para arquivos persistentes no banco."""
-    try:
-        chaves_upload = {
-            'imagem_destaque',
-            'foto_bau',
-            'anuncio_bau_frente',
-            'anuncio_bau_lado',
-            'anuncio_bau_traseira',
-        }
-
-        for chave in chaves_upload:
-            item = SiteConfig.query.filter_by(chave=chave).first()
-            if item and item.valor and not is_db_file(item.valor):
-                item.valor = _salvar_arquivo_local_no_banco(item.valor, chave)
-
-        for parceiro in Partner.query.all():
-            if parceiro.logo and not is_db_file(parceiro.logo):
-                parceiro.logo = _salvar_arquivo_local_no_banco(parceiro.logo, 'parceiro')
-
-        for avaliacao in Review.query.all():
-            if avaliacao.foto and not is_db_file(avaliacao.foto):
-                avaliacao.foto = _salvar_arquivo_local_no_banco(avaliacao.foto, 'avaliacao')
-
-        for candidato in Candidato.query.all():
-            if candidato.curriculo and not is_db_file(candidato.curriculo):
-                candidato.curriculo = _salvar_arquivo_local_no_banco(candidato.curriculo, 'curriculo')
-
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    return url_for('static_asset', path='uploads/' + valor)
 
 
 def calcular_idade(nascimento):
@@ -385,94 +231,73 @@ def calcular_idade(nascimento):
     return hoje.year - nascimento.year - ((hoje.month, hoje.day) < (nascimento.month, nascimento.day))
 
 
-def garantir_colunas_extras():
-    """Garante compatibilidade com bancos já criados antes das novas colunas existirem."""
-    try:
-        engine_name = db.engine.url.get_backend_name()
-
-        if engine_name.startswith('sqlite'):
-            colunas_review = [row[1] for row in db.session.execute(db.text("PRAGMA table_info(review)")).fetchall()]
-            if 'foto' not in colunas_review:
-                db.session.execute(db.text("ALTER TABLE review ADD COLUMN foto VARCHAR(255)"))
-                db.session.commit()
-
-            colunas_partner = [row[1] for row in db.session.execute(db.text("PRAGMA table_info(partner)")).fetchall()]
-            if 'cliques' not in colunas_partner:
-                db.session.execute(db.text("ALTER TABLE partner ADD COLUMN cliques INTEGER DEFAULT 0"))
-                db.session.commit()
-
-        elif engine_name.startswith('postgresql'):
-            colunas_review = {
-                row[0] for row in db.session.execute(db.text(
-                    "SELECT column_name FROM information_schema.columns WHERE table_name = 'review'"
-                )).fetchall()
-            }
-            if 'foto' not in colunas_review:
-                db.session.execute(db.text("ALTER TABLE review ADD COLUMN foto VARCHAR(255)"))
-                db.session.commit()
-
-            colunas_partner = {
-                row[0] for row in db.session.execute(db.text(
-                    "SELECT column_name FROM information_schema.columns WHERE table_name = 'partner'"
-                )).fetchall()
-            }
-            if 'cliques' not in colunas_partner:
-                db.session.execute(db.text("ALTER TABLE partner ADD COLUMN cliques INTEGER DEFAULT 0"))
-                db.session.commit()
-
-    except Exception:
-        db.session.rollback()
+def formatar_data_hora_br(data_hora):
+    if not data_hora:
+        return ''
+    if isinstance(data_hora, str):
+        try:
+            data_hora = datetime.fromisoformat(data_hora.replace('Z', '+00:00'))
+        except Exception:
+            return data_hora
+    if data_hora.tzinfo is None:
+        data_hora = data_hora.replace(tzinfo=timezone.utc)
+    return data_hora.astimezone(FUSO_NATAL).strftime('%d/%m/%Y %H:%M')
 
 
-def init_db():
-    with app.app_context():
-        db.create_all()
-        garantir_colunas_extras()
-
-        for chave, valor in DEFAULTS.items():
-            item = SiteConfig.query.filter_by(chave=chave).first()
-            if not item:
-                db.session.add(SiteConfig(chave=chave, valor=valor))
-            elif chave in DEFAULTS and item.valor is None:
-                item.valor = valor
-
-        for chave, valor in CARD_DEFAULTS.items():
-            item = SiteConfig.query.filter_by(chave=chave).first()
-            if not item:
-                db.session.add(SiteConfig(chave=chave, valor=valor))
-            elif item.valor is None:
-                item.valor = valor
-
-        admin_user = os.getenv('SITE_ADMIN_USER', 'coopex')
-        admin_pass = os.getenv('SITE_ADMIN_PASS', 'coopex05289')
-        admin = AdminUser.query.filter_by(usuario=admin_user).first()
-        if not admin:
-            db.session.add(AdminUser(usuario=admin_user, senha_hash=generate_password_hash(admin_pass)))
-        elif os.getenv('FORCAR_SENHA_ADMIN_SITE', '1') == '1':
-            admin.senha_hash = generate_password_hash(admin_pass)
-
-        if Partner.query.count() == 0:
-            db.session.add_all([
-                Partner(nome='Parceiro COOPEX', link='#', logo=None, ativo=True, ordem=1),
-                Partner(nome='Solicite sua entrega', link=get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), logo=None, ativo=True, ordem=2),
-            ])
-
-        if Review.query.count() == 0:
-            db.session.add_all([
-                Review(nome='Cliente COOPEX', empresa='Restaurante parceiro', comentario='Atendimento organizado, entregadores bem apresentados e suporte rápido quando precisamos.', nota=5, data_avaliacao='há 2 semanas', link='#', ativo=True, ordem=1),
-                Review(nome='Empresa parceira', empresa='Delivery local', comentario='A operação ficou mais segura com a COOPEX. Sempre que precisamos, conseguimos falar com a equipe.', nota=5, data_avaliacao='há 1 mês', link='#', ativo=True, ordem=2),
-                Review(nome='Estabelecimento cliente', empresa='Farmácia', comentario='Equipe responsável, boa comunicação e entregadores fardados. Recomendo para operação fixa.', nota=5, data_avaliacao='há 2 meses', link='#', ativo=True, ordem=3),
-            ])
+def login_required():
+    return session.get('site_admin_logado') is True
 
 
-        if CardLink.query.count() == 0:
-            db.session.add_all([
-                CardLink(titulo='Solicitar entrega', subtitulo='Atendimento COOPEX', url=get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), ativo=True, ordem=1),
-                CardLink(titulo='Instagram', subtitulo='Acompanhe a COOPEX', url='https://instagram.com/coopex.entregas', ativo=True, ordem=2),
-                CardLink(titulo='Contato', subtitulo='Fale conosco', url='https://wa.me/5584981110706', ativo=True, ordem=3),
-            ])
+def ensure_seed():
+    for chave, valor in {**DEFAULTS, **CARD_DEFAULTS}.items():
+        _db_run('INSERT OR IGNORE INTO site_config (chave, valor) VALUES (?, ?)', chave, valor)
 
-        db.session.commit()
+    admin = _one('SELECT id FROM admin_user LIMIT 1')
+    if not admin:
+        usuario = getattr(_env(), 'SITE_ADMIN_USER', 'coopex')
+        senha = getattr(_env(), 'SITE_ADMIN_PASS', 'coopex05289')
+        _db_run(
+            'INSERT INTO admin_user (usuario, senha_hash) VALUES (?, ?)',
+            usuario, generate_password_hash(senha)
+        )
+
+    if not _one('SELECT id FROM site_access LIMIT 1'):
+        _db_run('INSERT INTO site_access (total_acessos, atualizado_em) VALUES (0, ?)', agora_utc_iso())
+
+    if not _one('SELECT id FROM partner LIMIT 1'):
+        _db_run('INSERT INTO partner (nome, link, ativo, ordem, cliques, criado_em) VALUES (?, ?, 1, 1, 0, ?)', 'Parceiro COOPEX', '#', agora_utc_iso())
+        _db_run('INSERT INTO partner (nome, link, ativo, ordem, cliques, criado_em) VALUES (?, ?, 1, 2, 0, ?)', 'Solicite sua entrega', get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), agora_utc_iso())
+
+    if not _one('SELECT id FROM review LIMIT 1'):
+        reviews = [
+            ('Cliente COOPEX', 'Restaurante parceiro', 'Atendimento organizado, entregadores bem apresentados e suporte rápido quando precisamos.', 'há 2 semanas', 1),
+            ('Empresa parceira', 'Delivery local', 'A operação ficou mais segura com a COOPEX. Sempre que precisamos, conseguimos falar com a equipe.', 'há 1 mês', 2),
+            ('Estabelecimento cliente', 'Farmácia', 'Equipe responsável, boa comunicação e entregadores fardados. Recomendo para operação fixa.', 'há 2 meses', 3),
+        ]
+        for nome, empresa, comentario, data_avaliacao, ordem in reviews:
+            _db_run('''INSERT INTO review
+                       (nome, empresa, comentario, nota, data_avaliacao, link, ativo, ordem, criado_em)
+                       VALUES (?, ?, ?, 5, ?, '#', 1, ?, ?)''',
+                    nome, empresa, comentario, data_avaliacao, ordem, agora_utc_iso())
+
+    if not _one('SELECT id FROM card_link LIMIT 1'):
+        links = [
+            ('Solicitar entrega', 'Atendimento COOPEX', get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), 1),
+            ('Instagram', 'Acompanhe a COOPEX', 'https://instagram.com/coopex.entregas', 2),
+            ('Contato', 'Fale conosco', 'https://wa.me/5584981110706', 3),
+        ]
+        for titulo, subtitulo, url, ordem in links:
+            _db_run('''INSERT INTO card_link
+                       (titulo, subtitulo, url, ativo, ordem, cliques, criado_em)
+                       VALUES (?, ?, ?, 1, ?, 0, ?)''', titulo, subtitulo, url, ordem, agora_utc_iso())
+
+
+@app.before_request
+def _bootstrap():
+    if request.path.startswith('/static/'):
+        return None
+    ensure_seed()
+    return None
 
 
 @app.context_processor
@@ -481,39 +306,48 @@ def inject_global():
         'cfg': config_dict(),
         'card_cfg': card_config_dict(),
         'arquivo_url': arquivo_url,
-        'formatar_data_hora_br': formatar_data_hora_br
+        'formatar_data_hora_br': formatar_data_hora_br,
     }
 
 
-def login_required():
-    return session.get('site_admin_logado') is True
+@app.route('/static/<path:path>')
+def static_asset(path):
+    return _asset_response('static/' + path)
 
 
 @app.route('/arquivo/<int:file_id>')
 def arquivo_db(file_id):
-    arquivo = FileUpload.query.get_or_404(file_id)
+    arquivo = _one('SELECT * FROM file_upload WHERE id = ? LIMIT 1', file_id)
+    if not arquivo:
+        abort(404)
+
+    chunks = _rows('SELECT data FROM file_chunk WHERE file_id = ? ORDER BY parte ASC', file_id)
+    partes = []
+    for row in chunks:
+        data = row.get('data')
+        data = _to_py(data)
+        if isinstance(data, list):
+            data = bytes(data)
+        elif isinstance(data, bytearray):
+            data = bytes(data)
+        partes.append(data or b'')
+
     return send_file(
-        BytesIO(arquivo.data),
-        mimetype=arquivo.mimetype or 'application/octet-stream',
-        download_name=arquivo.original_filename or arquivo.filename
+        BytesIO(b''.join(partes)),
+        mimetype=arquivo.get('mimetype') or 'application/octet-stream',
+        download_name=arquivo.get('original_filename') or arquivo.get('filename')
     )
 
 
 @app.route('/')
 def index():
     if not session.get('site_visitou'):
-        contador = SiteAccess.query.first()
-        if not contador:
-            contador = SiteAccess(total_acessos=0)
-            db.session.add(contador)
-
-        contador.total_acessos = (contador.total_acessos or 0) + 1
+        _db_run('UPDATE site_access SET total_acessos = COALESCE(total_acessos, 0) + 1, atualizado_em = ? WHERE id = (SELECT id FROM site_access LIMIT 1)', agora_utc_iso())
         session['site_visitou'] = True
-        db.session.commit()
 
-    parceiros = Partner.query.filter_by(ativo=True).order_by(Partner.ordem.asc(), Partner.nome.asc()).all()
-    avaliacoes = Review.query.filter_by(ativo=True).order_by(Review.ordem.asc(), Review.criado_em.desc()).all()
-    return render_template('index.html', parceiros=parceiros, avaliacoes=avaliacoes)
+    parceiros = _objs(_rows('SELECT * FROM partner WHERE ativo = 1 ORDER BY ordem ASC, nome ASC'))
+    avaliacoes = _objs(_rows('SELECT * FROM review WHERE ativo = 1 ORDER BY ordem ASC, criado_em DESC'))
+    return render_cf('index.html', parceiros=parceiros, avaliacoes=avaliacoes)
 
 
 @app.route('/trabalhe-conosco/enviar', methods=['POST'])
@@ -549,24 +383,18 @@ def enviar_curriculo():
         flash('Envie o currículo em PDF, DOC, DOCX ou imagem.', 'erro')
         return redirect(url_for('index') + '#trabalhe')
 
-    candidato = Candidato(
-        nome_completo=nome,
-        data_nascimento=nascimento,
-        idade=idade,
-        escolaridade=escolaridade,
-        email=email,
-        atividade_remunerada=True,
-        curriculo=curriculo
-    )
-    db.session.add(candidato)
-    db.session.commit()
+    _db_run('''INSERT INTO candidato
+               (nome_completo, data_nascimento, idade, escolaridade, email,
+                atividade_remunerada, curriculo, criado_em)
+               VALUES (?, ?, ?, ?, ?, 1, ?, ?)''',
+            nome, nascimento.isoformat(), idade, escolaridade, email, curriculo, agora_utc_iso())
     flash('Currículo enviado com sucesso. A COOPEX analisará as informações.', 'ok')
     return redirect(url_for('index') + '#trabalhe')
 
 
 @app.route('/politica-de-privacidade')
 def politica_privacidade():
-    return render_template('politica_privacidade.html')
+    return render_cf('politica_privacidade.html')
 
 
 @app.route('/admin-coopex', methods=['GET', 'POST'])
@@ -575,13 +403,13 @@ def admin_login():
     if request.method == 'POST':
         usuario = request.form.get('usuario', '').strip()
         senha = request.form.get('senha', '')
-        admin = AdminUser.query.filter_by(usuario=usuario).first()
-        if admin and check_password_hash(admin.senha_hash, senha):
+        admin = _one('SELECT * FROM admin_user WHERE usuario = ? LIMIT 1', usuario)
+        if admin and check_password_hash(admin['senha_hash'], senha):
             session['site_admin_logado'] = True
             session['site_admin_usuario'] = usuario
             return redirect(url_for('admin_dashboard'))
         flash('Usuário ou senha inválidos.', 'erro')
-    return render_template('admin_login.html')
+    return render_cf('admin_login.html')
 
 
 @app.route('/admin-coopex/sair')
@@ -596,14 +424,14 @@ def admin_logout():
 def admin_dashboard():
     if not login_required():
         return redirect(url_for('admin_login'))
-    parceiros = Partner.query.order_by(Partner.ordem.asc(), Partner.nome.asc()).all()
-    avaliacoes = Review.query.order_by(Review.ordem.asc(), Review.criado_em.desc()).all()
-    candidatos = Candidato.query.order_by(Candidato.criado_em.desc()).limit(100).all()
 
-    contador_site = SiteAccess.query.first()
-    total_acessos_site = contador_site.total_acessos if contador_site else 0
+    parceiros = _objs(_rows('SELECT * FROM partner ORDER BY ordem ASC, nome ASC'))
+    avaliacoes = _objs(_rows('SELECT * FROM review ORDER BY ordem ASC, criado_em DESC'))
+    candidatos = _objs(_rows('SELECT * FROM candidato ORDER BY criado_em DESC LIMIT 100'))
+    contador = _one('SELECT total_acessos FROM site_access LIMIT 1')
+    total_acessos_site = int(contador['total_acessos'] or 0) if contador else 0
 
-    return render_template(
+    return render_cf(
         'admin_dashboard.html',
         parceiros=parceiros,
         avaliacoes=avaliacoes,
@@ -613,41 +441,35 @@ def admin_dashboard():
     )
 
 
-
 @app.route('/admin-coopex/candidatos/<int:candidato_id>/excluir', methods=['POST'])
 @app.route('/admin-site/candidatos/<int:candidato_id>/excluir', methods=['POST'])
 def candidato_excluir(candidato_id):
     if not login_required():
         return redirect(url_for('admin_login'))
-
-    candidato = Candidato.query.get_or_404(candidato_id)
-
-    try:
-        excluir_arquivo_referencia(candidato.curriculo)
-        db.session.delete(candidato)
-        db.session.commit()
-        flash('Currículo excluído com sucesso.', 'ok')
-    except Exception:
-        db.session.rollback()
-        flash('Erro ao excluir o currículo. Tente novamente.', 'erro')
-
+    candidato = _one('SELECT * FROM candidato WHERE id = ? LIMIT 1', candidato_id)
+    if not candidato:
+        abort(404)
+    excluir_arquivo_referencia(candidato.get('curriculo'))
+    _db_run('DELETE FROM candidato WHERE id = ?', candidato_id)
+    flash('Currículo excluído com sucesso.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
 
 @app.route('/instagram')
 @app.route('/card-instagram')
 def card_instagram():
-    links = CardLink.query.filter_by(ativo=True).order_by(CardLink.ordem.asc(), CardLink.criado_em.asc()).all()
-    return render_template('instagram_card.html', card=card_config_dict(), links=links)
+    links = _objs(_rows('SELECT * FROM card_link WHERE ativo = 1 ORDER BY ordem ASC, criado_em ASC'))
+    return render_cf('instagram_card.html', card=card_config_dict(), links=links)
 
 
 @app.route('/card-link/<int:link_id>/ir')
 def card_link_ir(link_id):
-    link = CardLink.query.get_or_404(link_id)
-    link.cliques = (link.cliques or 0) + 1
-    db.session.commit()
-    if link.url and link.url != '#':
-        return redirect(link.url)
+    link = _one('SELECT * FROM card_link WHERE id = ? LIMIT 1', link_id)
+    if not link:
+        abort(404)
+    _db_run('UPDATE card_link SET cliques = COALESCE(cliques, 0) + 1 WHERE id = ?', link_id)
+    if link.get('url') and link['url'] != '#':
+        return redirect(link['url'])
     return redirect(url_for('card_instagram'))
 
 
@@ -656,8 +478,8 @@ def card_link_ir(link_id):
 def admin_card():
     if not login_required():
         return redirect(url_for('admin_login'))
-    links = CardLink.query.order_by(CardLink.ordem.asc(), CardLink.criado_em.asc()).all()
-    return render_template('admin_card.html', card=card_config_dict(), links=links)
+    links = _objs(_rows('SELECT * FROM card_link ORDER BY ordem ASC, criado_em ASC'))
+    return render_cf('admin_card.html', card=card_config_dict(), links=links)
 
 
 @app.route('/admin-coopex/card/salvar', methods=['POST'])
@@ -667,32 +489,27 @@ def salvar_card_configuracoes():
         return redirect(url_for('admin_login'))
 
     campos_texto = [
-        'card_nome', 'card_descricao', 'card_bio', 'card_localizacao', 'card_mapa_link', 'card_cor_primaria', 'card_cor_secundaria',
-        'card_cor_texto', 'card_cor_botao', 'card_cor_texto_botao', 'card_estilo',
-        'card_botao_whatsapp', 'card_link_whatsapp'
+        'card_nome', 'card_descricao', 'card_bio', 'card_localizacao', 'card_mapa_link',
+        'card_cor_primaria', 'card_cor_secundaria', 'card_cor_texto', 'card_cor_botao',
+        'card_cor_texto_botao', 'card_estilo', 'card_botao_whatsapp', 'card_link_whatsapp'
     ]
     for chave in campos_texto:
         set_config(chave, request.form.get(chave, CARD_DEFAULTS.get(chave, '')))
-
     set_config('card_mostrar_video', '1' if request.form.get('card_mostrar_video') == 'on' else '0')
 
-    foto = salvar_upload(request.files.get('card_foto'), 'card_foto', ALLOWED_IMAGE_EXTENSIONS)
-    if foto:
-        set_config('card_foto', foto)
+    for campo, prefixo, allowed in [
+        ('card_foto', 'card_foto', ALLOWED_IMAGE_EXTENSIONS),
+        ('card_logo', 'card_logo', ALLOWED_IMAGE_EXTENSIONS),
+        ('card_fundo_imagem', 'card_fundo', ALLOWED_IMAGE_EXTENSIONS),
+        ('card_video', 'card_video', ALLOWED_VIDEO_EXTENSIONS),
+    ]:
+        valor = salvar_upload(request.files.get(campo), prefixo, allowed)
+        if valor:
+            antigo = get_config(campo, '')
+            if antigo:
+                excluir_arquivo_referencia(antigo)
+            set_config(campo, valor)
 
-    logo = salvar_upload(request.files.get('card_logo'), 'card_logo', ALLOWED_IMAGE_EXTENSIONS)
-    if logo:
-        set_config('card_logo', logo)
-
-    fundo = salvar_upload(request.files.get('card_fundo_imagem'), 'card_fundo', ALLOWED_IMAGE_EXTENSIONS)
-    if fundo:
-        set_config('card_fundo_imagem', fundo)
-
-    video = salvar_upload(request.files.get('card_video'), 'card_video', ALLOWED_VIDEO_EXTENSIONS)
-    if video:
-        set_config('card_video', video)
-
-    db.session.commit()
     flash('Card do Instagram atualizado com sucesso.', 'ok')
     return redirect(url_for('admin_card'))
 
@@ -702,20 +519,19 @@ def salvar_card_configuracoes():
 def card_link_novo():
     if not login_required():
         return redirect(url_for('admin_login'))
-
     titulo = request.form.get('titulo', '').strip()
-    subtitulo = request.form.get('subtitulo', '').strip()
-    url = request.form.get('url', '').strip() or '#'
-    ativo = request.form.get('ativo') == 'on'
-    ordem = int(request.form.get('ordem') or 0)
-
     if not titulo:
         flash('Informe o título do botão/link.', 'erro')
         return redirect(url_for('admin_card'))
-
+    subtitulo = request.form.get('subtitulo', '').strip()
+    url = request.form.get('url', '').strip() or '#'
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
+    ordem = int(request.form.get('ordem') or 0)
     icone = salvar_upload(request.files.get('icone'), 'card_icone', ALLOWED_IMAGE_EXTENSIONS)
-    db.session.add(CardLink(titulo=titulo, subtitulo=subtitulo, url=url, icone=icone, ativo=ativo, ordem=ordem))
-    db.session.commit()
+    _db_run('''INSERT INTO card_link
+               (titulo, subtitulo, url, icone, ativo, ordem, cliques, criado_em)
+               VALUES (?, ?, ?, ?, ?, ?, 0, ?)''',
+            titulo, subtitulo, url, icone, ativo, ordem, agora_utc_iso())
     flash('Link cadastrado no card.', 'ok')
     return redirect(url_for('admin_card'))
 
@@ -725,19 +541,24 @@ def card_link_novo():
 def card_link_editar(link_id):
     if not login_required():
         return redirect(url_for('admin_login'))
+    link = _one('SELECT * FROM card_link WHERE id = ? LIMIT 1', link_id)
+    if not link:
+        abort(404)
 
-    link = CardLink.query.get_or_404(link_id)
-    link.titulo = request.form.get('titulo', link.titulo).strip()
-    link.subtitulo = request.form.get('subtitulo', link.subtitulo or '').strip()
-    link.url = request.form.get('url', link.url).strip() or '#'
-    link.ordem = int(request.form.get('ordem') or 0)
-    link.ativo = request.form.get('ativo') == 'on'
-
+    titulo = request.form.get('titulo', link['titulo']).strip()
+    subtitulo = request.form.get('subtitulo', link.get('subtitulo') or '').strip()
+    url = request.form.get('url', link['url']).strip() or '#'
+    ordem = int(request.form.get('ordem') or 0)
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
     icone = salvar_upload(request.files.get('icone'), 'card_icone', ALLOWED_IMAGE_EXTENSIONS)
     if icone:
-        link.icone = icone
+        excluir_arquivo_referencia(link.get('icone'))
+    else:
+        icone = link.get('icone')
 
-    db.session.commit()
+    _db_run('''UPDATE card_link SET titulo = ?, subtitulo = ?, url = ?, icone = ?,
+               ativo = ?, ordem = ? WHERE id = ?''',
+            titulo, subtitulo, url, icone, ativo, ordem, link_id)
     flash('Link atualizado.', 'ok')
     return redirect(url_for('admin_card'))
 
@@ -747,10 +568,11 @@ def card_link_editar(link_id):
 def card_link_excluir(link_id):
     if not login_required():
         return redirect(url_for('admin_login'))
-
-    link = CardLink.query.get_or_404(link_id)
-    db.session.delete(link)
-    db.session.commit()
+    link = _one('SELECT * FROM card_link WHERE id = ? LIMIT 1', link_id)
+    if not link:
+        abort(404)
+    excluir_arquivo_referencia(link.get('icone'))
+    _db_run('DELETE FROM card_link WHERE id = ?', link_id)
     flash('Link excluído do card.', 'ok')
     return redirect(url_for('admin_card'))
 
@@ -762,38 +584,27 @@ def salvar_configuracoes():
         return redirect(url_for('admin_login'))
 
     upload_config_keys = {
-        'imagem_destaque',
-        'foto_bau',
-        'anuncio_bau_frente',
-        'anuncio_bau_lado',
-        'anuncio_bau_traseira',
+        'imagem_destaque', 'foto_bau', 'anuncio_bau_frente',
+        'anuncio_bau_lado', 'anuncio_bau_traseira'
     }
-
-    for chave in DEFAULTS.keys():
+    for chave in DEFAULTS:
         if chave not in upload_config_keys:
             set_config(chave, request.form.get(chave, DEFAULTS[chave]))
 
-    imagem_destaque = salvar_upload(request.files.get('imagem_destaque'), 'destaque', ALLOWED_IMAGE_EXTENSIONS)
-    if imagem_destaque:
-        set_config('imagem_destaque', imagem_destaque)
+    for campo, prefixo in [
+        ('imagem_destaque', 'destaque'),
+        ('foto_bau', 'bau'),
+        ('anuncio_bau_frente', 'anuncio_frente'),
+        ('anuncio_bau_lado', 'anuncio_lado'),
+        ('anuncio_bau_traseira', 'anuncio_traseira'),
+    ]:
+        valor = salvar_upload(request.files.get(campo), prefixo, ALLOWED_IMAGE_EXTENSIONS)
+        if valor:
+            antigo = get_config(campo, '')
+            if antigo:
+                excluir_arquivo_referencia(antigo)
+            set_config(campo, valor)
 
-    foto_bau = salvar_upload(request.files.get('foto_bau'), 'bau', ALLOWED_IMAGE_EXTENSIONS)
-    if foto_bau:
-        set_config('foto_bau', foto_bau)
-
-    anuncio_bau_frente = salvar_upload(request.files.get('anuncio_bau_frente'), 'anuncio_frente', ALLOWED_IMAGE_EXTENSIONS)
-    if anuncio_bau_frente:
-        set_config('anuncio_bau_frente', anuncio_bau_frente)
-
-    anuncio_bau_lado = salvar_upload(request.files.get('anuncio_bau_lado'), 'anuncio_lado', ALLOWED_IMAGE_EXTENSIONS)
-    if anuncio_bau_lado:
-        set_config('anuncio_bau_lado', anuncio_bau_lado)
-
-    anuncio_bau_traseira = salvar_upload(request.files.get('anuncio_bau_traseira'), 'anuncio_traseira', ALLOWED_IMAGE_EXTENSIONS)
-    if anuncio_bau_traseira:
-        set_config('anuncio_bau_traseira', anuncio_bau_traseira)
-
-    db.session.commit()
     flash('Informações do site atualizadas com sucesso.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
@@ -803,19 +614,18 @@ def salvar_configuracoes():
 def parceiro_novo():
     if not login_required():
         return redirect(url_for('admin_login'))
-
     nome = request.form.get('nome', '').strip()
-    link = request.form.get('link', '').strip() or '#'
-    ordem = int(request.form.get('ordem') or 0)
-    ativo = request.form.get('ativo') == 'on'
-
     if not nome:
         flash('Informe o nome do parceiro.', 'erro')
         return redirect(url_for('admin_dashboard'))
-
-    filename = salvar_upload(request.files.get('logo'), 'parceiro', ALLOWED_IMAGE_EXTENSIONS)
-    db.session.add(Partner(nome=nome, link=link, logo=filename, ativo=ativo, ordem=ordem))
-    db.session.commit()
+    link = request.form.get('link', '').strip() or '#'
+    ordem = int(request.form.get('ordem') or 0)
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
+    logo = salvar_upload(request.files.get('logo'), 'parceiro', ALLOWED_IMAGE_EXTENSIONS)
+    _db_run('''INSERT INTO partner
+               (nome, link, logo, ativo, ordem, cliques, criado_em)
+               VALUES (?, ?, ?, ?, ?, 0, ?)''',
+            nome, link, logo, ativo, ordem, agora_utc_iso())
     flash('Parceiro cadastrado com sucesso.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
@@ -825,32 +635,34 @@ def parceiro_novo():
 def parceiro_editar(partner_id):
     if not login_required():
         return redirect(url_for('admin_login'))
+    parceiro = _one('SELECT * FROM partner WHERE id = ? LIMIT 1', partner_id)
+    if not parceiro:
+        abort(404)
 
-    parceiro = Partner.query.get_or_404(partner_id)
-    parceiro.nome = request.form.get('nome', parceiro.nome).strip()
-    parceiro.link = request.form.get('link', parceiro.link).strip() or '#'
-    parceiro.ordem = int(request.form.get('ordem') or 0)
-    parceiro.ativo = request.form.get('ativo') == 'on'
+    nome = request.form.get('nome', parceiro['nome']).strip()
+    link = request.form.get('link', parceiro['link']).strip() or '#'
+    ordem = int(request.form.get('ordem') or 0)
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
+    logo = salvar_upload(request.files.get('logo'), 'parceiro', ALLOWED_IMAGE_EXTENSIONS)
+    if logo:
+        excluir_arquivo_referencia(parceiro.get('logo'))
+    else:
+        logo = parceiro.get('logo')
 
-    filename = salvar_upload(request.files.get('logo'), 'parceiro', ALLOWED_IMAGE_EXTENSIONS)
-    if filename:
-        parceiro.logo = filename
-
-    db.session.commit()
+    _db_run('UPDATE partner SET nome = ?, link = ?, logo = ?, ativo = ?, ordem = ? WHERE id = ?',
+            nome, link, logo, ativo, ordem, partner_id)
     flash('Parceiro atualizado.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
 
 @app.route('/parceiro/<int:partner_id>/ir')
 def parceiro_ir(partner_id):
-    parceiro = Partner.query.get_or_404(partner_id)
-
-    parceiro.cliques = (parceiro.cliques or 0) + 1
-    db.session.commit()
-
-    if parceiro.link and parceiro.link != '#':
-        return redirect(parceiro.link)
-
+    parceiro = _one('SELECT * FROM partner WHERE id = ? LIMIT 1', partner_id)
+    if not parceiro:
+        abort(404)
+    _db_run('UPDATE partner SET cliques = COALESCE(cliques, 0) + 1 WHERE id = ?', partner_id)
+    if parceiro.get('link') and parceiro['link'] != '#':
+        return redirect(parceiro['link'])
     return redirect(url_for('index') + '#parceiros')
 
 
@@ -859,13 +671,13 @@ def parceiro_ir(partner_id):
 def parceiro_excluir(partner_id):
     if not login_required():
         return redirect(url_for('admin_login'))
-
-    parceiro = Partner.query.get_or_404(partner_id)
-    db.session.delete(parceiro)
-    db.session.commit()
+    parceiro = _one('SELECT * FROM partner WHERE id = ? LIMIT 1', partner_id)
+    if not parceiro:
+        abort(404)
+    excluir_arquivo_referencia(parceiro.get('logo'))
+    _db_run('DELETE FROM partner WHERE id = ?', partner_id)
     flash('Parceiro excluído.', 'ok')
     return redirect(url_for('admin_dashboard'))
-
 
 
 @app.route('/admin-coopex/avaliacoes/nova', methods=['POST'])
@@ -880,31 +692,21 @@ def avaliacao_nova():
     data_avaliacao = request.form.get('data_avaliacao', '').strip()
     link = request.form.get('link', '').strip() or '#'
     ordem = int(request.form.get('ordem') or 0)
-    ativo = request.form.get('ativo') == 'on'
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
     foto = salvar_upload(request.files.get('foto'), 'avaliacao', ALLOWED_IMAGE_EXTENSIONS)
-
     try:
-        nota = int(request.form.get('nota') or 5)
+        nota = max(1, min(5, int(request.form.get('nota') or 5)))
     except ValueError:
         nota = 5
-    nota = max(1, min(5, nota))
 
     if not nome or not comentario:
         flash('Informe o nome e o comentário da avaliação.', 'erro')
         return redirect(url_for('admin_dashboard'))
 
-    db.session.add(Review(
-        nome=nome,
-        empresa=empresa,
-        comentario=comentario,
-        nota=nota,
-        data_avaliacao=data_avaliacao,
-        link=link,
-        foto=foto,
-        ativo=ativo,
-        ordem=ordem
-    ))
-    db.session.commit()
+    _db_run('''INSERT INTO review
+               (nome, empresa, comentario, nota, data_avaliacao, link, foto, ativo, ordem, criado_em)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            nome, empresa, comentario, nota, data_avaliacao, link, foto, ativo, ordem, agora_utc_iso())
     flash('Avaliação cadastrada com sucesso.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
@@ -914,26 +716,30 @@ def avaliacao_nova():
 def avaliacao_editar(review_id):
     if not login_required():
         return redirect(url_for('admin_login'))
+    avaliacao = _one('SELECT * FROM review WHERE id = ? LIMIT 1', review_id)
+    if not avaliacao:
+        abort(404)
 
-    avaliacao = Review.query.get_or_404(review_id)
-    avaliacao.nome = request.form.get('nome', avaliacao.nome).strip()
-    avaliacao.empresa = request.form.get('empresa', avaliacao.empresa or '').strip()
-    avaliacao.comentario = request.form.get('comentario', avaliacao.comentario).strip()
-    avaliacao.data_avaliacao = request.form.get('data_avaliacao', avaliacao.data_avaliacao or '').strip()
-    avaliacao.link = request.form.get('link', avaliacao.link or '#').strip() or '#'
-    foto = salvar_upload(request.files.get('foto'), 'avaliacao', ALLOWED_IMAGE_EXTENSIONS)
-    if foto:
-        avaliacao.foto = foto
-    avaliacao.ordem = int(request.form.get('ordem') or 0)
-    avaliacao.ativo = request.form.get('ativo') == 'on'
-
+    nome = request.form.get('nome', avaliacao['nome']).strip()
+    empresa = request.form.get('empresa', avaliacao.get('empresa') or '').strip()
+    comentario = request.form.get('comentario', avaliacao['comentario']).strip()
+    data_avaliacao = request.form.get('data_avaliacao', avaliacao.get('data_avaliacao') or '').strip()
+    link = request.form.get('link', avaliacao.get('link') or '#').strip() or '#'
+    ordem = int(request.form.get('ordem') or 0)
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
     try:
-        nota = int(request.form.get('nota') or avaliacao.nota or 5)
+        nota = max(1, min(5, int(request.form.get('nota') or avaliacao.get('nota') or 5)))
     except ValueError:
         nota = 5
-    avaliacao.nota = max(1, min(5, nota))
+    foto = salvar_upload(request.files.get('foto'), 'avaliacao', ALLOWED_IMAGE_EXTENSIONS)
+    if foto:
+        excluir_arquivo_referencia(avaliacao.get('foto'))
+    else:
+        foto = avaliacao.get('foto')
 
-    db.session.commit()
+    _db_run('''UPDATE review SET nome = ?, empresa = ?, comentario = ?, nota = ?,
+               data_avaliacao = ?, link = ?, foto = ?, ativo = ?, ordem = ? WHERE id = ?''',
+            nome, empresa, comentario, nota, data_avaliacao, link, foto, ativo, ordem, review_id)
     flash('Avaliação atualizada.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
@@ -943,31 +749,29 @@ def avaliacao_editar(review_id):
 def avaliacao_excluir(review_id):
     if not login_required():
         return redirect(url_for('admin_login'))
-
-    avaliacao = Review.query.get_or_404(review_id)
-    db.session.delete(avaliacao)
-    db.session.commit()
+    avaliacao = _one('SELECT * FROM review WHERE id = ? LIMIT 1', review_id)
+    if not avaliacao:
+        abort(404)
+    excluir_arquivo_referencia(avaliacao.get('foto'))
+    _db_run('DELETE FROM review WHERE id = ?', review_id)
     flash('Avaliação excluída.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
 
 @app.route('/api/site/parceiros')
 def api_parceiros():
-    parceiros = Partner.query.filter_by(ativo=True).order_by(Partner.ordem.asc(), Partner.nome.asc()).all()
+    parceiros = _rows('SELECT * FROM partner WHERE ativo = 1 ORDER BY ordem ASC, nome ASC')
     return jsonify({
         'ok': True,
         'parceiros': [
             {
-                'nome': p.nome,
-                'link': p.link,
-                'logo': arquivo_url(p.logo) if p.logo else None,
+                'nome': p['nome'],
+                'link': p['link'],
+                'logo': arquivo_url(p.get('logo')) if p.get('logo') else None,
             }
             for p in parceiros
         ]
     })
 
 
-init_db()
-
-if __name__ == '__main__':
-    app.run(debug=True)
+Default = wsgi.entrypoint(app)
