@@ -1,7 +1,6 @@
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 from io import BytesIO
 from types import SimpleNamespace
-from zoneinfo import ZoneInfo
 
 from flask import (
     Flask, Response, abort, flash, jsonify, redirect, render_template_string,
@@ -21,7 +20,7 @@ ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov'}
 ALLOWED_CURRICULO_EXTENSIONS = {'pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp'}
 CHUNK_SIZE = 1_500_000
-FUSO_NATAL = ZoneInfo('America/Fortaleza')
+FUSO_NATAL = timezone(timedelta(hours=-3))
 
 DEFAULTS = {
     'nome_cooperativa': 'COOPEX',
