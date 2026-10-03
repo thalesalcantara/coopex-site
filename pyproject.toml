@@ -1,15 +1,16 @@
 [project]
 name = "coopex-site"
 version = "1.0.0"
-description = "Site COOPEX em Cloudflare Workers + D1"
+description = "Site institucional COOPEX - Cloudflare Workers + D1"
 requires-python = ">=3.13"
+
 dependencies = [
-  "Flask==3.0.3",
-  "Werkzeug==3.0.3"
+    "Flask==3.0.3",
+    "Werkzeug==3.0.3"
 ]
 
 [dependency-groups]
 dev = [
-  "workers-py",
-  "workers-runtime-sdk"
+    "workers-py",
+    "workers-runtime-sdk"
 ]
