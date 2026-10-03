@@ -1,8 +1,12 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "coopex-site"
 version = "1.0.0"
 description = "Site institucional COOPEX - Cloudflare Workers + D1"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 
 dependencies = [
     "Flask==3.0.3",
@@ -13,4 +17,16 @@ dependencies = [
 dev = [
     "workers-py",
     "workers-runtime-sdk"
+]
+
+[tool.setuptools]
+py-modules = [
+    "app",
+    "templates_cf"
+]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+    "static/*",
+    "templates/*"
 ]
