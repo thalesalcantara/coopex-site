@@ -249,46 +249,82 @@ def login_required():
 
 def ensure_seed():
     for chave, valor in {**DEFAULTS, **CARD_DEFAULTS}.items():
-        _db_run('INSERT OR IGNORE INTO site_config (chave, valor) VALUES (?, ?)', chave, valor)
+        _db_run(
+            'INSERT OR IGNORE INTO site_config (chave, valor) VALUES (?, ?)',
+            chave,
+            valor
+        )
 
     admin = _one('SELECT id FROM admin_user LIMIT 1')
     if not admin:
         usuario = getattr(_env(), 'SITE_ADMIN_USER', 'coopex')
-        senha = getattr(_env(), 'SITE_ADMIN_PASS', 'coopex05289')
+        senha = getattr(_env(), 'SITE_ADMIN_PASS', 'oopex05289')
+        senha_hash = generate_password_hash(
+            senha,
+            method='pbkdf2:sha256:600000'
+        )
         _db_run(
             'INSERT INTO admin_user (usuario, senha_hash) VALUES (?, ?)',
-            usuario, generate_password_hash(senha)
+            usuario,
+            senha_hash
         )
 
     if not _one('SELECT id FROM site_access LIMIT 1'):
-        _db_run('INSERT INTO site_access (total_acessos, atualizado_em) VALUES (0, ?)', agora_utc_iso())
+        _db_run(
+            'INSERT INTO site_access (total_acessos, atualizado_em) VALUES (0, ?)',
+            agora_utc_iso()
+        )
 
     if not _one('SELECT id FROM partner LIMIT 1'):
-        _db_run('INSERT INTO partner (nome, link, ativo, ordem, cliques, criado_em) VALUES (?, ?, 1, 1, 0, ?)', 'Parceiro COOPEX', '#', agora_utc_iso())
-        _db_run('INSERT INTO partner (nome, link, ativo, ordem, cliques, criado_em) VALUES (?, ?, 1, 2, 0, ?)', 'Solicite sua entrega', get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), agora_utc_iso())
+        _db_run(
+            'INSERT INTO partner (nome, link, ativo, ordem, cliques, criado_em) VALUES (?, ?, 1, 1, 0, ?)',
+            'Parceiro COOPEX',
+            '#',
+            agora_utc_iso()
+        )
+        _db_run(
+            'INSERT INTO partner (nome, link, ativo, ordem, cliques, criado_em) VALUES (?, ?, 1, 2, 0, ?)',
+            'Solicite sua entrega',
+            get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']),
+            agora_utc_iso()
+        )
 
     if not _one('SELECT id FROM review LIMIT 1'):
         reviews = [
-            ('Cliente COOPEX', 'Restaurante parceiro', 'Atendimento organizado, entregadores bem apresentados e suporte rápido quando precisamos.', 'há 2 semanas', 1),
-            ('Empresa parceira', 'Delivery local', 'A operação ficou mais segura com a COOPEX. Sempre que precisamos, conseguimos falar com a equipe.', 'há 1 mês', 2),
-            ('Estabelecimento cliente', 'Farmácia', 'Equipe responsável, boa comunicação e entregadores fardados. Recomendo para operação fixa.', 'há 2 meses', 3),
+            ('Cliente COOPEX', 'Restaurante parceiro',
+             'Atendimento organizado, entregadores bem apresentados e suporte rápido quando precisamos.',
+             'há 2 semanas', 1),
+            ('Empresa parceira', 'Delivery local',
+             'A operação ficou mais segura com a COOPEX. Sempre que precisamos, conseguimos falar com a equipe.',
+             'há 1 mês', 2),
+            ('Estabelecimento cliente', 'Farmácia',
+             'Equipe responsável, boa comunicação e entregadores fardados. Recomendo para operação fixa.',
+             'há 2 meses', 3),
         ]
         for nome, empresa, comentario, data_avaliacao, ordem in reviews:
-            _db_run('''INSERT INTO review
-                       (nome, empresa, comentario, nota, data_avaliacao, link, ativo, ordem, criado_em)
-                       VALUES (?, ?, ?, 5, ?, '#', 1, ?, ?)''',
-                    nome, empresa, comentario, data_avaliacao, ordem, agora_utc_iso())
+            _db_run(
+                """INSERT INTO review
+                   (nome, empresa, comentario, nota, data_avaliacao, link, ativo, ordem, criado_em)
+                   VALUES (?, ?, ?, 5, ?, '#', 1, ?, ?)""",
+                nome, empresa, comentario, data_avaliacao, ordem, agora_utc_iso()
+            )
 
     if not _one('SELECT id FROM card_link LIMIT 1'):
         links = [
-            ('Solicitar entrega', 'Atendimento COOPEX', get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), 1),
-            ('Instagram', 'Acompanhe a COOPEX', 'https://instagram.com/coopex.entregas', 2),
-            ('Contato', 'Fale conosco', 'https://wa.me/5584981110706', 3),
+            ('Solicitar entrega', 'Atendimento COOPEX',
+             get_config('link_solicitar_entrega', DEFAULTS['link_solicitar_entrega']), 1),
+            ('Instagram', 'Acompanhe a COOPEX',
+             'https://instagram.com/coopex.entregas', 2),
+            ('Contato', 'Fale conosco',
+             'https://wa.me/5584981110706', 3),
         ]
         for titulo, subtitulo, url, ordem in links:
-            _db_run('''INSERT INTO card_link
-                       (titulo, subtitulo, url, ativo, ordem, cliques, criado_em)
-                       VALUES (?, ?, ?, 1, ?, 0, ?)''', titulo, subtitulo, url, ordem, agora_utc_iso())
+            _db_run(
+                """INSERT INTO card_link
+                   (titulo, subtitulo, url, ativo, ordem, cliques, criado_em)
+                   VALUES (?, ?, ?, 1, ?, 0, ?)""",
+                titulo, subtitulo, url, ordem, agora_utc_iso()
+            )
 
 
 @app.before_request
