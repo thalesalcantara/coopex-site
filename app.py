@@ -372,7 +372,10 @@ def inject_global():
 
 @app.route('/static/<path:filename>', endpoint='static')
 def static_asset(filename):
-    return _asset_response(filename)
+    # Cloudflare publica o conteúdo de ./static na raiz do namespace de assets.
+    # Ex.: ./static/style.css -> /style.css
+    # Mantemos url_for('static', ...) nos templates e redirecionamos para o asset real.
+    return redirect('/' + filename.lstrip('/'), code=302)
 
 
 @app.route('/arquivo/<int:file_id>')
