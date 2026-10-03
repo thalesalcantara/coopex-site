@@ -11,7 +11,20 @@ database_id = "85e33289-f9d6-4dea-8e96-5ab7ddafb04c"
 [assets]
 directory = "./static"
 binding = "ASSETS"
-run_worker_first = true
+run_worker_first = [
+    "/",
+    "/static/*",
+    "/admin-coopex*",
+    "/admin-site*",
+    "/arquivo/*",
+    "/api/*",
+    "/trabalhe-conosco/*",
+    "/politica-de-privacidade",
+    "/instagram",
+    "/card-instagram",
+    "/card-link/*",
+    "/parceiro/*"
+]
 
 [python_modules]
 exclude = [
