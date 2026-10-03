@@ -7,7 +7,9 @@ from flask import (
     request, send_file, session, url_for
 )
 from pyodide.ffi import run_sync
-from werkzeug.security import check_password_hash, generate_password_hash
+import hashlib
+import hmac
+import secrets
 from werkzeug.utils import secure_filename
 from workers import wsgi
 from templates_cf import TEMPLATES
@@ -76,6 +78,32 @@ CARD_DEFAULTS = {
 
 def agora_utc_iso():
     return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+
+def gerar_hash_senha(senha, salt=None):
+    """
+    Hash compatível com Cloudflare Python Workers sem depender de
+    hashlib.scrypt ou hashlib.pbkdf2_hmac.
+    """
+    salt = salt or secrets.token_hex(16)
+    digest = hashlib.sha256(f"{salt}:{senha}".encode("utf-8")).hexdigest()
+    return f"sha256${salt}${digest}"
+
+
+def verificar_senha(hash_salvo, senha):
+    try:
+        metodo, salt, digest_salvo = str(hash_salvo).split("$", 2)
+    except ValueError:
+        return False
+
+    if metodo != "sha256":
+        return False
+
+    digest_atual = hashlib.sha256(
+        f"{salt}:{senha}".encode("utf-8")
+    ).hexdigest()
+
+    return hmac.compare_digest(digest_salvo, digest_atual)
 
 
 def _env():
@@ -259,10 +287,7 @@ def ensure_seed():
     if not admin:
         usuario = getattr(_env(), 'SITE_ADMIN_USER', 'coopex')
         senha = getattr(_env(), 'SITE_ADMIN_PASS', 'oopex05289')
-        senha_hash = generate_password_hash(
-            senha,
-            method='pbkdf2:sha256:600000'
-        )
+        senha_hash = gerar_hash_senha(senha)
         _db_run(
             'INSERT INTO admin_user (usuario, senha_hash) VALUES (?, ?)',
             usuario,
@@ -439,7 +464,7 @@ def admin_login():
         usuario = request.form.get('usuario', '').strip()
         senha = request.form.get('senha', '')
         admin = _one('SELECT * FROM admin_user WHERE usuario = ? LIMIT 1', usuario)
-        if admin and check_password_hash(admin['senha_hash'], senha):
+        if admin and verificar_senha(admin['senha_hash'], senha):
             session['site_admin_logado'] = True
             session['site_admin_usuario'] = usuario
             return redirect(url_for('admin_dashboard'))
