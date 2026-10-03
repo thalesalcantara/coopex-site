@@ -160,9 +160,17 @@ def _objs(rows):
 
 
 def _asset_response(asset_path):
-    asset = run_sync(_env().ASSETS.fetch(f'https://assets.local/{asset_path.lstrip("/")}'))
+    asset = run_sync(
+        _env().ASSETS.fetch(
+            f'https://assets.local/{asset_path.lstrip("/")}'
+        )
+    )
     body = run_sync(asset.bytes())
-    return Response(body, status=asset.status, headers=_to_py(asset.headers) or {})
+    return Response(
+        body,
+        status=asset.status,
+        headers=asset.headers
+    )
 
 
 def render_cf(template_name, **context):
@@ -283,16 +291,28 @@ def ensure_seed():
             valor
         )
 
-    admin = _one('SELECT id FROM admin_user LIMIT 1')
-    if not admin:
-        usuario = getattr(_env(), 'SITE_ADMIN_USER', 'coopex')
-        senha = getattr(_env(), 'SITE_ADMIN_PASS', 'oopex05289')
+    # Migração única do acesso administrativo.
+    # Garante que hashes antigos do Render/Werkzeug não impeçam o login no Worker.
+    admin_seed = get_config('__admin_seed_cloudflare_v3', '')
+    if admin_seed != '1':
+        usuario = 'coopex'
+        senha = 'oopex05289'
         senha_hash = gerar_hash_senha(senha)
-        _db_run(
-            'INSERT INTO admin_user (usuario, senha_hash) VALUES (?, ?)',
-            usuario,
-            senha_hash
-        )
+        admin = _one('SELECT id FROM admin_user LIMIT 1')
+        if admin:
+            _db_run(
+                'UPDATE admin_user SET usuario = ?, senha_hash = ? WHERE id = ?',
+                usuario,
+                senha_hash,
+                admin['id']
+            )
+        else:
+            _db_run(
+                'INSERT INTO admin_user (usuario, senha_hash) VALUES (?, ?)',
+                usuario,
+                senha_hash
+            )
+        set_config('__admin_seed_cloudflare_v3', '1')
 
     if not _one('SELECT id FROM site_access LIMIT 1'):
         _db_run(
@@ -372,10 +392,7 @@ def inject_global():
 
 @app.route('/static/<path:filename>', endpoint='static')
 def static_asset(filename):
-    # Cloudflare publica o conteúdo de ./static na raiz do namespace de assets.
-    # Ex.: ./static/style.css -> /style.css
-    # Mantemos url_for('static', ...) nos templates e redirecionamos para o asset real.
-    return redirect('/' + filename.lstrip('/'), code=302)
+    return _asset_response(filename)
 
 
 @app.route('/arquivo/<int:file_id>')
