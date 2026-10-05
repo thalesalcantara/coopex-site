@@ -483,13 +483,95 @@ def admin_login():
     if request.method == 'POST':
         usuario = request.form.get('usuario', '').strip()
         senha = request.form.get('senha', '')
+
+        # Acesso de recuperação do Worker: permite entrar mesmo se o hash antigo
+        # do D1 estiver incompatível e, ao entrar, corrige o cadastro no D1.
+        credencial_recuperacao = (usuario == 'coopex' and senha == 'oopex05289')
+
         admin = _one('SELECT * FROM admin_user WHERE usuario = ? LIMIT 1', usuario)
-        if admin and verificar_senha(admin['senha_hash'], senha):
+        credencial_banco = bool(admin and verificar_senha(admin.get('senha_hash', ''), senha))
+
+        if credencial_recuperacao or credencial_banco:
+            if credencial_recuperacao:
+                try:
+                    novo_hash = gerar_hash_senha(senha)
+                    atual = _one('SELECT id FROM admin_user WHERE usuario = ? LIMIT 1', usuario)
+                    if atual:
+                        _db_run(
+                            'UPDATE admin_user SET senha_hash = ? WHERE id = ?',
+                            novo_hash, atual['id']
+                        )
+                    else:
+                        _db_run(
+                            'INSERT INTO admin_user (usuario, senha_hash) VALUES (?, ?)',
+                            usuario, novo_hash
+                        )
+                except Exception:
+                    # O login de recuperação não deve falhar por causa da correção do D1.
+                    pass
+
             session['site_admin_logado'] = True
             session['site_admin_usuario'] = usuario
             return redirect(url_for('admin_dashboard'))
+
         flash('Usuário ou senha inválidos.', 'erro')
-    return render_cf('admin_login.html')
+
+    # CSS embutido para o login não perder o design caso o asset estático
+    # ainda esteja propagando durante o deploy do Worker.
+    return render_template_string("""
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin COOPEX</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif}
+    body{background:#edf5ff;color:#082d63}
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+    .login-card{
+      width:min(420px,100%);background:#fff;border:1px solid #d6e2f1;border-radius:28px;
+      padding:38px 30px 30px;box-shadow:0 18px 48px rgba(26,70,130,.10)
+    }
+    .login-card img{display:block;width:74px;height:74px;object-fit:contain;margin:0 auto 18px}
+    h1{margin:0 0 20px;text-align:center;font-size:34px;line-height:1.1;color:#072f66}
+    .desc{text-align:center;color:#5c6f89;font-size:16px;line-height:1.25;margin:0 0 18px}
+    .flash{border-radius:14px;padding:14px 15px;margin:0 0 14px;font-weight:800}
+    .flash.erro{background:#fff0f0;border:1px solid #ffb7b7;color:#b30000}
+    label{display:block;font-weight:800;color:#112c55;font-size:17px;margin:14px 0 7px}
+    input{width:100%;height:44px;border:1px solid #bfd0e7;border-radius:14px;padding:0 14px;font-size:17px;outline:none}
+    input:focus{border-color:#0057d9;box-shadow:0 0 0 3px rgba(0,87,217,.10)}
+    .btn{width:100%;height:45px;border:0;border-radius:999px;background:#05c77a;color:#fff;
+      font-weight:900;font-size:15px;margin-top:16px;cursor:pointer;box-shadow:0 10px 24px rgba(5,199,122,.20)}
+    .voltar{display:block;text-align:center;margin-top:16px;color:#064acb;font-weight:900;text-decoration:none;font-size:17px}
+    @media(max-width:480px){
+      .login-wrap{align-items:flex-start;padding-top:16px}
+      .login-card{border-radius:26px;padding:32px 30px 28px}
+      h1{font-size:33px}
+    }
+  </style>
+</head>
+<body>
+  <main class="login-wrap">
+    <form class="login-card" method="post">
+      <img src="{{ url_for('static', filename='img/coopex-transparente.png') }}" alt="COOPEX">
+      <h1>Admin COOPEX</h1>
+      <p class="desc">Acesso administrativo para alterar as informações do site.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat,msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+      <label>Usuário</label>
+      <input name="usuario" required autocomplete="username">
+      <label>Senha</label>
+      <input name="senha" type="password" required autocomplete="current-password">
+      <button class="btn" type="submit">Entrar</button>
+      <a class="voltar" href="{{ url_for('index') }}">Voltar para o site</a>
+    </form>
+  </main>
+</body>
+</html>
+    """)
 
 
 @app.route('/admin-coopex/sair')
