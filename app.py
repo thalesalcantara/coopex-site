@@ -1121,6 +1121,14 @@ def inject_global():
 
 @app.route('/static/<path:filename>', endpoint='static')
 def static_asset(filename):
+    # O CSS principal é servido diretamente pelo Worker para não depender
+    # do binding ASSETS. O site e o painel administrativo usam este arquivo.
+    if filename == 'style.css':
+        return Response(
+            SITE_CSS,
+            mimetype='text/css',
+            headers={'Cache-Control': 'no-store'}
+        )
     return _asset_response(filename)
 
 
