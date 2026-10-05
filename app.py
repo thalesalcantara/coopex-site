@@ -293,7 +293,7 @@ def ensure_seed():
 
     # Migração única do acesso administrativo.
     # Garante que hashes antigos do Render/Werkzeug não impeçam o login no Worker.
-    admin_seed = get_config('__admin_seed_cloudflare_v3', '')
+    admin_seed = get_config('__admin_seed_cloudflare_v4', '')
     if admin_seed != '1':
         usuario = 'coopex'
         senha = 'oopex05289'
@@ -312,7 +312,7 @@ def ensure_seed():
                 usuario,
                 senha_hash
             )
-        set_config('__admin_seed_cloudflare_v3', '1')
+        set_config('__admin_seed_cloudflare_v4', '1')
 
     if not _one('SELECT id FROM site_access LIMIT 1'):
         _db_run(
