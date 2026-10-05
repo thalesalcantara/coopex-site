@@ -902,11 +902,15 @@ def render_cf(template_name, **context):
     # O Worker Python pode servir o HTML antes de o Assets binding responder ao CSS.
     # Para preservar exatamente o design original em todas as telas, embutimos o
     # mesmo static/style.css dentro do HTML renderizado.
-    estilos = '<style>' + SITE_CSS + '</style>'
-    html = html.replace(
-        '<link rel="stylesheet" href="{{ url_for(\'static\', filename=\'style.css\') }}">',
-        estilos
-    )
+    estilos = '<style id="coopex-main-css">' + SITE_CSS + '</style>'
+
+    # Injeta o CSS sempre, sem depender de localizar a tag <link>.
+    # Isso evita diferenças de serialização do template no Python Worker.
+    if '</head>' in html:
+        html = html.replace('</head>', estilos + '</head>', 1)
+    else:
+        html = estilos + html
+
     return render_template_string(html, **context)
 
 def allowed_file(filename, allowed):
