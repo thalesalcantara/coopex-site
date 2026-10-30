@@ -904,7 +904,7 @@ def render_cf(template_name, **context):
     # mesmo static/style.css dentro do HTML renderizado.
     # O painel do cartão já inclui /static/style.css, servido pelo próprio Worker.
     # Evita duplicar o CSS extenso dentro do template e economiza CPU/memória.
-    if template_name == 'admin_card.html':
+    if template_name in ('admin_card.html', 'instagram_card.html'):
         return render_template_string(html, **context)
 
     estilos = '<style id="coopex-main-css">' + SITE_CSS + '</style>'
