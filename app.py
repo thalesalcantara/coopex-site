@@ -907,13 +907,8 @@ def render_cf(template_name, **context):
         context.setdefault('cfg', {k: valores.get(k, v) for k, v in DEFAULTS.items()})
         context.setdefault('card_cfg', {k: valores.get(k, v) for k, v in CARD_DEFAULTS.items()})
 
-    # As paginas de card ja possuem estilos proprios completos.
-    if template_name not in ('admin_card.html', 'instagram_card.html'):
-        estilos = '<style id="coopex-main-css">' + SITE_CSS + '</style>'
-        if '</head>' in html:
-            html = html.replace('</head>', estilos + '</head>', 1)
-        else:
-            html = estilos + html
+    # Evita embutir ~CSS volumoso em toda resposta HTML.
+    # Os templates ja carregam /static/style.css, que possui cache.
     return render_template_string(html, **context)
 
 def allowed_file(filename, allowed):
@@ -1138,7 +1133,7 @@ def static_asset(filename):
         return Response(
             SITE_CSS,
             mimetype='text/css',
-            headers={'Cache-Control': 'no-store'}
+            headers={'Cache-Control': 'public, max-age=3600'}
         )
     if filename == 'site.js':
         return Response("function mostrarPagina(id){\n  document.querySelectorAll('.page-section').forEach(sec => {\n    sec.classList.toggle('active', sec.id === id);\n  });\n\n  document.querySelectorAll('.tab-link').forEach(btn => {\n    btn.classList.toggle('active', btn.dataset.page === id);\n  });\n\n  const avaliacoes = document.getElementById('avaliacoesGoogle');\n\n  if (avaliacoes) {\n    if (id === 'inicio' || id === 'sobre') {\n      avaliacoes.style.display = 'block';\n    } else {\n      avaliacoes.style.display = 'none';\n    }\n  }\n\n  document.body.classList.remove('menu-open');\n\n  if (history.replaceState) {\n    history.replaceState(null, '', '#' + id);\n  }\n\n  window.scrollTo({\n    top: 0,\n    behavior: 'smooth'\n  });\n}\n\ndocument.addEventListener('DOMContentLoaded', function(){\n  document.querySelectorAll('.tab-link').forEach(btn => {\n    btn.addEventListener('click', function(){\n      const page = this.dataset.page || 'inicio';\n      mostrarPagina(page);\n    });\n  });\n\n  const hash = (window.location.hash || '').replace('#', '');\n\n  if (hash && document.getElementById(hash)) {\n    mostrarPagina(hash);\n  } else {\n    mostrarPagina('inicio');\n  }\n});\n\nfunction abrirSolicitacao(){\n  const modal = document.getElementById('modalSolicitacao');\n  const iframe = document.getElementById('iframeSolicitacao');\n\n  if (!modal || !iframe) return;\n\n  modal.classList.add('aberto');\n  modal.setAttribute('aria-hidden', 'false');\n\n  if (!iframe.src) {\n    iframe.src = iframe.dataset.src;\n  }\n}\n\nfunction fecharSolicitacao(){\n  const modal = document.getElementById('modalSolicitacao');\n\n  if (!modal) return;\n\n  modal.classList.remove('aberto');\n  modal.setAttribute('aria-hidden', 'true');\n}\n\ndocument.addEventListener('keydown', function(e){\n  if (e.key === 'Escape') {\n    fecharSolicitacao();\n  }\n});\n", mimetype='application/javascript',
@@ -1167,7 +1162,8 @@ def arquivo_db(file_id):
                 raw = _to_py(blob)
                 return send_file(BytesIO(bytes(raw)),
                     mimetype=arquivo.get('mimetype') or 'application/octet-stream',
-                    download_name=arquivo.get('original_filename') or arquivo.get('filename'))
+                    download_name=arquivo.get('original_filename') or arquivo.get('filename'),
+                    max_age=86400 if not str(arquivo.get('categoria') or '').lower().startswith('curriculo') else 0)
     except Exception:
         # Compatibilidade com arquivos antigos que residem nos chunks do D1.
         pass
