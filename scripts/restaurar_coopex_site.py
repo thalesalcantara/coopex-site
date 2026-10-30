@@ -7,8 +7,6 @@ Exige: npx wrangler autenticado e R2 habilitado na conta.
 """
 import argparse
 import csv
-import sqlite3
-import mimetypes
 import io
 import pathlib
 import subprocess
@@ -93,8 +91,10 @@ def main():
                     "ON CONFLICT(id) DO UPDATE SET "
                     "filename=excluded.filename,original_filename=excluded.original_filename,"
                     "mimetype=excluded.mimetype,categoria=excluded.categoria,"
-                    "tamanho=excluded.tamanho,criado_em=excluded.criado_em;\\n"
+                    "tamanho=excluded.tamanho,criado_em=excluded.criado_em;\n"
                 )
+        run("npx", "wrangler", "d1", "execute", args.database,
+            "--remote", "--file", str(sql))
         run("npx", "wrangler", "d1", "execute", args.database,
             "--remote", "--file", str(root / "coopex_site_arquivos_metadata.sql"))
         print("Dados importados; verificar renderizacao, uploads, login e painel.")
