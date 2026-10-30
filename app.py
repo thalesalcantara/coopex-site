@@ -1112,9 +1112,9 @@ def ensure_seed():
 
 @app.before_request
 def _bootstrap():
-    if request.path.startswith('/static/'):
-        return None
-    ensure_seed()
+    # D1 ja foi inicializado e restaurado. Nao executar dezenas de
+    # INSERT OR IGNORE em todas as requisicoes: isso aumenta a latencia
+    # e pode exceder a CPU do Cloudflare Python Workers.
     return None
 
 
