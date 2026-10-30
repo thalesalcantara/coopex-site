@@ -7,6 +7,8 @@ Exige: npx wrangler autenticado e R2 habilitado na conta.
 """
 import argparse
 import csv
+import sqlite3
+import mimetypes
 import io
 import pathlib
 import subprocess
@@ -63,17 +65,38 @@ def main():
         # armazenados no R2; a aplicacao precisa resolver referencias db:<id>.
         # Exige configuracao do bucket privado e binding FILES no Worker.
         imgdir = root / "imagens_do_banco"
-        for path in imgdir.iterdir():
-            if not path.is_file():
-                continue
-            if "curriculo_" in path.name.lower():
-                key = f"privado/{path.name}"
-            else:
-                key = f"publico/{path.name}"
+        # Arquivos extraidos guardam seus IDs originais no manifesto CSV.
+        # Usar o mesmo caminho que a rota /arquivo/<id> procura.
+        for item in items:
+            file_id = int(item["id"])
+            file_path = imgdir / item["saved_as"]
+            if not file_path.is_file():
+                raise RuntimeError(f"Arquivo original ausente: {file_id}")
+            privado = item["categoria"].lower().startswith("curriculo")
+            prefixo = "privado" if privado else "publico"
+            chave = f"{prefixo}/{file_id}/{item['filename']}"
             run("npx", "wrangler", "r2", "object", "put",
-                f"{args.bucket}/{key}", "--file", str(path), "--remote")
+                f"{args.bucket}/{chave}", "--file", str(file_path),
+                "--content-type", item["mimetype"], "--remote")
+        # Metadados pequenos no D1; os binarios ficam somente no R2.
+        def quote(value):
+            return "'" + str(value or "").replace("'", "''") + "'"
+        with (root / "coopex_site_arquivos_metadata.sql").open("w", encoding="utf-8") as f:
+            for item in items:
+                id_ = int(item["id"])
+                f.write(
+                    "INSERT INTO file_upload "
+                    "(id,filename,original_filename,mimetype,categoria,tamanho,criado_em) VALUES "
+                    f"({id_},{quote(item['filename'])},{quote(item['original_filename'])},"
+                    f"{quote(item['mimetype'])},{quote(item['categoria'])},"
+                    f"{int(item['bytes'])},{quote(item['created_at'])}) "
+                    "ON CONFLICT(id) DO UPDATE SET "
+                    "filename=excluded.filename,original_filename=excluded.original_filename,"
+                    "mimetype=excluded.mimetype,categoria=excluded.categoria,"
+                    "tamanho=excluded.tamanho,criado_em=excluded.criado_em;\\n"
+                )
         run("npx", "wrangler", "d1", "execute", args.database,
-            "--remote", "--file", str(sql))
+            "--remote", "--file", str(root / "coopex_site_arquivos_metadata.sql"))
         print("Dados importados; verificar renderizacao, uploads, login e painel.")
         print("IMPORTANTE: habilitar resolucao de refs db:<id> no Worker antes do corte.")
 
