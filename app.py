@@ -902,6 +902,11 @@ def render_cf(template_name, **context):
     # O Worker Python pode servir o HTML antes de o Assets binding responder ao CSS.
     # Para preservar exatamente o design original em todas as telas, embutimos o
     # mesmo static/style.css dentro do HTML renderizado.
+    # O painel do cartão já inclui /static/style.css, servido pelo próprio Worker.
+    # Evita duplicar o CSS extenso dentro do template e economiza CPU/memória.
+    if template_name == 'admin_card.html':
+        return render_template_string(html, **context)
+
     estilos = '<style id="coopex-main-css">' + SITE_CSS + '</style>'
 
     # Injeta o CSS sempre, sem depender de localizar a tag <link>.
