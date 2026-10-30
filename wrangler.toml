@@ -18,3 +18,7 @@ exclude = [
     "**/*.pyc",
     "**/__pycache__"
 ]
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "coopex-site-arquivos"
