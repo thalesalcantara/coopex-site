@@ -899,24 +899,22 @@ def render_cf(template_name, **context):
     if html is None:
         abort(500, description=f'Template não encontrado: {template_name}')
 
-    # O Worker Python pode servir o HTML antes de o Assets binding responder ao CSS.
-    # Para preservar exatamente o design original em todas as telas, embutimos o
-    # mesmo static/style.css dentro do HTML renderizado.
-    # O painel do cartão já inclui /static/style.css, servido pelo próprio Worker.
-    # Evita duplicar o CSS extenso dentro do template e economiza CPU/memória.
-    if template_name in ('admin_card.html', 'instagram_card.html'):
-        return render_template_string(html, **context)
+    # Uma unica consulta de configuracoes por pagina, sem carregar
+    # a mesma tabela duas vezes no context processor.
+    if 'cfg' not in context or 'card_cfg' not in context:
+        valores = {r['chave']: r['valor'] for r in
+                   _rows('SELECT chave, valor FROM site_config')}
+        context.setdefault('cfg', {k: valores.get(k, v) for k, v in DEFAULTS.items()})
+        context.setdefault('card_cfg', {k: valores.get(k, v) for k, v in CARD_DEFAULTS.items()})
 
-    estilos = '<style id="coopex-main-css">' + SITE_CSS + '</style>'
-
-    # Injeta o CSS sempre, sem depender de localizar a tag <link>.
-    # Isso evita diferenças de serialização do template no Python Worker.
-    if '</head>' in html:
-        html = html.replace('</head>', estilos + '</head>', 1)
-    else:
-        html = estilos + html
-
-    return render_template_string(html, cfg=context.get('cfg') or config_dict(), card_cfg=context.get('card_cfg') or card_config_dict(), **{k:v for k,v in context.items() if k not in ('cfg','card_cfg')})
+    # As paginas de card ja possuem estilos proprios completos.
+    if template_name not in ('admin_card.html', 'instagram_card.html'):
+        estilos = '<style id="coopex-main-css">' + SITE_CSS + '</style>'
+        if '</head>' in html:
+            html = html.replace('</head>', estilos + '</head>', 1)
+        else:
+            html = estilos + html
+    return render_template_string(html, **context)
 
 def allowed_file(filename, allowed):
     return bool(filename and '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed)
