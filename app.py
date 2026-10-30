@@ -916,7 +916,7 @@ def render_cf(template_name, **context):
     else:
         html = estilos + html
 
-    return render_template_string(html, **context)
+    return render_template_string(html, cfg=context.get('cfg') or config_dict(), card_cfg=context.get('card_cfg') or card_config_dict(), **{k:v for k,v in context.items() if k not in ('cfg','card_cfg')})
 
 def allowed_file(filename, allowed):
     return bool(filename and '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed)
@@ -1120,9 +1120,9 @@ def _bootstrap():
 
 @app.context_processor
 def inject_global():
+    # Somente as paginas que usam cfg/card_cfg devem consultar o D1.
+    # Evita duas consultas extras em cada arquivo e em cada renderizacao.
     return {
-        'cfg': config_dict(),
-        'card_cfg': card_config_dict(),
         'arquivo_url': arquivo_url,
         'formatar_data_hora_br': formatar_data_hora_br,
     }
