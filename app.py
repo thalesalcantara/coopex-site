@@ -1029,7 +1029,7 @@ def ensure_seed():
     admin_seed = get_config('__admin_seed_cloudflare_v4', '')
     if admin_seed != '1':
         usuario = 'coopex'
-        senha = 'oopex05289'
+        senha = 'coopex05289'
         senha_hash = gerar_hash_senha(senha)
         admin = _one('SELECT id FROM admin_user LIMIT 1')
         if admin:
@@ -1227,7 +1227,7 @@ def admin_login():
 
         # Acesso de recuperação independente do D1: se essas credenciais forem
         # usadas, entra imediatamente e depois tenta sincronizar o hash no banco.
-        if usuario == 'coopex' and senha == 'oopex05289':
+        if usuario == 'coopex' and senha == 'coopex05289':
             session['site_admin_logado'] = True
             session['site_admin_usuario'] = usuario
             try:
