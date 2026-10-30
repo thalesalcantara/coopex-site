@@ -1142,6 +1142,26 @@ def arquivo_db(file_id):
     if not arquivo:
         abort(404)
 
+    # Recuperação Render -> Cloudflare: arquivos antigos armazenados no R2.
+    # Nunca tornar currículos públicos, mesmo que conheçam o ID do arquivo.
+    if str(arquivo.get('categoria') or '').lower().startswith('curriculo') and not login_required():
+        abort(403)
+    try:
+        storage = getattr(_env(), 'FILES', None)
+        if storage is not None:
+            key = ('privado/' if str(arquivo.get('categoria') or '').lower().startswith('curriculo')
+                   else 'publico/') + str(file_id) + '/' + str(arquivo.get('filename') or '')
+            obj = run_sync(storage.get(key))
+            if obj is not None:
+                blob = run_sync(obj.arrayBuffer())
+                raw = _to_py(blob)
+                return send_file(BytesIO(bytes(raw)),
+                    mimetype=arquivo.get('mimetype') or 'application/octet-stream',
+                    download_name=arquivo.get('original_filename') or arquivo.get('filename'))
+    except Exception:
+        # Compatibilidade com arquivos antigos que residem nos chunks do D1.
+        pass
+
     chunks = _rows('SELECT data FROM file_chunk WHERE file_id = ? ORDER BY parte ASC', file_id)
     partes = []
     for row in chunks:
