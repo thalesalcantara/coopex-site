@@ -339,8 +339,8 @@
               </div>
             </div>
 
-            <div class="docs-box">
-              <h3>Documentos necessários para entrevista</h3>
+            <details class="docs-box">
+              <summary>Documentos necessários para entrevista <span>Ver lista completa</span></summary>
               <ul class="docs-list">
                 {% set docs = cfg.documentos_entrevista.replace(';', '\n') %}
                 {% for doc in docs.split('\n') if doc.strip() %}
