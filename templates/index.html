@@ -11,16 +11,16 @@
   <header class="topo">
     <div class="container nav">
       <button class="brand tab-link active" type="button" data-page="inicio" aria-label="COOPEX Entregas">
-        <img src="{{ url_for('static', filename='img/coopex-nome-entregas.png') }}" alt="COOPEX Entregas">
+        <img src="{{ url_for('static', filename='img/coopex-nome-entregas.png') }}" alt="COOPEX Entregas" fetchpriority="high" decoding="async">
       </button>
 
       <div class="somos-wrap">
-        <img src="{{ url_for('static', filename='img/somos-coop.png') }}" alt="Somos Coop">
+        <img src="{{ url_for('static', filename='img/somos-coop.png') }}" alt="Somos Coop" decoding="async">
       </div>
 
-      <button class="menu-btn" type="button" onclick="document.body.classList.toggle('menu-open')" aria-label="Abrir menu">☰</button>
+      <button class="menu-btn" type="button" onclick="document.body.classList.toggle('menu-open')" aria-label="Abrir menu" aria-controls="mainNavigation">☰</button>
 
-      <nav class="links" aria-label="Menu principal">
+      <nav class="links" id="mainNavigation" aria-label="Menu principal">
         <button class="tab-link active" type="button" data-page="inicio">Início</button>
         <button class="tab-link" type="button" data-page="sobre">Sobre</button>
         <button class="tab-link" type="button" data-page="servicos">Serviços</button>
@@ -46,7 +46,7 @@
         <div class="container hero-container">
           <div class="hero-banner">
             {% if cfg.imagem_destaque %}
-              <img class="hero-bg" src="{{ arquivo_url(cfg.imagem_destaque) }}" alt="Imagem principal COOPEX">
+              <img class="hero-bg" src="{{ arquivo_url(cfg.imagem_destaque) }}" alt="Imagem principal COOPEX" fetchpriority="high" decoding="async">
             {% else %}
               <div class="hero-bg hero-placeholder-bg">
                 <strong>Espaço para imagem principal grande</strong>
@@ -76,14 +76,12 @@
           </div>
         </div>
       </div>
-    </section>
-
     <section id="avaliacoesGoogle" class="home-reviews" aria-label="Avaliações dos clientes">
       <div class="container reviews-grid">
         <div class="reviews-title">
           <span class="google-pill"><strong>G</strong> Avaliações no Google</span>
           <h2>O que os clientes dizem</h2>
-          <p>Depoimentos cadastrados pela administração com aparência organizada para destacar a confiança dos clientes.</p>
+          <p>Comentários e notas cadastrados no sistema, preservados com seus nomes, fotos e links.</p>
         </div>
 
         <div class="reviews-cards">
@@ -123,6 +121,7 @@
         </div>
       </div>
     </section>
+    </section>
 
     <section id="sobre" class="page-section">
       <div class="secao">
@@ -130,7 +129,7 @@
           <div>
             <span class="tag azul">Quem somos</span>
             <h2>Mais de 20 anos atuando com entregas</h2>
-            <div class="texto-sobre-admin">{{ cfg.texto_sobre }}</div>
+            <div class="texto-sobre-admin">{{ cfg.texto_sobre }}</div><button class="about-open" type="button" aria-label="Ler história completa da COOPEX" onclick="document.getElementById('historiaCompleta').showModal()">Ler história completa</button>
           </div>
           <div class="stats stats-modern">
             <div class="stat-card">
@@ -168,18 +167,23 @@
       </div>
     </section>
 
+    <dialog id="historiaCompleta" class="glass-dialog" aria-label="História completa da COOPEX">
+      <div class="glass-dialog-top"><strong>História da COOPEX</strong><button type="button" onclick="document.getElementById('historiaCompleta').close()" aria-label="Fechar">✕</button></div>
+      <div class="glass-dialog-content">{{ cfg.texto_sobre }}</div>
+    </dialog>
+
     <section id="servicos" class="page-section">
       <div class="secao soft">
         <div class="container">
           <div class="center">
             <span class="tag verde">Soluções</span>
             <h2>Serviços profissionais</h2>
-            <p>Escolha a aba de serviços para entender como a COOPEX atende empresas, restaurantes, farmácias e escritórios.</p>
+            <p>Serviços de motofrete profissional para empresas, restaurantes, farmácias e escritórios em Natal e Grande Natal.</p>
           </div>
           <div class="cards">
             <article class="card">
               <div class="card-icon">🏢</div>
-              <h3>Serviço Office</h3>
+              <h3>Serviço Office</h3><p class="service-intro">Documentos, coleta de malotes e demandas empresariais com atendimento organizado.</p>
               <ul>
                 <li>Bancários, cartórios e escritórios</li>
                 <li>Coleta de malotes e documentos</li>
@@ -189,7 +193,7 @@
             </article>
             <article class="card">
               <div class="card-icon">🛵</div>
-              <h3>Serviço Delivery</h3>
+              <h3>Serviço Delivery</h3><p class="service-intro">Entregas comerciais para estabelecimentos, com opções avulsas e contratos.</p>
               <ul>
                 <li>Pizzarias e hamburguerias</li>
                 <li>Restaurantes e farmácias</li>
@@ -199,7 +203,7 @@
             </article>
             <article class="card destaque">
               <div class="card-icon">✅</div>
-              <h3>Por que contratar?</h3>
+              <h3>Por que contratar?</h3><p class="service-intro">A estrutura cooperativa oferece organização, identificação e apoio operacional.</p>
               <ul>
                 <li>Cooperados fardados</li>
                 <li>Suporte operacional</li>
@@ -323,7 +327,7 @@
             <p>Para realizar o cadastro, o candidato deve ter <strong>21 anos ou mais</strong> e possuir <strong>CNH definitiva há, no mínimo, 2 anos</strong>, com observação de <strong>atividade remunerada (EAR)</strong>. <strong>Não serão aceitas permissões para dirigir.</strong></p>
 
             <div class="bau-box">
-              <h3>Baú recomendado</h3>
+              <h3>Baú recomendado</h3><span class="bau-subtitle">Fibra branca de 95 litros, conforme o padrão da COOPEX.</span>
               {% if cfg.foto_bau %}
                 <img class="bau-img" src="{{ arquivo_url(cfg.foto_bau) }}" alt="Foto do baú recomendado">
               {% else %}
@@ -343,7 +347,7 @@
                   <li>{{ doc.strip() }}</li>
                 {% endfor %}
               </ul>
-            </div>
+            </details>
           </div>
 
           <form class="work-form" method="post" enctype="multipart/form-data" action="{{ url_for('enviar_curriculo') }}">
@@ -996,5 +1000,229 @@
     })();
   </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const navigation = document.querySelector('#mainNavigation');
+  document.querySelectorAll('.tab-link').forEach(link => link.addEventListener('click', () => {
+    document.body.classList.remove('menu-open');
+  }));
+  document.addEventListener('click', event => {
+    if (document.body.classList.contains('menu-open') && !event.target.closest('.nav')) {
+      document.body.classList.remove('menu-open');
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') document.body.classList.remove('menu-open');
+  });
+});
+</script>
+<style id="coopex-premium-glass-2026">
+
+/* COOPEX Liquid Glass – design editorial 2026; preserva conteúdo e recursos originais */
+:root{--ink:#0b2850;--sub:#4b688b;--royal:#0752b7;--emerald:#04b678;--mist:#eff7ff;--pane:rgba(255,255,255,.76);--hair:rgba(255,255,255,.91);--shadow:0 22px 64px rgba(15,68,127,.10)}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(ellipse at 3% 12%,rgba(99,181,243,.18),transparent 35%),radial-gradient(ellipse at 95% 25%,rgba(20,189,139,.12),transparent 29%),linear-gradient(135deg,#f6fbff,#eaf5ff 65%,#f4fdfb);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);overflow-x:hidden}
+body:before{position:fixed;inset:0;pointer-events:none;background:linear-gradient(130deg,transparent 20%,rgba(255,255,255,.15) 49%,transparent 70%);content:"";z-index:-1}
+.topo{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.74)!important;border-bottom:1px solid rgba(255,255,255,.95);box-shadow:0 6px 30px rgba(16,74,131,.075)!important;backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%)}
+.container{width:min(1500px,calc(100% - 56px))}
+.nav{min-height:72px!important;display:grid!important;grid-template-columns: minmax(160px,235px) minmax(90px,125px) minmax(0,1fr);gap:14px;align-items:center;padding:6px 0!important}
+.brand{min-width:0!important;justify-content:start!important;background:transparent!important}
+.brand img{height:55px!important;width:auto!important;max-width:210px!important;filter:drop-shadow(0 6px 12px rgba(13,68,120,.12))!important;object-fit:contain!important}
+.somos-wrap{position:static!important;transform:none!important;left:auto!important;top:auto!important;pointer-events:none!important;justify-self:center}
+.somos-wrap img{height:44px!important;width:auto!important;max-width:115px!important;filter:none!important}
+.links{padding:0!important;margin:0!important;gap:2px!important;min-width:0;display:flex;justify-content:flex-end}
+.links button{border:1px solid transparent!important;border-radius:12px!important;background:transparent!important;color:#284c77!important;font-weight:700!important;font-size:clamp(11px,.82vw,13px)!important;line-height:1.2!important;padding:11px 9px!important;white-space:nowrap;transition:background .18s,box-shadow .18s}
+.links button:hover,.links button.active{background:rgba(255,255,255,.97)!important;border-color:#dae9fa!important;color:#0751b5!important;box-shadow:0 4px 14px rgba(11,77,140,.08)}
+.menu-btn{background:rgba(255,255,255,.83)!important;color:#0b4eac!important;border:1px solid #dae8f7!important}
+main{min-height:0}
+.page-section{min-height:0!important}
+.secao,.hero,.home-reviews{background:transparent!important;padding:clamp(15px,2vw,26px) 0!important}
+.hero{padding:14px 0 5px!important}
+.hero-banner{height:clamp(360px,57vh,650px)!important;min-height:0!important;border:1px solid rgba(255,255,255,.95)!important;border-radius:29px!important;box-shadow:var(--shadow)!important;overflow:hidden}
+.hero-shade{background:linear-gradient(90deg,rgba(246,251,255,.99),rgba(246,251,255,.95) 27%,rgba(242,250,255,.66) 51%,rgba(242,250,255,.07) 80%)!important}
+.hero-copy{width:min(600px,53%)!important;height:100%!important;min-height:0!important;justify-content:center!important;padding:clamp(22px,3vw,46px)!important}
+.hero-copy h1{font-size:clamp(31px,3.3vw,54px)!important;letter-spacing:-1.7px!important;line-height:1.05!important;margin:11px 0!important;font-weight:820}
+.hero-copy>p{font-size:clamp(13px,1.02vw,16px)!important;line-height:1.48!important;margin-bottom:16px!important;max-width:510px}
+.tag{background:rgba(255,255,255,.75)!important;border:1px solid rgba(198,219,242,.75)!important;font-weight:700!important;color:#0b55ae!important}
+.btn{border-radius:14px!important;min-height:44px!important;padding:11px 18px!important;font-weight:750!important;transition:transform .18s,box-shadow .18s}
+.btn:hover{transform:translateY(-2px)}
+.btn.primary{background:linear-gradient(145deg,#02bb81,#059e70)!important;box-shadow:0 11px 25px rgba(0,163,115,.16)!important}
+.btn.secondary{background:rgba(255,255,255,.86)!important;border-color:#d4e5f8!important}
+.selo-utilidade-box{margin-top:17px!important;border-radius:17px!important;padding:9px 13px!important;gap:12px!important;max-width:480px!important;background:rgba(255,255,255,.81)!important;border:1px solid #fff!important;backdrop-filter:blur(15px);box-shadow:0 8px 21px rgba(11,68,121,.10)!important}
+.selo-utilidade-box img{width:59px!important;height:59px!important;filter:none!important}
+.selo-utilidade-box strong{font-size:13px!important;margin-bottom:2px!important}
+.selo-utilidade-box p{font-size:11.5px!important;line-height:1.3!important}
+.home-reviews{padding:6px 0 14px!important}
+.reviews-grid{grid-template-columns:minmax(200px,.75fr) minmax(0,3fr)!important;gap:12px!important}
+.reviews-title,.review-card,.stats-modern .stat-card,.info-grid-site article,.card,.partner,.bau-ad-card,.anuncio-info-grid article,.anuncio-cta,.work-info,.work-form,.contact-list a,.contact-list>div,.contato-card,.mapa-card{border-radius:20px!important;background:rgba(255,255,255,.76)!important;border:1px solid rgba(255,255,255,.92)!important;backdrop-filter:blur(18px) saturate(148%);-webkit-backdrop-filter:blur(18px) saturate(148%);box-shadow:0 13px 34px rgba(17,75,133,.09)!important}
+.reviews-title,.review-card{padding:13px 15px!important;min-height:0!important}
+.reviews-title h2{font-size:20px!important;margin:10px 0 8px!important;line-height:1.1!important}
+.reviews-title p{font-size:12px!important;line-height:1.3!important}
+.reviews-cards{gap:10px!important}
+.review-card p{font-size:12px!important;line-height:1.32!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.review-card{min-height:150px!important}
+.review-top strong{font-size:13px!important}
+.review-date{font-size:10px}
+.avatar-google-img{height:33px!important;width:33px!important}
+.footer-royal{padding:8px 0!important;background:linear-gradient(115deg,#05397b,#0d56a7)!important;box-shadow:none!important}
+.footer-royal-grid{min-height:42px!important}
+.footer-logo-coopex{height:37px!important;filter:none!important}
+.footer-logo-somos{height:31px!important;filter:none!important}
+.footer-policy,.footer-copy{font-size:11px!important}
+.two-col{display:grid!important;grid-template-columns:minmax(0,1.25fr) minmax(290px,.77fr)!important;align-items:start!important;gap:22px!important}
+.two-col h2,.center h2,.work-info h2,.contato h2{font-size:clamp(28px,2.7vw,41px)!important;letter-spacing:-1.15px!important;line-height:1.08!important;margin:9px 0 16px!important}
+.two-col p,.center p,.work-info p,.contato p{font-size:14px!important;line-height:1.5!important}
+.texto-sobre-admin{font-size:14px!important;line-height:1.55!important;text-align:left!important;white-space:pre-line!important;display:-webkit-box;-webkit-line-clamp:10;-webkit-box-orient:vertical;overflow:hidden}
+.about-open{border:1px solid #d5e6f7;background:rgba(255,255,255,.75);color:#0a57b7;border-radius:12px;padding:10px 15px;margin-top:12px;font-weight:750;cursor:pointer}
+.glass-dialog{border:1px solid #fff;background:rgba(247,252,255,.96);border-radius:22px;box-shadow:0 25px 80px rgba(10,36,78,.23);max-width:680px;width:calc(100% - 30px);max-height:78vh;padding:24px;backdrop-filter:blur(22px);color:var(--ink)}
+.glass-dialog::backdrop{background:rgba(9,29,60,.48);backdrop-filter:blur(4px)}
+.glass-dialog-top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #d5e7f8;padding-bottom:14px}
+.glass-dialog-top button{background:white;border:1px solid #d6e7fb;padding:8px 12px;border-radius:12px;cursor:pointer}
+.glass-dialog-content{margin-top:14px;white-space:pre-line;overflow-y:auto;max-height:55vh;line-height:1.75;font-size:15px}
+.stats-modern{gap:9px!important}
+.stats-modern .stat-card{min-height:0!important;padding:15px 14px 14px 62px!important;border-radius:18px!important}
+.stats-modern .stat-icon{left:14px!important;top:15px!important;width:35px!important;height:35px!important;border-radius:11px!important;font-size:17px!important}
+.stats-modern .stat-card strong{font-size:18px!important;margin-bottom:3px!important}
+.stats-modern .stat-card small{font-size:12px!important;line-height:1.28!important}
+.info-grid-site{margin-top:17px!important;gap:12px!important}
+.info-grid-site article{padding:16px!important}
+.info-grid-site h3{font-size:16px!important;margin:0 0 7px!important}
+.info-grid-site p{font-size:12.5px!important;line-height:1.42!important;margin:0!important}
+#servicos .center{margin-bottom:25px!important}
+#servicos .cards{gap:15px!important}
+#servicos .card{position:relative;overflow:hidden;min-height:370px!important;padding:26px!important;transition:transform .2s}
+#servicos .card:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,#1364d5,#42d6a6)}
+#servicos .card:hover{transform:translateY(-4px)}
+#servicos .card-icon{font-size:30px!important;height:42px}
+#servicos .card h3{font-size:23px!important;letter-spacing:-.55px!important}
+#servicos .card ul{padding-left:21px!important}
+#servicos .card li{font-size:15px!important;line-height:2!important;color:#365980}
+.service-intro{font-size:14px!important;color:#547294!important;line-height:1.45!important;min-height:44px;margin:10px 0 14px!important}
+.partner-carousel-area{grid-template-columns:40px minmax(0,1fr) 40px!important;gap:8px!important;margin-top:20px!important}
+.partner-arrow{width:39px!important;height:39px!important;font-size:28px!important;box-shadow:none!important;background:rgba(255,255,255,.9)!important}
+.partner-carousel{padding:14px 8px!important}
+.partner-carousel .partner-track{gap:14px!important}
+.partner-carousel .partner{flex:0 0 220px!important;min-width:220px!important;width:220px!important;min-height:167px!important;padding:19px!important;border-radius:19px!important;box-shadow:0 8px 23px rgba(14,69,117,.08)!important;transition:transform .18s}
+.partner-carousel .partner img{max-height:100px!important;max-width:175px!important;object-fit:contain!important}
+.partner-carousel .partner span{font-size:13px!important;line-height:1.25!important}
+.bau-ads-grid,.anuncio-info-grid{gap:13px!important}
+.bau-ad-card{padding:12px!important}
+.bau-ad-card img,.bau-ad-placeholder{height:clamp(140px,24vh,220px)!important;object-fit:contain!important;border-radius:14px!important}
+.bau-ad-card strong{font-size:13px!important}
+.anuncio-info-grid{margin-top:13px!important}
+.anuncio-info-grid article,.anuncio-cta{padding:15px!important}
+.anuncio-info-grid h3{font-size:16px!important;margin:0 0 7px!important}
+.anuncio-info-grid p,.anuncio-cta p{font-size:12px!important;line-height:1.4!important}
+.anuncio-cta{margin-top:13px!important}
+.anuncio-cta h3{font-size:17px!important;margin:0 0 6px!important}
+.trabalhe-grid{grid-template-columns:minmax(0,.98fr) minmax(0,1.02fr)!important;gap:16px!important;align-items:start!important}
+.work-info,.work-form{padding:19px!important}
+.work-info h2{font-size:30px!important;margin:8px 0 12px!important}
+.work-info>p{font-size:13px!important;line-height:1.42!important}
+.bau-box,.docs-box{margin-top:10px!important;padding:12px!important;border-radius:15px!important;background:rgba(245,251,255,.7)!important}
+.bau-box h3{font-size:15px!important}
+.bau-subtitle{font-size:12px;color:#547294}
+.bau-img{height:145px!important;width:100%!important;object-fit:contain!important}
+.bau-details p{font-size:12px!important;line-height:1.4!important;margin:5px 0!important}
+.docs-box>summary{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:14px;font-weight:750;color:#0c3975;list-style:none}
+.docs-box>summary span{font-size:12px;color:#0c62bb}
+.docs-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;list-style:none!important;padding:7px 0 0!important;margin:0!important}
+.docs-list li{border:1px solid #e1effb;border-radius:9px;background:#fff;padding:6px 9px!important;font-size:11px!important}
+.work-form h3{font-size:18px!important}
+.work-form label{font-size:13px!important;margin-bottom:9px!important}
+.work-form input:not([type=checkbox]),.work-form select{min-height:39px!important;padding:8px 10px!important;border-radius:10px!important;font-size:14px!important}
+.work-form .form-note{font-size:11px!important}
+.contato-grid{gap:14px!important}
+.contact-list{gap:10px!important}
+.contact-list a,.contact-list>div{padding:12px!important}
+.contact-list strong{font-size:14px!important}
+.contact-list small{font-size:12px!important}
+.contato-card{padding:19px!important}
+.mapa-card{padding:10px!important}
+.mapa-card iframe{height:clamp(210px,37vh,370px)!important;border-radius:16px!important}
+.floating-delivery{border-radius:17px!important;box-shadow:0 9px 22px rgba(2,150,103,.18)!important}
+@media(min-width:1100px){
+  .page-section.active{min-height:0!important}
+  #sobre .secao,#anuncie .secao,#trabalhe .secao,#contato .secao,#parceiros .secao{padding:clamp(13px,2vh,28px) 0!important}
+  #inicio .hero-banner{height:clamp(340px,54vh,625px)!important}
+  #inicio .reviews-grid{min-height:0}
+  #sobre .two-col{gap:18px!important}
+}
+@media(min-width:1100px) and (max-height:800px){
+  #inicio .hero-banner{height:51vh!important}
+  #inicio .hero-copy{padding:24px 32px!important}
+  #inicio .hero-copy h1{font-size:clamp(28px,3vw,46px)!important}
+  #inicio .selo-utilidade-box{margin-top:10px!important}
+  #sobre .texto-sobre-admin{-webkit-line-clamp:7}
+  #sobre .stats-modern .stat-card{padding-top:10px!important;padding-bottom:9px!important}
+  #sobre .info-grid-site article{padding:11px!important}
+  #anuncie .bau-ad-card img{height:18vh!important}
+  #trabalhe .bau-img{height:95px!important}
+  #trabalhe .work-form label{margin-bottom:6px!important}
+  #trabalhe .work-info>p{font-size:12px!important}
+}
+@media(max-width:1150px){
+  .container{width:calc(100% - 36px)}
+  .nav{display:flex!important;justify-content:space-between;flex-wrap:wrap}
+  .brand img{height:48px!important}
+  .somos-wrap{display:flex!important;position:static!important;transform:none!important}
+  .somos-wrap img{height:37px!important}
+  .links{padding:0!important}
+  .links button{font-size:11px!important;padding:9px 6px!important}
+}
+@media(max-width:980px){
+  .nav{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;gap:9px}
+  .brand img{height:44px!important;max-width:min(190px,46vw)!important}
+  .somos-wrap img{height:32px!important;max-width:92px!important}
+  .menu-btn{display:block!important;padding:8px 12px!important}
+  .links{display:none!important;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:60;padding:12px!important;background:rgba(247,252,255,.96)!important;border:1px solid white;border-radius:20px;box-shadow:0 17px 43px rgba(6,51,112,.2);backdrop-filter:blur(22px)}
+  body.menu-open .links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important}
+  .links button{font-size:13px!important;white-space:normal!important;min-height:47px}
+  .hero-banner{height:auto!important;min-height:0!important}
+  .hero-copy{min-height:440px!important;width:min(660px,75%)!important}
+  .two-col{grid-template-columns:1fr!important}
+  .texto-sobre-admin{-webkit-line-clamp:unset;display:block;overflow:visible}
+  .about-open{display:none}
+  .stats-modern{grid-template-columns:repeat(3,1fr)!important}
+  .info-grid-site{grid-template-columns:repeat(2,1fr)!important}
+  .trabalhe-grid,.contato-grid{grid-template-columns:1fr!important}
+  .contact-list{grid-template-columns:repeat(2,1fr)!important}
+}
+@media(max-width:650px){
+  .container{width:calc(100% - 24px)}
+  .nav{min-height:64px!important}
+  .brand img{height:39px!important;max-width:170px!important}
+  .somos-wrap img{height:26px!important;max-width:72px!important}
+  .hero{padding:11px 0 4px!important}
+  .hero-banner{min-height:0!important;border-radius:21px!important;height:auto!important}
+  .hero-shade{background:linear-gradient(180deg,rgba(246,252,255,.98),rgba(246,252,255,.92) 55%,rgba(246,252,255,.75))!important}
+  .hero-copy{width:100%!important;min-height:0!important;padding:25px 19px 19px!important}
+  .hero-copy h1{font-size:clamp(29px,8vw,39px)!important;line-height:1.08!important;letter-spacing:-.8px!important}
+  .hero-copy>p{font-size:14px!important}
+  .actions{flex-direction:column!important}
+  .actions .btn{width:100%}
+  .selo-utilidade-box{margin-top:13px!important}
+  .selo-utilidade-box img{height:52px!important;width:52px!important}
+  .reviews-grid,.reviews-cards,.cards,.info-grid-site,.stats-modern,.anuncio-info-grid,.bau-ads-grid,.contact-list{grid-template-columns:1fr!important}
+  .home-reviews{padding:12px 0!important}
+  .reviews-title,.review-card{padding:15px!important}
+  .review-card p{-webkit-line-clamp:unset}
+  .two-col h2,.center h2,.work-info h2,.contato h2{font-size:29px!important}
+  .secao{padding:20px 0!important}
+  #servicos .card{min-height:0!important;padding:21px!important}
+  .service-intro{min-height:0}
+  .partner-carousel-area{grid-template-columns:34px minmax(0,1fr) 34px!important}
+  .partner-arrow{width:33px!important;height:35px!important;font-size:23px!important}
+  .partner-carousel .partner{flex-basis:180px!important;min-width:180px!important;width:180px!important}
+  .docs-list{grid-template-columns:1fr!important}
+  .bau-ad-card img{height:190px!important}
+  .footer-royal-grid{grid-template-columns:1fr!important;justify-items:center!important;gap:8px!important}
+  .footer-policy,.footer-copy{justify-self:center!important;text-align:center!important}
+  .floating-delivery{bottom:12px!important;right:12px!important}
+  .floating-delivery strong{display:none}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+</style>
 </body>
 </html>
