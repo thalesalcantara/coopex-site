@@ -11,7 +11,7 @@
   <header class="topo">
     <div class="container nav">
       <button class="brand tab-link active" type="button" data-page="inicio" aria-label="COOPEX Entregas">
-        <span class="coopex-brand-icon" aria-hidden="true"><img src="{{ url_for('static', filename='img/coopex-transparente.png') }}" alt="" decoding="async"></span><img class="coopex-brand-word" src="{{ url_for('static', filename='img/coopex-nome-entregas.png') }}" alt="COOPEX Entregas" fetchpriority="high" decoding="async">
+        <img class="coopex-brand-official" src="{{ url_for('static', filename='img/coopex-oficial-3d.webp') }}" alt="COOPEX Entregas" fetchpriority="high" decoding="async">
       </button>
 
       <div class="somos-wrap">
@@ -451,7 +451,7 @@
       </a>
 
       <div class="footer-logos">
-        <img class="footer-logo-coopex" src="{{ url_for('static', filename='img/coopex-nome-entregas.png') }}" alt="COOPEX Entregas">
+        <img class="footer-logo-coopex" src="{{ url_for('static', filename='img/coopex-oficial-3d.webp') }}" alt="COOPEX Entregas">
         <img class="footer-logo-somos" src="{{ url_for('static', filename='img/somos-coop.png') }}" alt="Somos Coop">
       </div>
 
@@ -1234,6 +1234,10 @@ main{min-height:0}
  .coopex-brand-icon img{width:98px!important;height:98px!important;left:-29px!important;top:-8px!important}
  .brand .coopex-brand-word{width:min(131px,31vw)!important;max-width:min(131px,31vw)!important;height:auto!important}
 }
+
+.brand .coopex-brand-official{display:block!important;width:min(240px,100%)!important;max-width:240px!important;height:auto!important;max-height:68px!important;object-fit:contain!important;mix-blend-mode:multiply;filter:none!important}
+.footer-logos .footer-logo-coopex{height:auto!important;width:120px!important;max-height:52px!important;object-fit:contain!important;background:rgba(255,255,255,.94)!important;border-radius:8px!important;padding:2px 4px!important;filter:none!important}
+@media(max-width:650px){.brand .coopex-brand-official{width:min(167px,43vw)!important;max-height:52px!important}}
 </style>
 </body>
 </html>
