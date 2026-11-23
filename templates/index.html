@@ -11,7 +11,7 @@
   <header class="topo">
     <div class="container nav">
       <button class="brand tab-link active" type="button" data-page="inicio" aria-label="COOPEX Entregas">
-        <img src="{{ url_for('static', filename='img/coopex-nome-entregas.png') }}" alt="COOPEX Entregas" fetchpriority="high" decoding="async">
+        <span class="coopex-brand-icon" aria-hidden="true"><img src="{{ url_for('static', filename='img/coopex-transparente.png') }}" alt="" decoding="async"></span><img class="coopex-brand-word" src="{{ url_for('static', filename='img/coopex-nome-entregas.png') }}" alt="COOPEX Entregas" fetchpriority="high" decoding="async">
       </button>
 
       <div class="somos-wrap">
@@ -1223,6 +1223,17 @@ main{min-height:0}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
+
+/* Preserva os arquivos originais da identidade visual e apresenta símbolo e nome lado a lado */
+.brand{display:flex!important;align-items:center!important;gap:0!important}
+.coopex-brand-icon{position:relative;display:block;flex:0 0 53px;width:53px;height:55px;overflow:hidden}
+.coopex-brand-icon img{position:absolute!important;width:135px!important;height:135px!important;max-width:none!important;left:-40px!important;top:-10px!important;object-fit:contain!important;filter:none!important}
+.brand .coopex-brand-word{width:165px!important;height:auto!important;max-width:165px!important;object-fit:contain!important}
+@media(max-width:650px){
+ .coopex-brand-icon{flex-basis:38px;width:38px;height:41px}
+ .coopex-brand-icon img{width:98px!important;height:98px!important;left:-29px!important;top:-8px!important}
+ .brand .coopex-brand-word{width:min(131px,31vw)!important;max-width:min(131px,31vw)!important;height:auto!important}
+}
 </style>
 </body>
 </html>
