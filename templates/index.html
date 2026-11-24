@@ -7,7 +7,7 @@
   <meta name="description" content="Site institucional da COOPEX Entregas. Soluções de entrega para empresas, restaurantes, farmácias e estabelecimentos.">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="coopex-liquid">
   <header class="topo">
     <div class="container nav">
       <button class="brand tab-link active" type="button" data-page="inicio" aria-label="COOPEX Entregas">
@@ -18,7 +18,7 @@
         <img src="{{ url_for('static', filename='img/somos-coop.png') }}" alt="Somos Coop" decoding="async">
       </div>
 
-      <button class="menu-btn" type="button" onclick="document.body.classList.toggle('menu-open')" aria-label="Abrir menu" aria-controls="mainNavigation">☰</button>
+      <button class="menu-btn" type="button" onclick="document.body.classList.toggle('menu-open')" aria-label="Abrir menu" aria-controls="mainNavigation" aria-expanded="false">☰</button>
 
       <nav class="links" id="mainNavigation" aria-label="Menu principal">
         <button class="tab-link active" type="button" data-page="inicio">Início</button>
@@ -889,7 +889,7 @@
         const card = car.querySelector('.partner');
         if (!card) return 420;
 
-        const gap = 30;
+        const gap = parseFloat(getComputedStyle(track()).columnGap) || 13;
         return card.getBoundingClientRect().width + gap;
       }
 
@@ -916,19 +916,20 @@
       function iniciarAuto(){
         const car = carousel();
         const tr = track();
-        if (!car || !tr) return;
+        if (!car || !tr || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
         pararAuto();
 
         autoParceiros = setInterval(function(){
+          if (document.hidden || !car.closest('.page-section').classList.contains('active') || car.matches(':hover') || car.contains(document.activeElement)) return;
           const metade = tr.scrollWidth / 2;
 
-          if (metade > 0 && car.scrollLeft >= metade - car.clientWidth - 5) {
-            car.scrollLeft = 0;
+          if (metade > 0 && car.scrollLeft >= metade) {
+            car.scrollLeft = car.scrollLeft - metade;
           } else {
             car.scrollLeft += 1;
           }
-        }, 25);
+        }, 35);
       }
 
       function iniciarArraste(){
@@ -1239,5 +1240,365 @@ main{min-height:0}
 .footer-logos .footer-logo-coopex{height:auto!important;width:120px!important;max-height:52px!important;object-fit:contain!important;background:rgba(255,255,255,.94)!important;border-radius:8px!important;padding:2px 4px!important;filter:none!important}
 @media(max-width:650px){.brand .coopex-brand-official{width:min(167px,43vw)!important;max-height:52px!important}}
 </style>
+<style id="coopex-aurora-glass-2026">
+
+/* COOPEX | Aurora Glass — public site only. Existing content, images and endpoints are unchanged. */
+.coopex-liquid{
+ --lg-bg:#061a2d;--lg-deep:#041321;--lg-white:#f3faff;--lg-muted:#c0d5e8;
+ --lg-blue:#58b9ff;--lg-green:#63edaa;--lg-border:rgba(194,226,255,.23);
+ --lg-panel:linear-gradient(151deg,rgba(166,218,255,.15) 0%,rgba(77,137,189,.10) 48%,rgba(20,55,89,.29) 100%);
+ --lg-shadow:0 14px 38px rgba(0,8,25,.23),inset 0 1px 0 rgba(255,255,255,.13);
+ --azul-escuro:#f3faff;--texto:#eef8ff;--muted:#c0d5e8;--borda:rgba(195,225,255,.20);
+ min-height:100vh;min-height:100svh;display:flex;flex-direction:column;
+ font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+ color:var(--lg-white);background:
+ radial-gradient(ellipse at 93% 6%,rgba(8,129,126,.24),transparent 42%),
+ radial-gradient(ellipse at 6% 15%,rgba(25,104,209,.29),transparent 46%),
+ linear-gradient(145deg,#071c32 0%,#0c2942 48%,#051523 100%) !important;
+ background-attachment:fixed!important;
+ overflow-x:hidden;font-size:15px;line-height:1.52;
+}
+.coopex-liquid:before{display:none!important}
+.coopex-liquid *{box-sizing:border-box}
+.coopex-liquid main{flex:1 0 auto;display:flex;flex-direction:column;min-height:0;width:100%;padding:0}
+.coopex-liquid .container{width:calc(100% - clamp(28px,4vw,72px))!important;max-width:none!important;margin-inline:auto!important;min-width:0}
+.coopex-liquid main>.page-section{display:none!important;min-height:0!important;width:100%}
+.coopex-liquid main>.page-section.active{display:flex!important;flex:1 0 auto;flex-direction:column;animation:coopexAppear .28s ease-out both}
+.coopex-liquid main>.page-section>.secao{width:100%;flex:1;min-width:0;padding:clamp(24px,4.4vh,46px) 0!important;background:transparent!important}
+@keyframes coopexAppear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.coopex-liquid :is(a,button,input,select,summary):focus-visible{outline:3px solid #60d8ff!important;outline-offset:4px}
+.coopex-liquid button{touch-action:manipulation}
+.coopex-liquid img{max-width:100%}
+.coopex-liquid .topo{position:sticky!important;top:0!important;z-index:100!important;padding:10px 0 6px!important;background:linear-gradient(180deg,rgba(5,21,39,.90),rgba(5,21,39,.34))!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
+.coopex-liquid .topo .container.nav{
+ width:calc(100% - clamp(20px,2.6vw,48px))!important;display:grid!important;
+ grid-template-columns:minmax(175px,clamp(175px,17vw,248px)) minmax(70px,clamp(70px,8vw,112px)) minmax(0,1fr)!important;
+ min-height:76px!important;align-items:center!important;justify-content:normal!important;gap:clamp(8px,1.1vw,18px)!important;
+ padding:8px clamp(12px,1.7vw,26px)!important;position:relative!important;
+ border:1px solid rgba(255,255,255,.95)!important;border-radius:24px!important;
+ background:linear-gradient(150deg,rgba(255,255,255,.98),rgba(222,240,255,.92) 60%,rgba(226,251,244,.96))!important;
+ box-shadow:0 10px 34px rgba(0,9,26,.30),inset 0 1px 1px #fff,inset 0 -3px 9px rgba(89,155,207,.10)!important;
+ -webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%)
+}
+.coopex-liquid .topo .brand{display:flex!important;align-items:center!important;min-width:0!important;width:100%!important;border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;justify-content:flex-start!important}
+.coopex-liquid .topo .brand .coopex-brand-official{
+ display:block!important;width:min(100%,246px)!important;height:auto!important;max-height:65px!important;
+ max-width:100%!important;object-fit:contain!important;mix-blend-mode:multiply!important;filter:none!important
+}
+.coopex-liquid .topo .somos-wrap{display:flex!important;position:static!important;transform:none!important;justify-self:center!important;align-self:center!important;min-width:0!important}
+.coopex-liquid .topo .somos-wrap img{height:clamp(32px,3.3vw,46px)!important;max-width:100%!important;width:auto!important;object-fit:contain!important;filter:none!important}
+.coopex-liquid .topo .links{position:static!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;min-width:0!important;gap:4px!important;margin:0!important;padding:0!important;background:transparent!important;box-shadow:none!important;border:0!important;white-space:normal!important}
+.coopex-liquid .topo .links button{
+ flex:0 1 auto;min-height:43px!important;padding:10px clamp(7px,.68vw,13px)!important;border:1px solid transparent!important;border-radius:13px!important;
+ background:transparent!important;color:#153e65!important;white-space:nowrap!important;line-height:1.18!important;font-weight:750!important;
+ font-size:clamp(11.5px,.88vw,14px)!important;letter-spacing:-.12px;transition:background .2s,box-shadow .2s,transform .2s
+}
+.coopex-liquid .topo .links button:hover{background:rgba(255,255,255,.86)!important;border-color:rgba(73,140,203,.20)!important;color:#084b9f!important}
+.coopex-liquid .topo .links button.active{
+ color:#fff!important;border-color:#65b8ef!important;
+ background:linear-gradient(150deg,#409be1,#0d5bb5 65%,#124f97)!important;
+ box-shadow:0 6px 12px rgba(16,85,165,.23),inset 0 1px 1px rgba(255,255,255,.51),inset 0 -2px 5px rgba(0,33,102,.20)!important
+}
+.coopex-liquid .topo .menu-btn{display:none!important}
+.coopex-liquid .hero,.coopex-liquid .home-reviews{background:transparent!important}
+.coopex-liquid #inicio .hero{padding:clamp(9px,1.6vh,20px) 0 8px!important}
+.coopex-liquid #inicio .hero-banner{
+ display:flex!important;align-items:stretch;position:relative!important;isolation:isolate;
+ height:auto!important;min-height:clamp(350px,51vh,630px)!important;aspect-ratio:auto!important;
+ border:1px solid rgba(184,226,255,.40)!important;border-radius:clamp(24px,2.3vw,38px)!important;
+ overflow:hidden!important;background:linear-gradient(118deg,#0e304e 5%,#123d60 55%,#087d80 100%)!important;
+ box-shadow:0 23px 64px rgba(0,7,20,.36),inset 0 1px 1px rgba(255,255,255,.30)!important
+}
+.coopex-liquid #inicio .hero-banner:after{
+ content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;
+ box-shadow:inset 0 1px 2px rgba(255,255,255,.40),inset 0 -1px 2px rgba(0,0,0,.32);
+ background:linear-gradient(130deg,rgba(199,236,255,.09),transparent 28%,transparent 75%,rgba(70,224,181,.07))
+}
+.coopex-liquid #inicio .hero-bg{position:absolute!important;inset:0 0 0 auto!important;width:67%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;display:block!important;z-index:0}
+.coopex-liquid #inicio .hero-placeholder-bg{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;padding:clamp(24px,6vw,80px) 7% clamp(24px,6vw,80px) 24%!important;text-align:center;color:#e6f8ff!important;background:radial-gradient(ellipse at 74% 45%,#1f6f91,transparent 67%),linear-gradient(145deg,#173f62,#0a3149)!important}
+.coopex-liquid #inicio .hero-placeholder-bg span{color:#b9d7e8!important}
+.coopex-liquid #inicio .hero-shade{position:absolute!important;inset:0!important;z-index:1;background:linear-gradient(90deg,#0c2843 0%,#0d304d 27%,rgba(10,36,61,.98) 40%,rgba(11,42,64,.70) 53%,rgba(7,31,49,.12) 75%,transparent 100%)!important}
+.coopex-liquid #inicio .hero-copy{
+ position:relative!important;z-index:2!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;
+ width:min(62%,740px)!important;min-height:0!important;height:auto!important;
+ padding:clamp(24px,3.4vw,60px)!important;
+}
+.coopex-liquid #inicio .hero-copy h1{color:#fff!important;font-size:clamp(32px,3.5vw,62px)!important;line-height:1.045!important;font-weight:820!important;letter-spacing:-.045em!important;margin:15px 0 14px!important;max-width:18ch;text-wrap:balance;overflow-wrap:anywhere;text-shadow:0 3px 22px rgba(0,10,24,.18)}
+.coopex-liquid #inicio .hero-copy>p{color:#d3e8f7!important;font-size:clamp(14px,1.17vw,18px)!important;line-height:1.55!important;max-width:49ch!important;margin:0 0 20px!important}
+.coopex-liquid .tag{display:inline-flex!important;align-items:center;gap:7px;max-width:100%!important;white-space:normal!important;width:max-content!important;color:#d9f2ff!important;background:linear-gradient(150deg,rgba(99,174,230,.22),rgba(25,83,127,.26))!important;border:1px solid rgba(157,217,253,.34)!important;border-radius:99px!important;padding:7px 12px!important;font-size:12px!important;font-weight:750!important;letter-spacing:.025em}
+.coopex-liquid .tag.verde{color:#adffdf!important;background:rgba(26,152,115,.16)!important;border-color:rgba(94,223,173,.29)!important}
+.coopex-liquid .actions{display:flex!important;flex-wrap:wrap!important;gap:11px!important;width:100%!important}
+.coopex-liquid .btn{border-radius:15px!important;min-height:47px!important;padding:12px 19px!important;font-size:14px!important;font-weight:800!important;line-height:1.25!important;letter-spacing:.005em;transition:transform .18s,box-shadow .18s,filter .18s;white-space:normal!important;text-align:center!important}
+.coopex-liquid .btn.primary,.coopex-liquid .floating-delivery{
+ color:#032d24!important;background:linear-gradient(155deg,#a3ffd4,#4ee7a4 30%,#14c684 68%,#08ab77)!important;border:1px solid rgba(181,255,220,.85)!important;
+ box-shadow:0 9px 24px rgba(1,117,77,.29),inset 0 1px 2px #d4ffeb,inset 0 -3px 6px rgba(0,82,58,.22)!important
+}
+.coopex-liquid .btn.secondary{color:#f1faff!important;background:linear-gradient(150deg,rgba(204,237,255,.25),rgba(94,158,205,.14))!important;border:1px solid rgba(195,231,255,.42)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.27),0 5px 15px rgba(0,0,0,.12)!important}
+@media(hover:hover){.coopex-liquid .btn:hover{transform:translateY(-2px);filter:brightness(1.07)}.coopex-liquid .btn:active{transform:translateY(1px)}}
+.coopex-liquid #inicio .selo-utilidade-box{background:linear-gradient(125deg,rgba(209,240,255,.17),rgba(64,122,164,.13))!important;border:1px solid rgba(177,224,255,.27)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 9px 25px rgba(0,11,28,.14)!important;border-radius:17px!important;padding:10px 14px!important;gap:13px!important;margin-top:17px!important;max-width:510px!important}
+.coopex-liquid #inicio .selo-utilidade-box img{height:58px!important;width:58px!important;flex-shrink:0;object-fit:contain!important;filter:none!important}
+.coopex-liquid #inicio .selo-utilidade-box strong{color:#f4faff!important;font-size:14px!important;margin-bottom:3px!important}
+.coopex-liquid #inicio .selo-utilidade-box p{color:#c7deee!important;font-size:12px!important;line-height:1.42!important;margin:0!important}
+.coopex-liquid .home-reviews{padding:8px 0 20px!important}
+.coopex-liquid .reviews-grid{display:grid!important;grid-template-columns:minmax(185px,.72fr) minmax(0,3fr)!important;gap:14px!important;align-items:stretch!important}
+.coopex-liquid .reviews-cards{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;min-width:0}
+.coopex-liquid :is(.reviews-title,.review-card,.stats-modern .stat-card,.info-grid-site article,.card,.bau-ad-card,.anuncio-info-grid article,.anuncio-cta,.work-info,.work-form,.contact-list a,.contact-list>div,.contato-card,.mapa-card){
+ background:var(--lg-panel)!important;border:1px solid var(--lg-border)!important;border-radius:22px!important;
+ box-shadow:var(--lg-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;min-width:0;color:var(--lg-white)!important
+}
+.coopex-liquid .reviews-title{display:flex!important;flex-direction:column!important;justify-content:center!important;min-height:148px!important;padding:17px 19px!important;background:linear-gradient(145deg,rgba(68,147,211,.25),rgba(44,108,155,.14))!important}
+.coopex-liquid .reviews-title h2{font-size:clamp(20px,1.55vw,27px)!important;line-height:1.12!important;letter-spacing:-.035em!important;color:#fff!important;margin:9px 0 6px!important}
+.coopex-liquid .reviews-title p{color:var(--lg-muted)!important;font-size:12.5px!important;line-height:1.42!important;margin:0!important}
+.coopex-liquid .google-pill{color:#eaf5ff!important;background:rgba(255,255,255,.09)!important;border:1px solid rgba(255,255,255,.20)!important;box-shadow:none!important;font-size:11px!important}
+.coopex-liquid .google-pill strong,.coopex-liquid .g-mark{background:#fff!important;color:#1766df!important}
+.coopex-liquid .review-card{padding:17px 18px!important;min-height:148px!important;height:auto!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;transition:background .2s,transform .2s}
+.coopex-liquid .review-top strong{color:#fff!important;font-size:14px!important;overflow-wrap:anywhere}
+.coopex-liquid .review-top small,.coopex-liquid .review-date{color:#b4cce0!important}
+.coopex-liquid .review-card p{color:#dfedf8!important;font-size:13.5px!important;line-height:1.48!important;display:block!important;-webkit-line-clamp:unset!important;overflow:visible!important;white-space:normal!important;margin:6px 0 9px!important;overflow-wrap:anywhere}
+.coopex-liquid .review-date{font-size:11px!important;margin-top:auto!important}
+.coopex-liquid .stars{color:#ffcb69!important;letter-spacing:2px!important;font-size:16px!important;margin-top:7px!important}
+.coopex-liquid .avatar-google,.coopex-liquid .avatar-google-img{width:37px!important;height:37px!important;flex-shrink:0}
+.coopex-liquid .avatar-google{background:#d3efff!important;color:#125496!important}
+.coopex-liquid .review-card:hover,.coopex-liquid .contact-list a:hover{transform:translateY(-2px);border-color:rgba(112,220,255,.5)!important}
+.coopex-liquid main .secao :is(h2,h3){color:#f2faff!important}
+.coopex-liquid main .secao :is(.center,.two-col,.work-info,.contato) h2{font-size:clamp(30px,3.15vw,52px)!important;line-height:1.08!important;letter-spacing:-.045em!important;margin:12px 0 15px!important;font-weight:820!important;text-wrap:balance}
+.coopex-liquid main .secao :is(.center,.two-col,.work-info,.contato) p{color:var(--lg-muted)!important;font-size:15px!important;line-height:1.58!important}
+.coopex-liquid .center{max-width:850px!important;margin:0 auto clamp(22px,3vh,37px)!important;text-align:center!important}
+.coopex-liquid .center p{max-width:75ch!important;margin:0 auto!important}
+.coopex-liquid #sobre .two-col{display:grid!important;grid-template-columns:minmax(0,1.5fr) minmax(275px,.8fr)!important;align-items:stretch!important;gap:20px!important}
+.coopex-liquid #sobre .two-col>div:first-child{padding:clamp(20px,2.8vw,40px)!important;border:1px solid var(--lg-border);border-radius:26px;background:var(--lg-panel);box-shadow:var(--lg-shadow);min-width:0}
+.coopex-liquid #sobre .texto-sobre-admin{color:#d2e5f4!important;font-size:clamp(14px,1.02vw,16px)!important;line-height:1.65!important;white-space:pre-line!important;display:block!important;-webkit-line-clamp:unset!important;overflow:visible!important;max-height:none!important}
+.coopex-liquid .about-open{color:#d8f5ff!important;border:1px solid rgba(152,214,255,.33)!important;background:rgba(125,190,238,.13)!important;border-radius:12px!important;padding:10px 14px!important;margin-top:15px!important;font-size:13px!important;font-weight:750!important;cursor:pointer}
+.coopex-liquid #sobre .stats-modern{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;align-content:stretch!important}
+.coopex-liquid #sobre .stats-modern .stat-card{position:relative!important;display:flex!important;flex-direction:column!important;justify-content:center!important;padding:19px 17px 19px 76px!important;min-height:95px!important;overflow-wrap:anywhere}
+.coopex-liquid #sobre .stats-modern .stat-icon{left:18px!important;top:50%!important;transform:translateY(-50%)!important;width:44px!important;height:44px!important;background:linear-gradient(155deg,rgba(148,220,255,.27),rgba(47,117,163,.20))!important;border:1px solid rgba(195,234,255,.33)!important;border-radius:15px!important;font-size:21px!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.25)!important}
+.coopex-liquid #sobre .stat-card strong{color:#f4faff!important;font-size:clamp(19px,1.65vw,26px)!important;margin:0 0 4px!important;font-weight:800!important}
+.coopex-liquid #sobre .stat-card small{color:var(--lg-muted)!important;font-size:13px!important;line-height:1.4!important}
+.coopex-liquid #sobre .info-grid-site{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;margin-top:20px!important;width:calc(100% - clamp(28px,4vw,72px))!important;max-width:none!important;margin-inline:auto!important}
+.coopex-liquid #sobre .info-grid-site article{padding:clamp(17px,1.8vw,26px)!important}
+.coopex-liquid #sobre .info-grid-site h3{font-size:18px!important;margin:0 0 10px!important}
+.coopex-liquid #sobre .info-grid-site p{color:#c9deee!important;font-size:14px!important;line-height:1.6!important;margin:0!important}
+.coopex-liquid #servicos .cards{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(14px,1.65vw,25px)!important;align-items:stretch!important}
+.coopex-liquid #servicos .card{position:relative!important;isolation:isolate;overflow:hidden!important;padding:clamp(23px,3vw,46px)!important;min-height:clamp(315px,42vh,440px)!important;border-radius:28px!important;transition:transform .2s,box-shadow .2s}
+.coopex-liquid #servicos .card:before{content:"";position:absolute;left:0;right:0;top:0;height:3px!important;background:linear-gradient(90deg,transparent,#74c9ff 35%,#7ee6bb 70%,transparent)!important}
+.coopex-liquid #servicos .card:after{content:"";position:absolute;z-index:-1;right:-60px;top:-95px;width:235px;height:235px;pointer-events:none;border-radius:50%;background:radial-gradient(circle,rgba(71,166,235,.13),transparent 72%)}
+.coopex-liquid #servicos .card.destaque{background:linear-gradient(145deg,rgba(68,194,150,.18),rgba(55,127,165,.09) 55%,rgba(16,58,73,.26))!important;border-color:rgba(115,238,190,.32)!important}
+.coopex-liquid #servicos .card-icon{display:flex!important;align-items:center!important;justify-content:center!important;width:64px!important;height:64px!important;font-size:32px!important;border-radius:20px!important;border:1px solid rgba(175,228,255,.35)!important;background:linear-gradient(155deg,rgba(183,230,255,.26),rgba(55,127,183,.16))!important;box-shadow:inset 0 1px 2px rgba(255,255,255,.35),0 8px 20px rgba(0,14,32,.18);margin:0 0 24px!important}
+.coopex-liquid #servicos .card h3{font-size:clamp(22px,1.9vw,31px)!important;line-height:1.16!important;letter-spacing:-.035em!important;margin:0 0 12px!important}
+.coopex-liquid #servicos .service-intro{color:#c7dfee!important;font-size:15px!important;line-height:1.55!important;min-height:0!important;margin:0 0 19px!important}
+.coopex-liquid #servicos .card ul{list-style:none!important;margin:0!important;padding:0!important;display:grid;gap:7px}
+.coopex-liquid #servicos .card li{font-size:15px!important;line-height:1.43!important;color:#e1eff9!important;position:relative;padding:8px 0 8px 22px;border-top:1px solid rgba(187,221,246,.12)}
+.coopex-liquid #servicos .card li:before{content:"";width:8px;height:8px;border-radius:50%;background:#69e7b0;box-shadow:0 0 0 3px rgba(105,231,176,.10);position:absolute;left:2px;top:15px}
+.coopex-liquid #parceiros .partner-carousel-area{display:grid!important;grid-template-columns:48px minmax(0,1fr) 48px!important;gap:12px!important;align-items:center!important;width:100%;min-width:0;margin:22px 0 0!important}
+.coopex-liquid #parceiros .partner-carousel{min-width:0!important;width:100%!important;padding:16px!important;overflow-x:auto!important;overflow-y:hidden!important;background:rgba(161,217,255,.06)!important;border:1px solid var(--lg-border)!important;border-radius:26px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 13px 34px rgba(0,7,20,.14)!important;scroll-behavior:auto!important}
+.coopex-liquid #parceiros .partner-track{display:grid!important;grid-auto-flow:column!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;grid-auto-columns:clamp(160px,15vw,246px)!important;gap:13px!important;width:max-content!important;animation:none!important;align-items:stretch!important}
+.coopex-liquid #parceiros .partner-carousel .partner{display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;width:100%!important;min-width:0!important;max-width:none!important;min-height:clamp(148px,18vh,190px)!important;padding:16px 13px!important;gap:11px!important;background:linear-gradient(150deg,#fff 0%,#edf6ff 100%)!important;border:1px solid #f9fcff!important;border-radius:18px!important;box-shadow:0 6px 16px rgba(0,10,25,.15),inset 0 1px 0 white!important;text-align:center!important;color:#173b5d!important;transform:none!important;transition:filter .18s,box-shadow .18s}
+.coopex-liquid #parceiros .partner-carousel .partner:hover{filter:brightness(1.03);box-shadow:0 0 0 2px #6fd9f5!important}
+.coopex-liquid #parceiros .partner-carousel .partner img{width:auto!important;max-width:100%!important;height:clamp(70px,10vh,112px)!important;max-height:none!important;object-fit:contain!important;filter:none!important}
+.coopex-liquid #parceiros .partner-carousel .partner span{font-size:13px!important;line-height:1.25!important;font-weight:720!important;color:#193d60!important;overflow-wrap:anywhere!important}
+.coopex-liquid #parceiros .partner-arrow{display:grid!important;place-items:center!important;width:48px!important;height:48px!important;min-width:0!important;padding:0!important;border-radius:17px!important;font-size:30px!important;line-height:1!important;font-weight:500!important;color:#effaff!important;background:linear-gradient(145deg,rgba(183,229,255,.24),rgba(53,121,175,.23))!important;border:1px solid rgba(191,229,255,.36)!important;box-shadow:0 8px 20px rgba(0,12,30,.18),inset 0 1px 0 rgba(255,255,255,.32)!important}
+.coopex-liquid #anuncie .bau-ads-grid,.coopex-liquid #anuncie .anuncio-info-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:15px!important}
+.coopex-liquid #anuncie .bau-ad-card{padding:14px!important;overflow:hidden!important}
+.coopex-liquid #anuncie .bau-ad-card img,.coopex-liquid #anuncie .bau-ad-placeholder{width:100%!important;height:clamp(130px,22vh,255px)!important;max-height:none!important;object-fit:contain!important;border-radius:14px!important;background:linear-gradient(145deg,rgba(218,238,250,.94),rgba(158,195,220,.85))!important}
+.coopex-liquid #anuncie .bau-ad-placeholder{color:#285271!important}
+.coopex-liquid #anuncie .bau-ad-card strong{color:#eef8ff!important;font-size:14px!important;margin-top:10px!important;display:block!important}
+.coopex-liquid #anuncie .anuncio-info-grid{margin-top:15px!important}
+.coopex-liquid #anuncie .anuncio-info-grid article{padding:18px 20px!important}
+.coopex-liquid #anuncie .anuncio-info-grid h3,.coopex-liquid #anuncie .anuncio-cta h3{font-size:18px!important;margin:0 0 9px!important}
+.coopex-liquid #anuncie .anuncio-info-grid p,.coopex-liquid #anuncie .anuncio-cta p{color:#cfe3f1!important;font-size:14px!important;line-height:1.5!important;margin:0!important;overflow-wrap:anywhere}
+.coopex-liquid #anuncie .anuncio-cta{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:4px 22px!important;padding:19px 24px!important;margin-top:15px!important;background:linear-gradient(120deg,rgba(46,178,141,.18),rgba(75,134,183,.12))!important}
+.coopex-liquid #anuncie .anuncio-cta h3,.coopex-liquid #anuncie .anuncio-cta p{grid-column:1}
+.coopex-liquid #anuncie .anuncio-cta a{grid-column:2;grid-row:1/span 2;align-self:center}
+.coopex-liquid #trabalhe .trabalhe-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:start!important;gap:20px!important}
+.coopex-liquid #trabalhe .work-info,.coopex-liquid #trabalhe .work-form{padding:clamp(19px,2.1vw,34px)!important;border-radius:26px!important}
+.coopex-liquid #trabalhe .work-info h2{font-size:clamp(28px,2.55vw,41px)!important;line-height:1.1!important}
+.coopex-liquid #trabalhe .work-info>p{font-size:14.5px!important;color:#d3e6f4!important}
+.coopex-liquid #trabalhe .bau-box,.coopex-liquid #trabalhe .docs-box{border:1px solid rgba(185,222,250,.20)!important;background:rgba(8,29,49,.26)!important;border-radius:17px!important;padding:15px!important;margin-top:13px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)!important}
+.coopex-liquid #trabalhe .bau-box h3{font-size:17px!important;margin:0 0 3px!important}
+.coopex-liquid #trabalhe .bau-subtitle,.coopex-liquid #trabalhe .bau-details p{color:#c4dded!important;font-size:13px!important;line-height:1.45!important}
+.coopex-liquid #trabalhe .bau-img{height:clamp(100px,17vh,190px)!important;width:100%!important;object-fit:contain!important;background:rgba(237,247,255,.90)!important;border-radius:12px!important;margin:10px 0!important}
+.coopex-liquid #trabalhe .bau-placeholder{color:#c0d8e9!important;background:rgba(255,255,255,.07)!important}
+.coopex-liquid #trabalhe .docs-box summary{color:#f0faff!important;gap:12px!important;flex-wrap:wrap!important}
+.coopex-liquid #trabalhe .docs-box summary span{color:#81d5ff!important}
+.coopex-liquid #trabalhe .docs-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+.coopex-liquid #trabalhe .docs-list li{color:#e0edf7!important;background:rgba(184,223,250,.09)!important;border:1px solid rgba(185,222,250,.13)!important;border-radius:10px!important;font-size:12px!important;padding:8px!important;overflow-wrap:anywhere}
+.coopex-liquid #trabalhe .work-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+.coopex-liquid #trabalhe .work-form h3{grid-column:1/-1;font-size:clamp(23px,2vw,32px)!important;letter-spacing:-.03em!important;margin:0 0 9px!important}
+.coopex-liquid #trabalhe .work-form label{min-width:0!important;display:flex!important;flex-direction:column;gap:7px;color:#e4f1fa!important;font-size:13.5px!important;font-weight:730!important;margin:0!important}
+.coopex-liquid #trabalhe .work-form label:nth-of-type(1),.coopex-liquid #trabalhe .work-form label:nth-of-type(5),.coopex-liquid #trabalhe .work-form .check-line,.coopex-liquid #trabalhe .work-form .full,.coopex-liquid #trabalhe .work-form .form-note{grid-column:1/-1}
+.coopex-liquid #trabalhe .work-form :is(input:not([type=checkbox]),select){display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;min-height:47px!important;margin:0!important;color:#f1f9ff!important;background:#102e49!important;border:1px solid rgba(187,223,250,.28)!important;border-radius:12px!important;padding:11px 12px!important;font:inherit!important;font-weight:500!important;color-scheme:dark;box-shadow:inset 0 2px 7px rgba(0,11,26,.10)!important}
+.coopex-liquid #trabalhe .work-form select option{background:#102e49;color:#f1f9ff}
+.coopex-liquid #trabalhe .work-form input::file-selector-button{background:#d9edff;color:#174772;border:0;border-radius:8px;padding:7px 10px;margin-right:9px;font:inherit;font-weight:720;cursor:pointer}
+.coopex-liquid #trabalhe .work-form .check-line{flex-direction:row!important;align-items:flex-start!important;gap:10px!important;padding:11px 0!important;line-height:1.45!important}
+.coopex-liquid #trabalhe .work-form input[type=checkbox]{accent-color:#43e1a0;flex:0 0 auto;width:18px;height:18px;margin:2px 0 0!important}
+.coopex-liquid #trabalhe .work-form .form-note{color:#b9d0e3!important;font-size:12px!important;line-height:1.45!important}
+.coopex-liquid #contato .contato-grid{display:grid!important;grid-template-columns:minmax(0,1.06fr) minmax(0,1fr)!important;gap:17px!important;align-items:stretch!important}
+.coopex-liquid #contato .contato-grid>div:first-child{grid-column:1;grid-row:1/span 2;min-width:0;padding:clamp(20px,2.2vw,34px)!important;border-radius:26px;background:var(--lg-panel);border:1px solid var(--lg-border);box-shadow:var(--lg-shadow)}
+.coopex-liquid #contato .contact-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important;margin-top:20px!important;min-width:0}
+.coopex-liquid #contato .contact-list a,.coopex-liquid #contato .contact-list>div{padding:16px!important;min-height:115px!important;border-radius:16px!important;overflow-wrap:anywhere;transition:transform .2s}
+.coopex-liquid #contato .contact-list :is(a,div)>strong{color:#f0faff!important;font-size:15px!important}
+.coopex-liquid #contato .contact-list :is(a,div)>small{color:#ccdfef!important;font-size:13px!important;line-height:1.43!important;overflow-wrap:anywhere!important}
+.coopex-liquid #contato .contact-list :is(a,div)>span{color:#81d8ff!important}
+.coopex-liquid #contato .contato-card{grid-column:2;grid-row:2;padding:20px 24px!important}
+.coopex-liquid #contato .contato-card h3{font-size:21px!important;letter-spacing:-.02em!important;margin:0 0 9px!important}
+.coopex-liquid #contato .contato-card p{margin:0 0 14px!important}
+.coopex-liquid #contato .mapa-card{grid-column:2;grid-row:1;padding:9px!important;min-width:0!important}
+.coopex-liquid #contato .mapa-card iframe{width:100%!important;height:clamp(220px,34vh,380px)!important;border-radius:16px!important;display:block!important}
+.coopex-liquid .glass-dialog,.coopex-liquid .modal-card{background:linear-gradient(145deg,#193c59,#0e2942)!important;color:#f2faff!important;border:1px solid rgba(175,225,255,.32)!important;border-radius:24px!important;box-shadow:0 28px 90px rgba(0,6,20,.50)!important}
+.coopex-liquid .glass-dialog::backdrop{background:rgba(0,9,23,.68)!important;backdrop-filter:blur(6px)}
+.coopex-liquid .glass-dialog-top{border-bottom-color:rgba(180,221,250,.22)!important}
+.coopex-liquid .glass-dialog-top button,.coopex-liquid .mini-btn,.coopex-liquid .mini-link{background:rgba(189,227,252,.13)!important;color:#f0faff!important;border:1px solid rgba(194,230,253,.25)!important}
+.coopex-liquid .glass-dialog-content{color:#dcebf8!important}
+.coopex-liquid .iframe-top{background:transparent!important;color:#f3faff!important;border-color:rgba(195,228,250,.20)!important}
+.coopex-liquid .modal-solicitacao{background:rgba(0,10,25,.74)!important}
+.coopex-liquid .modal-card iframe{background:#fff!important;border-radius:0 0 18px 18px!important}
+.coopex-liquid .floating-delivery{z-index:80!important;min-height:49px!important;border-radius:16px!important;bottom:max(17px,env(safe-area-inset-bottom))!important;right:clamp(15px,2.5vw,36px)!important;font-weight:800!important}
+.coopex-liquid .floating-delivery strong{color:#032d24!important}
+.coopex-liquid .footer-royal{width:100%!important;flex-shrink:0;background:linear-gradient(180deg,rgba(8,28,47,.87),#051522)!important;border-top:1px solid rgba(167,212,244,.16)!important;box-shadow:none!important;padding:11px 0!important;margin-top:auto!important}
+.coopex-liquid .footer-royal-grid{display:grid!important;grid-template-columns:1fr auto 1fr!important;gap:15px!important;align-items:center!important;min-height:48px!important}
+.coopex-liquid .footer-policy,.coopex-liquid .footer-copy{color:#c4daea!important;font-size:11.5px!important;font-weight:650!important;line-height:1.4!important;white-space:normal!important}
+.coopex-liquid .footer-copy{text-align:right!important;padding-right:0!important}
+.coopex-liquid .footer-logos{display:flex!important;align-items:center!important;gap:12px!important}
+.coopex-liquid .footer-logos .footer-logo-coopex,.coopex-liquid .footer-logos .footer-logo-somos{height:auto!important;max-height:44px!important;object-fit:contain!important;background:#f6fbff!important;border-radius:8px!important;padding:5px 8px!important;filter:none!important}
+.coopex-liquid .footer-logos .footer-logo-coopex{width:128px!important}
+.coopex-liquid .footer-logos .footer-logo-somos{width:auto!important;max-width:100px!important;height:38px!important}
+.coopex-liquid .site-flashes{padding:9px 0!important}
+@media(min-width:1151px){
+ .coopex-liquid #servicos .secao,.coopex-liquid #parceiros .secao{display:flex!important;align-items:center!important;justify-content:center!important;padding-block:clamp(26px,5vh,56px)!important}
+}
+@media(min-width:1151px) and (max-height:830px){
+ .coopex-liquid #inicio .hero-banner{min-height:345px!important}
+ .coopex-liquid #inicio .hero-copy{padding:23px clamp(25px,3vw,45px)!important}
+ .coopex-liquid #inicio .hero-copy h1{font-size:clamp(29px,3.1vw,47px)!important;margin:9px 0 11px!important}
+ .coopex-liquid #inicio .hero-copy>p{margin-bottom:13px!important}
+ .coopex-liquid #inicio .selo-utilidade-box{margin-top:12px!important}
+ .coopex-liquid .reviews-title,.coopex-liquid .review-card{min-height:132px!important;padding:13px 16px!important}
+ .coopex-liquid main>.page-section>.secao{padding-block:23px!important}
+ .coopex-liquid #anuncie .bau-ad-card img,.coopex-liquid #anuncie .bau-ad-placeholder{height:clamp(118px,18vh,170px)!important}
+ .coopex-liquid #trabalhe .bau-img{height:120px!important}
+}
+@media(max-width:1150px){
+ .coopex-liquid .topo .container.nav{grid-template-columns:minmax(0,1fr) auto auto!important;min-height:69px!important;gap:12px!important}
+ .coopex-liquid .topo .brand .coopex-brand-official{width:min(225px,55vw)!important;max-height:59px!important}
+ .coopex-liquid .topo .somos-wrap img{max-width:110px!important;height:38px!important}
+ .coopex-liquid .topo .menu-btn{display:grid!important;place-items:center!important;width:47px!important;height:47px!important;padding:0!important;border-radius:14px!important;color:#184f88!important;background:rgba(255,255,255,.84)!important;border:1px solid #c6dff2!important;box-shadow:inset 0 1px 0 #fff,0 3px 8px rgba(16,61,105,.13)!important;font-size:24px!important}
+ .coopex-liquid .topo .links{display:none!important;position:absolute!important;top:calc(100% + 9px)!important;left:0!important;right:0!important;z-index:101!important;padding:12px!important;background:linear-gradient(145deg,#f6fbff,#e1f0ff)!important;border:1px solid #fff!important;border-radius:20px!important;box-shadow:0 18px 36px rgba(0,13,34,.36)!important;max-height:calc(100vh - 115px);overflow-y:auto}
+ .coopex-liquid.menu-open .topo .links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+ .coopex-liquid .topo .links button{font-size:14px!important;min-height:48px!important;white-space:normal!important;width:100%!important}
+ .coopex-liquid #inicio .hero-copy{width:67%!important}
+ .coopex-liquid #inicio .hero-copy h1{font-size:clamp(32px,4.2vw,49px)!important}
+ .coopex-liquid .reviews-grid{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+ .coopex-liquid .reviews-title{min-height:0!important;padding:14px 18px!important;display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;gap:3px 14px!important;align-items:center}
+ .coopex-liquid .reviews-title .google-pill{grid-row:1/span 2;align-self:center}
+ .coopex-liquid .reviews-title h2{margin:0!important}
+ .coopex-liquid .reviews-title p{margin:0!important}
+ .coopex-liquid #servicos .card{padding:23px!important;min-height:0!important}
+ .coopex-liquid #servicos .card li{font-size:14px!important}
+ .coopex-liquid #sobre .two-col{grid-template-columns:minmax(0,1.3fr) minmax(240px,.8fr)!important}
+}
+@media(max-width:900px){
+ .coopex-liquid #sobre .two-col,.coopex-liquid #trabalhe .trabalhe-grid,.coopex-liquid #contato .contato-grid{grid-template-columns:minmax(0,1fr)!important}
+ .coopex-liquid #sobre .stats-modern{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+ .coopex-liquid #sobre .stats-modern .stat-card{padding:17px 14px!important;min-height:0!important;gap:4px}
+ .coopex-liquid #sobre .stats-modern .stat-icon{position:static!important;transform:none!important;margin-bottom:7px!important}
+ .coopex-liquid #sobre .info-grid-site{gap:10px!important}
+ .coopex-liquid #contato .contato-grid>div:first-child,.coopex-liquid #contato .contato-card,.coopex-liquid #contato .mapa-card{grid-column:auto!important;grid-row:auto!important}
+ .coopex-liquid #anuncie .anuncio-cta{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}
+ .coopex-liquid #anuncie .anuncio-cta a{grid-column:1;grid-row:auto;justify-self:start;margin-top:7px}
+}
+@media(max-width:680px){
+ .coopex-liquid{font-size:14px;background-attachment:scroll!important}
+ .coopex-liquid .container,.coopex-liquid #sobre .info-grid-site{width:calc(100% - 24px)!important}
+ .coopex-liquid .topo{padding:6px 0 5px!important}
+ .coopex-liquid .topo .container.nav{width:calc(100% - 16px)!important;min-height:62px!important;border-radius:19px!important;padding:7px 11px!important;gap:9px!important}
+ .coopex-liquid .topo .brand .coopex-brand-official{width:min(185px,47vw)!important;max-height:49px!important}
+ .coopex-liquid .topo .somos-wrap img{height:29px!important;max-width:76px!important}
+ .coopex-liquid .topo .menu-btn{width:41px!important;height:41px!important;font-size:21px!important;border-radius:12px!important}
+ .coopex-liquid .topo .links{top:calc(100% + 6px)!important;border-radius:17px!important}
+ .coopex-liquid #inicio .hero{padding:7px 0 6px!important}
+ .coopex-liquid #inicio .hero-banner{flex-direction:column!important;min-height:0!important;height:auto!important;border-radius:24px!important}
+ .coopex-liquid #inicio .hero-copy{width:100%!important;min-height:0!important;height:auto!important;order:0!important;padding:24px 19px 22px!important}
+ .coopex-liquid #inicio .hero-copy h1{font-size:clamp(30px,8.2vw,44px)!important;letter-spacing:-.04em!important;max-width:none!important;margin:12px 0!important;text-wrap:pretty}
+ .coopex-liquid #inicio .hero-copy>p{font-size:15px!important;line-height:1.53!important;margin-bottom:17px!important}
+ .coopex-liquid #inicio .hero-shade{background:linear-gradient(150deg,rgba(10,39,65,.20),transparent 62%)!important}
+ .coopex-liquid #inicio .hero-bg{position:relative!important;inset:auto!important;order:1!important;width:100%!important;height:clamp(160px,49vw,290px)!important;z-index:2!important;object-fit:cover!important;border-top:1px solid rgba(216,237,255,.20)!important}
+ .coopex-liquid #inicio .hero-placeholder-bg{padding:20px!important}
+ .coopex-liquid #inicio .hero-placeholder-bg strong{font-size:17px!important}
+ .coopex-liquid #inicio .hero-placeholder-bg span{font-size:13px!important}
+ .coopex-liquid .actions{flex-direction:column!important;gap:9px!important}
+ .coopex-liquid .actions .btn{width:100%!important;min-height:48px!important}
+ .coopex-liquid #inicio .selo-utilidade-box{width:100%!important;margin-top:13px!important;padding:10px 12px!important}
+ .coopex-liquid #inicio .selo-utilidade-box img{width:48px!important;height:48px!important}
+ .coopex-liquid .home-reviews{padding:8px 0 18px!important}
+ .coopex-liquid .reviews-title{display:block!important;padding:16px!important}
+ .coopex-liquid .reviews-title h2{margin:9px 0 5px!important}
+ .coopex-liquid .reviews-cards{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ .coopex-liquid .review-card{min-height:0!important;padding:15px 16px!important}
+ .coopex-liquid main>.page-section>.secao{padding:21px 0!important}
+ .coopex-liquid main .secao :is(.center,.two-col,.work-info,.contato) h2{font-size:clamp(29px,7.8vw,37px)!important;text-wrap:pretty}
+ .coopex-liquid .center{margin-bottom:20px!important}
+ .coopex-liquid .center p{font-size:14px!important}
+ .coopex-liquid #sobre .two-col{gap:13px!important}
+ .coopex-liquid #sobre .two-col>div:first-child{padding:20px!important}
+ .coopex-liquid #sobre .stats-modern,.coopex-liquid #sobre .info-grid-site,.coopex-liquid #servicos .cards,.coopex-liquid #anuncie .bau-ads-grid,.coopex-liquid #anuncie .anuncio-info-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}
+ .coopex-liquid #sobre .stats-modern .stat-card{padding:15px 15px 15px 69px!important;min-height:82px!important;position:relative!important}
+ .coopex-liquid #sobre .stats-modern .stat-icon{position:absolute!important;left:13px!important;top:50%!important;transform:translateY(-50%)!important}
+ .coopex-liquid #sobre .info-grid-site{margin-top:13px!important}
+ .coopex-liquid #servicos .card{padding:23px!important;border-radius:23px!important}
+ .coopex-liquid #servicos .card-icon{width:54px!important;height:54px!important;font-size:27px!important;margin-bottom:17px!important}
+ .coopex-liquid #servicos .card h3{font-size:25px!important}
+ .coopex-liquid #parceiros .partner-carousel-area{grid-template-columns:34px minmax(0,1fr) 34px!important;gap:6px!important}
+ .coopex-liquid #parceiros .partner-carousel{border-radius:19px!important;padding:9px!important}
+ .coopex-liquid #parceiros .partner-track{grid-auto-columns:clamp(138px,43vw,176px)!important;gap:8px!important}
+ .coopex-liquid #parceiros .partner-carousel .partner{min-height:134px!important;padding:12px 9px!important;border-radius:13px!important;gap:7px!important}
+ .coopex-liquid #parceiros .partner-carousel .partner img{height:70px!important}
+ .coopex-liquid #parceiros .partner-carousel .partner span{font-size:12px!important}
+ .coopex-liquid #parceiros .partner-arrow{width:34px!important;height:42px!important;border-radius:12px!important;font-size:24px!important}
+ .coopex-liquid #anuncie .bau-ad-card img,.coopex-liquid #anuncie .bau-ad-placeholder{height:200px!important}
+ .coopex-liquid #anuncie .anuncio-cta{padding:19px!important}
+ .coopex-liquid #anuncie .anuncio-cta a{width:100%!important;justify-self:stretch}
+ .coopex-liquid #trabalhe .work-form{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+ .coopex-liquid #trabalhe .docs-list{grid-template-columns:minmax(0,1fr)!important}
+ .coopex-liquid #trabalhe .work-info,.coopex-liquid #trabalhe .work-form{padding:19px!important}
+ .coopex-liquid #contato .contact-list{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ .coopex-liquid #contato .contact-list a,.coopex-liquid #contato .contact-list>div{min-height:0!important}
+ .coopex-liquid #contato .contato-grid>div:first-child{padding:19px!important}
+ .coopex-liquid #contato .mapa-card iframe{height:245px!important}
+ .coopex-liquid .footer-royal{padding:15px 0 calc(65px + env(safe-area-inset-bottom))!important}
+ .coopex-liquid .footer-royal-grid{grid-template-columns:1fr!important;justify-items:center!important;gap:10px!important}
+ .coopex-liquid .footer-logos{grid-row:1!important}
+ .coopex-liquid .footer-policy,.coopex-liquid .footer-copy{text-align:center!important;justify-self:center!important;font-size:11px!important}
+ .coopex-liquid .floating-delivery{width:auto!important;min-width:48px!important;min-height:48px!important;right:12px!important;bottom:max(12px,env(safe-area-inset-bottom))!important;padding:10px 13px!important}
+ .coopex-liquid .floating-delivery strong{display:inline!important;font-size:12px!important}
+}
+@media(max-width:350px){
+ .coopex-liquid .topo .brand .coopex-brand-official{width:min(155px,43vw)!important}
+ .coopex-liquid .topo .somos-wrap img{max-width:62px!important;height:25px!important}
+ .coopex-liquid .topo .container.nav{gap:6px!important}
+ .coopex-liquid #inicio .hero-copy{padding:20px 16px!important}
+}
+@media(prefers-reduced-motion:reduce){.coopex-liquid *,.coopex-liquid *:before,.coopex-liquid *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+</style>
+
+<script>
+(function(){
+  function refreshNavigation(){
+    const menu=document.querySelector('.menu-btn');
+    if(menu)menu.setAttribute('aria-expanded',String(document.body.classList.contains('menu-open')));
+    document.querySelectorAll('#mainNavigation .tab-link').forEach(function(btn){
+      if(btn.classList.contains('active'))btn.setAttribute('aria-current','page');
+      else btn.removeAttribute('aria-current');
+    });
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    refreshNavigation();
+    const nav=document.querySelector('#mainNavigation');
+    if(nav)new MutationObserver(refreshNavigation).observe(nav,{attributes:true,subtree:true,attributeFilter:['class']});
+    new MutationObserver(refreshNavigation).observe(document.body,{attributes:true,attributeFilter:['class']});
+  });
+})();
+</script>
+
 </body>
 </html>
