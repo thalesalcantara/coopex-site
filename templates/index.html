@@ -7,7 +7,7 @@
   <meta name="description" content="Site institucional da COOPEX Entregas. Soluções de entrega para empresas, restaurantes, farmácias e estabelecimentos.">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="coopex-liquid crystal-light">
+<body class="coopex-liquid crystal-light prism">
   <header class="topo">
     <div class="container nav">
       <button class="brand tab-link active" type="button" data-page="inicio" aria-label="COOPEX Entregas">
@@ -24,7 +24,7 @@
         <button class="tab-link active" type="button" data-page="inicio">Início</button>
         <button class="tab-link" type="button" data-page="sobre">Sobre</button>
         <button class="tab-link" type="button" data-page="servicos">Serviços</button>
-        <button class="tab-link" type="button" data-page="parceiros">Parceiros</button>
+        
         <button class="tab-link" type="button" data-page="anuncie">Divulgue sua marca</button>
         <button class="tab-link" type="button" data-page="trabalhe">Trabalhe conosco</button>
         <button class="tab-link" type="button" data-page="contato">Contato</button>
@@ -113,7 +113,7 @@
         </div>
       </div>
     </section>
-{% if parceiros %}<section class="home-partners container" aria-label="Empresas parceiras"><div class="partners-heading"><div><span class="eyebrow">CONEXÕES QUE GERAM CONFIANÇA</span><h2>Empresas que caminham com a COOPEX</h2></div><button type="button" class="tab-link see-partners" data-page="parceiros">Conheça todos os parceiros <span aria-hidden="true">→</span></button></div><div class="home-partner-track" tabindex="0" aria-label="Vitrine de parceiros, deslize para ver mais">{% for p in parceiros %}<a class="home-partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">{% if p.logo %}<img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}" loading="lazy" decoding="async">{% else %}<strong>{{ p.nome[:2].upper() }}</strong>{% endif %}<span>{{ p.nome }}</span></a>{% endfor %}</div></section>{% endif %}
+{% if parceiros %}<section class="home-partners container" aria-label="Empresas parceiras"><div class="partners-heading"><div><span class="eyebrow">CONEXÕES QUE GERAM CONFIANÇA</span><h2>Empresas que caminham com a COOPEX</h2></div><button type="button" class="see-partners" onclick="document.getElementById('allPartners').showModal()">Todos os parceiros ↗</button></div><div class="home-partner-track" tabindex="0" aria-label="Vitrine de parceiros, deslize para ver mais">{% for p in parceiros %}<a class="home-partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">{% if p.logo %}<img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}" loading="lazy" decoding="async">{% else %}<strong>{{ p.nome[:2].upper() }}</strong>{% endif %}<span>{{ p.nome }}</span></a>{% endfor %}</div></section>{% endif %}
     </section>
 
     <section id="sobre" class="page-section">
@@ -175,7 +175,7 @@
           </div>
           <div class="cards">
             <article class="card">
-              <div class="card-icon">🏢</div>
+              <div class="card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="10" y="7" width="28" height="34" rx="5"/><path d="M17 16h14M17 23h14M17 30h8"/><path d="m29 7 9 9"/></svg></div>
               <h3>Serviço Office</h3><p class="service-intro">Documentos, coleta de malotes e demandas empresariais com atendimento organizado.</p>
               <ul>
                 <li>Bancários, cartórios e escritórios</li>
@@ -185,7 +185,7 @@
               </ul>
             </article>
             <article class="card">
-              <div class="card-icon">🛵</div>
+              <div class="card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="35" r="6"/><circle cx="36" cy="35" r="6"/><path d="M12 35l8-16h8l8 16M15 19h13M28 19l-4-9h8M19 35h11"/><rect x="5" y="10" width="12" height="9" rx="2"/></svg></div>
               <h3>Serviço Delivery</h3><p class="service-intro">Entregas comerciais para estabelecimentos, com opções avulsas e contratos.</p>
               <ul>
                 <li>Pizzarias e hamburguerias</li>
@@ -195,7 +195,7 @@
               </ul>
             </article>
             <article class="card destaque">
-              <div class="card-icon">✅</div>
+              <div class="card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M24 5 40 12v12c0 10-7 16-16 20C15 40 8 34 8 24V12Z"/><path d="m15 24 6 6 12-13"/></svg></div>
               <h3>Por que contratar?</h3><p class="service-intro">A estrutura cooperativa oferece organização, identificação e apoio operacional.</p>
               <ul>
                 <li>Cooperados fardados</li>
@@ -208,46 +208,6 @@
         </div>
       </div>
     </section>
-
-    <section id="parceiros" class="page-section">
-      <div class="secao soft">
-        <div class="container">
-          <div class="center">
-            <span class="tag verde">Clientes e parceiros</span>
-            <h2>Parceiros COOPEX</h2>
-            <p>Conheça também os parceiros que confiam na COOPEX. Clique nas logos para acessar a página de cada empresa, conhecer seus produtos, serviços e fortalecer quem caminha junto com a nossa cooperativa.</p>
-          </div>
-
-          {% if parceiros %}
-          <div class="partner-carousel-area" aria-label="Parceiros COOPEX">
-            <button class="partner-arrow partner-arrow-left" type="button" aria-label="Voltar parceiros">‹</button>
-
-            <div class="carousel-shell partner-carousel" id="partnerCarousel">
-              <div class="partner-track" id="partnerTrack">
-                {% for i in range(2) %}
-                  {% for p in parceiros %}
-                  <a class="partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">
-                    {% if p.logo %}
-                    <img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}">
-                    {% else %}
-                    <div class="partner-placeholder">{{ p.nome[:2].upper() }}</div>
-                    {% endif %}
-                    <span>{{ p.nome }}</span>
-                  </a>
-                  {% endfor %}
-                {% endfor %}
-              </div>
-            </div>
-
-            <button class="partner-arrow partner-arrow-right" type="button" aria-label="Avançar parceiros">›</button>
-          </div>
-          {% else %}
-          <p class="empty">Nenhum parceiro cadastrado ainda.</p>
-          {% endif %}
-        </div>
-      </div>
-    </section>
-
 
     <section id="anuncie" class="page-section">
       <div class="secao soft anuncie-section">
@@ -417,7 +377,7 @@
         </div>
       </div>
     </section>
-  </main>
+  </main><dialog class="glass-dialog all-partners-dialog" id="allPartners"><div class="glass-dialog-top"><strong>Empresas parceiras COOPEX</strong><button type="button" onclick="this.closest('dialog').close()" aria-label="Fechar">✕</button></div><div class="home-partner-track" tabindex="0" aria-label="Vitrine de parceiros, deslize para ver mais">{% for p in parceiros %}<a class="home-partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">{% if p.logo %}<img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}" loading="lazy" decoding="async">{% else %}<strong>{{ p.nome[:2].upper() }}</strong>{% endif %}<span>{{ p.nome }}</span></a>{% endfor %}</div></dialog>
 
   <button class="floating-delivery" type="button" onclick="abrirSolicitacao()" aria-label="Solicitar entrega">
     <span>🛵</span>
@@ -1663,5 +1623,75 @@ body.coopex-liquid.crystal-light{--lg-white:#123a69;--lg-muted:#466480;--lg-bord
 @media(max-width:1150px){.crystal-light .topo .container.nav{grid-template-columns:minmax(0,1fr) auto auto!important;gap:10px!important}.crystal-light .topo .links{background:linear-gradient(145deg,#fff,#dceeff)!important}.crystal-light .reviews-grid{grid-template-columns:1fr!important}.crystal-light #inicio .hero-copy{width:64%!important}}
 @media(max-width:680px){body.coopex-liquid.crystal-light{background-attachment:scroll!important}.crystal-light .topo .container.nav{padding:6px 9px!important;gap:7px!important}.crystal-light .topo .brand .coopex-brand-official{width:min(100%,190px)!important;max-height:55px!important}.crystal-light .topo .somos-wrap{padding:3px 5px!important;border-radius:10px!important}.crystal-light .topo .somos-wrap img{height:32px!important;width:57px!important}.crystal-light #inicio .hero-copy{width:100%!important;padding:23px 19px!important}.crystal-light #inicio .hero-copy h1{font-size:clamp(29px,8vw,42px)!important}.crystal-light #inicio .hero-bg{width:100%!important;height:clamp(185px,55vw,300px)!important}.crystal-light #inicio .hero-shade{background:linear-gradient(145deg,#ffffff5c,transparent)!important}.crystal-light .partners-heading{align-items:flex-start;flex-direction:column;gap:9px}.crystal-light .home-partners{padding:15px!important;border-radius:21px}.crystal-light .home-partner{height:96px;flex-basis:124px}.crystal-light .footer-royal{padding:14px 0 70px!important}.crystal-light .reviews-cards{grid-template-columns:1fr!important}.crystal-light .review-card{min-height:0!important}}
 </style>
-</body>
+<style id="prism-glass">
+body.prism{background:radial-gradient(ellipse at 15% 25%,#b3d7ff 0,transparent 44%),radial-gradient(ellipse at 90% 45%,#b3e0ff 0,transparent 45%),linear-gradient(130deg,#fff,#e3f0ff 55%,#f6fbff)!important;--lg-panel:linear-gradient(150deg,#ffffffc9 0%,#d8eaff65 42%,#ffffff91 65%,#b4d7ff62 100%);--lg-shadow:0 9px 25px #164e9f25,0 2px 4px #2363b425,inset 0 2px 2px #fff,inset 0 -4px 8px #6caae65c;--lg-border:#fff}
+body.prism:before{display:block!important;z-index:-1;background:radial-gradient(ellipse at 80% 15%,#ffffffc0,transparent 28%),linear-gradient(125deg,transparent 32%,#ffffff65 40%,transparent 52%);pointer-events:none}
+body.prism .topo .container.nav,body.prism .home-partners,body.prism .reviews-title,body.prism .review-card,body.prism #sobre .two-col>div:first-child,body.prism #sobre .info-grid-site article,body.prism #servicos .card,body.prism #trabalhe .work-info,body.prism #trabalhe .work-form,body.prism #anuncie .bau-ad-card,body.prism #anuncie .anuncio-info-grid article,body.prism #contato .contato-grid>div:first-child,body.prism .contato-card,body.prism .mapa-card{background:var(--lg-panel)!important;border:1.5px solid #fff!important;box-shadow:var(--lg-shadow)!important;backdrop-filter:blur(18px) saturate(150%)!important;-webkit-backdrop-filter:blur(18px) saturate(150%)!important}
+body.prism .topo .somos-wrap{background:linear-gradient(155deg,#fff8,#badcff80)!important;border:1px solid white!important;box-shadow:var(--lg-shadow)!important}
+body.prism .topo .somos-wrap img{filter:drop-shadow(0 2px 3px #164e9f26)!important}
+body.prism .btn.primary,body.prism .links button.active{background:linear-gradient(165deg,#b7e4ff 0%,#58a8fa 17%,#176bdd 48%,#0644b7 80%,#3278e3)!important;box-shadow:0 7px 15px #164db43b,inset 0 2px 2px #fff9,inset 0 -3px 6px #003e9d70!important}
+body.prism #servicos .card-icon{width:72px!important;height:72px!important;color:#fff!important;background:linear-gradient(155deg,#b9e6ff,#4393ef 42%,#1159c4)!important;border:1px solid #fff!important;box-shadow:0 10px 22px #246dc84a,inset 0 2px 3px #fff9,inset 0 -4px 7px #0645a155!important}
+body.prism .card-icon svg{width:41px;height:41px}
+body.prism .home-partner-track{scrollbar-width:none!important}
+body.prism .home-partner-track::-webkit-scrollbar{display:none}
+body.prism .home-partner{background:linear-gradient(145deg,#ffffffec,#e1efffb0)!important;border:1px solid white!important;box-shadow:0 3px 9px #396ab51f,inset 0 2px 2px #fff!important}
+body.prism .all-partners-dialog{width:min(1000px,94vw);max-width:1000px}
+body.prism .all-partners-dialog .home-partner-track{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));overflow:visible;gap:10px;padding:15px 0}
+body.prism .all-partners-dialog .home-partner{height:96px}
+body.prism .all-partners-dialog .home-partner img{height:60px}
+body.prism .footer-logos .footer-logo-somos{background:transparent!important}
+body.prism #sobre .texto-sobre-admin{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:5!important;overflow:hidden!important}
+body.prism #sobre .about-open{display:inline-block!important}
+@media(min-width:1050px) and (min-height:650px){
+body.prism{height:100dvh;min-height:0!important;overflow:hidden}
+body.prism .topo{flex:0 0 auto;padding:5px 0!important}
+body.prism .topo .container.nav{min-height:58px!important;padding:4px 16px!important;border-radius:19px!important}
+body.prism .topo .brand .coopex-brand-official{max-height:52px!important}
+body.prism .topo .somos-wrap img{height:32px!important}
+body.prism main{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important}
+body.prism main>.page-section.active{flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
+body.prism main>#inicio.active{display:grid!important;grid-template-rows:minmax(0,1fr) auto auto;gap:8px}
+body.prism #inicio .hero{padding:0!important;min-height:0!important;display:flex}
+body.prism #inicio .hero-container{height:100%;min-height:0}
+body.prism #inicio .hero-banner{height:100%!important;min-height:0!important;border-radius:25px!important}
+body.prism #inicio .hero-copy{padding:12px clamp(20px,2.5vw,40px)!important;justify-content:center!important}
+body.prism #inicio .hero-copy h1{font-size:clamp(24px,min(3.1vw,5.5vh),48px)!important;margin:6px 0!important;line-height:1.06!important}
+body.prism #inicio .hero-copy>p{font-size:clamp(12px,1.8vh,16px)!important;line-height:1.35!important;margin:0 0 8px!important}
+body.prism #inicio .selo-utilidade-box{margin-top:8px!important;padding:5px 10px!important}
+body.prism #inicio .selo-utilidade-box img{width:36px!important;height:36px!important}
+body.prism #inicio .selo-utilidade-box p{font-size:10.5px!important}
+body.prism .tag{padding:4px 9px!important;font-size:11px!important}
+body.prism .btn{min-height:35px!important;padding:8px 14px!important;font-size:12px!important}
+body.prism .home-reviews{padding:0!important;min-height:0}
+body.prism .reviews-title,body.prism .review-card{min-height:0!important;height:clamp(90px,16vh,135px)!important;padding:8px 12px!important;border-radius:17px!important;overflow:hidden}
+body.prism .reviews-title h2{font-size:18px!important;margin:3px 0!important}
+body.prism .reviews-title p,body.prism .review-card p{font-size:12px!important;line-height:1.3!important}
+body.prism .review-card p{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:3!important;overflow:hidden!important}
+body.prism .avatar-google,body.prism .avatar-google-img{width:27px!important;height:27px!important}
+body.prism .stars{margin:2px 0!important;font-size:13px!important}
+body.prism .home-partners{margin-block:0!important;padding:8px 13px!important;border-radius:19px!important}
+body.prism .partners-heading{margin-bottom:6px!important}
+body.prism .partners-heading h2{font-size:18px!important;margin:0!important}
+body.prism .eyebrow{font-size:9px!important}
+body.prism .home-partner-track{padding:2px 2px 3px!important}
+body.prism .home-partner{height:clamp(56px,9.5vh,86px)!important;flex-basis:clamp(100px,10vw,155px)!important;padding:4px!important}
+body.prism .home-partner img{height:clamp(29px,5.8vh,55px)!important}
+body.prism .home-partner span{font-size:10px!important}
+body.prism .footer-royal{padding:3px 0!important}
+body.prism .footer-royal-grid{min-height:30px!important}
+body.prism .footer-logos .footer-logo-coopex,body.prism .footer-logos .footer-logo-somos{max-height:29px!important}
+body.prism .floating-delivery{bottom:7px!important;min-height:34px!important;padding:6px 10px!important}
+body.prism main>.page-section:not(#inicio)>.secao{padding:12px 0!important;overflow:auto!important;min-height:0!important}
+body.prism #sobre .two-col>div:first-child{padding:18px!important}
+body.prism #sobre .stats-modern .stat-card{min-height:65px!important;padding-block:8px!important}
+body.prism #sobre .info-grid-site{margin-top:12px!important}
+body.prism #sobre .info-grid-site article{padding:12px!important}
+body.prism #servicos .card{min-height:0!important;padding:24px!important}
+body.prism #servicos .card-icon{margin-bottom:12px!important}
+body.prism #anuncie .bau-ad-card img{height:clamp(80px,18vh,180px)!important}
+body.prism #trabalhe .bau-img{height:clamp(70px,15vh,125px)!important}
+body.prism #contato .mapa-card iframe{height:clamp(140px,30vh,300px)!important}
+}
+@media(max-width:1049px),(max-height:649px){body.prism{overflow-x:hidden!important}body.prism #sobre .texto-sobre-admin{-webkit-line-clamp:6!important}}
+</style><script>document.addEventListener('DOMContentLoaded',()=>{if(location.hash==='#parceiros')mostrarPagina('inicio');const t=document.querySelector('#inicio .home-partner-track');if(t&&!matchMedia('(prefers-reduced-motion: reduce)').matches){let pause=false;t.addEventListener('mouseenter',()=>pause=true);t.addEventListener('mouseleave',()=>pause=false);t.addEventListener('focusin',()=>pause=true);t.addEventListener('focusout',()=>pause=false);setInterval(()=>{if(!pause&&!document.hidden&&document.querySelector('#inicio.active')){if(t.scrollLeft>=t.scrollWidth-t.clientWidth-3)t.scrollLeft=0;else t.scrollLeft+=1}},50)}})</script></body>
 </html>
