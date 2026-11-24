@@ -16,6 +16,32 @@ from templates_cf import TEMPLATES
 from jinja2 import DictLoader
 
 app = Flask(__name__, static_folder=None)
+# SEO: expose the existing COOPEX icon at a stable crawlable URL.
+import re as _seo_re
+from urllib.parse import unquote as _seo_unquote
+
+_SEO_FAVICON_MATCH = _seo_re.search(r'href="data:image/svg\+xml,([^"]+)"', TEMPLATES["index.html"])
+_SEO_FAVICON_SVG = _seo_unquote(_SEO_FAVICON_MATCH.group(1)) if _SEO_FAVICON_MATCH else ""
+_SEO_FAVICON_URL = "https://www.coopexentregas.com.br/favicon.svg"
+for _seo_name, _seo_html in list(TEMPLATES.items()):
+    if _SEO_FAVICON_SVG:
+        _seo_html = _seo_re.sub(r'href="data:image/svg\+xml,[^"]+"', 'href="' + _SEO_FAVICON_URL + '"', _seo_html)
+    if _seo_name == "index.html":
+        _seo_html = _seo_html.replace('"@type":"Organization","name":"COOPEX Entregas"', '"@type":"Organization","logo":"https://www.coopexentregas.com.br/static/img/coopex-oficial-v2.webp","sameAs":["https://www.instagram.com/coopex.entregas/"],"name":"COOPEX Entregas"', 1)
+        _seo_html = _seo_html.replace('</head>', '<meta property="og:image" content="https://www.coopexentregas.com.br/static/img/coopex-oficial-v2.webp"></head>', 1)
+    if _seo_name == "instagram_card.html" or "privacidade" in _seo_name:
+        _seo_path = "/card-instagram" if _seo_name == "instagram_card.html" else "/politica-de-privacidade"
+        if not _seo_re.search(r'rel=["\']canonical["\']', _seo_html):
+            _seo_html = _seo_html.replace('</head>', '<link rel="canonical" href="https://www.coopexentregas.com.br' + _seo_path + '"></head>', 1)
+    TEMPLATES[_seo_name] = _seo_html
+
+@app.route('/favicon.svg')
+def favicon_publico():
+    if not _SEO_FAVICON_SVG:
+        abort(404)
+    return Response(_SEO_FAVICON_SVG, mimetype='image/svg+xml', headers={'Cache-Control': 'public, max-age=86400'})
+
+
 app.jinja_loader = DictLoader(TEMPLATES)
 app.config['SECRET_KEY'] = 'troque-esta-chave-no-cloudflare'
 app.config['MAX_CONTENT_LENGTH'] = 12 * 1024 * 1024
