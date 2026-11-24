@@ -2671,3 +2671,9 @@ html body .topo .container.nav a.somos-wrap{pointer-events:auto!important;cursor
 html body .topo a.somos-wrap img{pointer-events:none!important}
 html body a[href="https://www.somos.coop.br/"]{pointer-events:auto!important;cursor:pointer!important}
 </style></head>""", 1)
+
+# Preserve the administrator's uploaded background over the preset glass palette.
+TEMPLATES["instagram_card.html"] = TEMPLATES["instagram_card.html"].replace("</head>", """{% if card.card_fundo_imagem %}<style id="card-custom-background">
+html body .page{background:linear-gradient(180deg,rgba(5,22,48,.12),rgba(5,22,48,.25)),url('{{ arquivo_url(card.card_fundo_imagem) }}') center center / cover no-repeat!important}
+html body .page:before{background:linear-gradient(125deg,transparent 20%,rgba(213,241,255,.07) 44%,transparent 64%)!important}
+</style>{% endif %}</head>""",1)
