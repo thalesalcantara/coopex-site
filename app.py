@@ -1738,7 +1738,7 @@ def admin_dashboard():
     if not login_required():
         return redirect(url_for('admin_login'))
 
-    parceiros = _objs(_rows('SELECT * FROM partner ORDER BY ordem ASC, nome ASC'))
+    parceiros = _objs(_rows('SELECT * FROM partner ORDER BY criado_em DESC, id DESC'))
     avaliacoes = _objs(_rows('SELECT * FROM review ORDER BY ordem ASC, criado_em DESC'))
     candidatos = _objs(_rows('SELECT * FROM candidato ORDER BY criado_em DESC LIMIT 100'))
     contador = _one('SELECT total_acessos FROM site_access LIMIT 1')
