@@ -68,7 +68,17 @@ CARD_DEFAULTS = {
     'card_cor_texto': '#FFFFFF',
     'card_cor_botao': '#FFFFFF',
     'card_cor_texto_botao': '#0047B8',
-    'card_estilo': 'ondas',
+    'card_estilo': 'vidro',
+    'card_colunas': '2',
+    'card_raio': '19',
+    'card_altura_botao': '68',
+    'card_avatar_tamanho': '118',
+    'card_intensidade_vidro': '78',
+    'card_rodape': '',
+    'card_mostrar_logo': '1',
+    'card_mostrar_localizacao': '1',
+    'card_mostrar_avatar': '1',
+    'card_mostrar_rodape': '1',
     'card_foto': '',
     'card_logo': '',
     'card_fundo_imagem': '',
@@ -1821,6 +1831,16 @@ def salvar_card_configuracoes():
     ]
     for chave in campos_texto:
         set_config(chave, request.form.get(chave, CARD_DEFAULTS.get(chave, '')))
+    for chave, minimo, maximo in [('card_colunas',1,3), ('card_raio',10,35), ('card_altura_botao',48,100), ('card_avatar_tamanho',80,160), ('card_intensidade_vidro',30,100)]:
+        try:
+            numero = int(request.form.get(chave, CARD_DEFAULTS[chave]))
+        except (ValueError, TypeError):
+            numero = int(CARD_DEFAULTS[chave])
+        set_config(chave, str(max(minimo, min(maximo, numero))))
+    set_config('card_rodape', request.form.get('card_rodape', '')[:180])
+    for chave in ('card_mostrar_logo','card_mostrar_localizacao','card_mostrar_avatar','card_mostrar_rodape'):
+        set_config(chave, '1' if request.form.get(chave) == 'on' else '0')
+    set_config('card_estilo', 'vidro')
     set_config('card_mostrar_video', '1' if request.form.get('card_mostrar_video') == 'on' else '0')
 
     for campo, prefixo, allowed in [
