@@ -1,51 +1,37 @@
-function mostrarPagina(id){
-  document.querySelectorAll('.page-section').forEach(sec => {
-    sec.classList.toggle('active', sec.id === id);
-  });
-
-  document.querySelectorAll('.tab-link').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.page === id);
-  });
-
-  const avaliacoes = document.getElementById('avaliacoesGoogle');
-
-  if (avaliacoes) {
-    if (id === 'inicio' || id === 'sobre') {
-      avaliacoes.style.display = 'block';
-    } else {
-      avaliacoes.style.display = 'none';
-    }
-  }
-
-  document.body.classList.remove('menu-open');
-
-  if (history.replaceState) {
-    history.replaceState(null, '', '#' + id);
-  }
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
+const paginasCOOPEX = {"inicio":"/","sobre":"/sobre","servicos":"/servicos","anuncie":"/anuncie","trabalhe":"/trabalhe","contato":"/contato"};
+function paginaAtual(){
+  const path = location.pathname.replace(/\/+$/, '') || '/';
+  const old = location.hash.slice(1);
+  if(path === '/' && Object.hasOwn(paginasCOOPEX,old)) return old;
+  return Object.keys(paginasCOOPEX).find(id=>paginasCOOPEX[id]===path)||'inicio';
 }
-
-document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('.tab-link').forEach(btn => {
-    btn.addEventListener('click', function(){
-      const page = this.dataset.page || 'inicio';
-      mostrarPagina(page);
-    });
-  });
-
-  const hash = (window.location.hash || '').replace('#', '');
-
-  if (hash && document.getElementById(hash)) {
-    mostrarPagina(hash);
-  } else {
-    mostrarPagina('inicio');
+function mostrarPagina(id,modo='push'){
+  if(!Object.hasOwn(paginasCOOPEX,id)) id='inicio';
+  document.querySelectorAll('.page-section').forEach(sec=>sec.classList.toggle('active',sec.id===id));
+  document.querySelectorAll('.tab-link').forEach(btn=>btn.classList.toggle('active',btn.dataset.page===id));
+  const avaliacoes=document.getElementById('avaliacoesGoogle');
+  if(avaliacoes) avaliacoes.style.display=id==='inicio'?'block':'none';
+  document.body.classList.remove('menu-open');
+  const path=paginasCOOPEX[id]+location.search;
+  if(location.pathname+location.search+location.hash!==path && modo!=='none'){
+    if(modo==='replace')history.replaceState({pagina:id},'',path);
+    else history.pushState({pagina:id},'',path);
   }
+  const canonical=document.querySelector('link[rel="canonical"]');
+  if(canonical)canonical.href='https://www.coopexentregas.com.br'+paginasCOOPEX[id];
+  const labels={inicio:'Entregas em Natal/RN',sobre:'Sobre',servicos:'Serviços',anuncie:'Divulgue sua marca',trabalhe:'Trabalhe conosco',contato:'Contato'};
+  document.title='COOPEX Entregas | '+labels[id];
+  window.scrollTo(0,0);
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.tab-link').forEach(btn=>btn.addEventListener('click',function(e){
+    if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
+    e.preventDefault();mostrarPagina(this.dataset.page||'inicio');
+  }));
+  mostrarPagina(paginaAtual(),'replace');
 });
-
+window.addEventListener('popstate',()=>mostrarPagina(paginaAtual(),'replace'));
+window.addEventListener('hashchange',()=>{if(location.hash)mostrarPagina(paginaAtual(),'replace')});
 function abrirSolicitacao(){
   const modal = document.getElementById('modalSolicitacao');
   const iframe = document.getElementById('iframeSolicitacao');

@@ -265,7 +265,7 @@ button{font-family:inherit}
   z-index:3;
 }
 
-.links button{
+.links :is(button,a){
   border:1px solid rgba(255,255,255,.30);
   background:rgba(255,255,255,.10);
   color:#fff;
@@ -278,8 +278,8 @@ button{font-family:inherit}
   white-space:nowrap;
 }
 
-.links button:hover,
-.links button.active{
+.links :is(button,a):hover,
+.links :is(button,a).active{
   background:#fff;
   color:#0b4bbb;
 }
@@ -428,7 +428,7 @@ footer{border-top:1px solid var(--borda);background:#f8fbff;padding:18px 0;color
   .nav{grid-template-columns:220px 1fr auto}
   .brand img{height:68px;max-width:220px}
   .somos-wrap{display:none}
-  .links button{font-size:13px;padding:9px 10px}
+  .links :is(button,a){font-size:13px;padding:9px 10px}
 }
 @media(max-width:980px){
   .container{width:min(94%,94%)}
@@ -436,7 +436,7 @@ footer{border-top:1px solid var(--borda);background:#f8fbff;padding:18px 0;color
   .brand img{height:58px;max-width:190px}
   .menu-btn{display:block;justify-self:end}
   .links{display:none;position:absolute;left:4%;right:4%;top:82px;background:#fff;border:1px solid var(--borda);border-radius:18px;padding:16px;box-shadow:var(--sombra);flex-direction:column;align-items:stretch;gap:10px}
-  .links button{color:#0b3c88;background:#f3f8ff;border-color:#dbeafe;font-size:14px}
+  .links :is(button,a){color:#0b3c88;background:#f3f8ff;border-color:#dbeafe;font-size:14px}
   .menu-open .links{display:flex}
   .hero{padding:24px 0 34px}
   .hero-banner{min-height:560px}
@@ -720,7 +720,7 @@ footer{border-top:1px solid var(--borda);background:#f8fbff;padding:18px 0;color
     padding-left:0;
   }
 
-  .links button{
+  .links :is(button,a){
     font-size:13px;
     padding:9px 10px;
   }
@@ -938,13 +938,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
   margin:0;padding:0;gap:3px;min-width:0;justify-content:flex-end;
   flex-wrap:nowrap;
 }
-.links button{
+.links :is(button,a){
   background:transparent;color:#174174;border:1px solid transparent;
   font-size:clamp(11px,.84vw,13px);font-weight:700;
   border-radius:12px;padding:10px 9px;white-space:nowrap;
   transition:background .2s,color .2s,box-shadow .2s
 }
-.links button:hover,.links button.active{
+.links :is(button,a):hover,.links :is(button,a).active{
   background:#fff;color:#0751ba;
   border-color:#dce9f8;box-shadow:0 3px 12px rgba(9,68,141,.08)
 }
@@ -1102,7 +1102,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
   .somos-wrap{position:static;display:flex;transform:none}
   .somos-wrap img{height:37px}
   .links{padding:0;margin:0}
-  .links button{font-size:12px;padding:8px 7px}
+  .links :is(button,a){font-size:12px;padding:8px 7px}
 }
 @media (max-width:980px){
   .container{width:calc(100% - 34px)}
@@ -1119,7 +1119,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
     -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)
   }
   body.menu-open .links{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-  .links button{min-height:44px;text-align:center;color:#123e78;font-size:13px;padding:10px;white-space:normal}
+  .links :is(button,a){min-height:44px;text-align:center;color:#123e78;font-size:13px;padding:10px;white-space:normal}
   .hero-banner{height:auto;min-height:0;aspect-ratio:auto}
   .hero-copy{min-height:430px;height:auto;width:min(550px,74%);padding:26px}
   .hero-copy h1{font-size:clamp(31px,5vw,45px)}
@@ -1413,7 +1413,7 @@ def static_asset(filename):
             headers={'Cache-Control': 'no-cache, must-revalidate'}
         )
     if filename == 'site.js':
-        return Response("function mostrarPagina(id){\n  document.querySelectorAll('.page-section').forEach(sec => {\n    sec.classList.toggle('active', sec.id === id);\n  });\n\n  document.querySelectorAll('.tab-link').forEach(btn => {\n    btn.classList.toggle('active', btn.dataset.page === id);\n  });\n\n  const avaliacoes = document.getElementById('avaliacoesGoogle');\n\n  if (avaliacoes) {\n    if (id === 'inicio' || id === 'sobre') {\n      avaliacoes.style.display = 'block';\n    } else {\n      avaliacoes.style.display = 'none';\n    }\n  }\n\n  document.body.classList.remove('menu-open');\n\n  if (history.replaceState) {\n    history.replaceState(null, '', '#' + id);\n  }\n\n  window.scrollTo({\n    top: 0,\n    behavior: 'smooth'\n  });\n}\n\ndocument.addEventListener('DOMContentLoaded', function(){\n  document.querySelectorAll('.tab-link').forEach(btn => {\n    btn.addEventListener('click', function(){\n      const page = this.dataset.page || 'inicio';\n      mostrarPagina(page);\n    });\n  });\n\n  const hash = (window.location.hash || '').replace('#', '');\n\n  if (hash && document.getElementById(hash)) {\n    mostrarPagina(hash);\n  } else {\n    mostrarPagina('inicio');\n  }\n});\n\nfunction abrirSolicitacao(){\n  const modal = document.getElementById('modalSolicitacao');\n  const iframe = document.getElementById('iframeSolicitacao');\n\n  if (!modal || !iframe) return;\n\n  modal.classList.add('aberto');\n  modal.setAttribute('aria-hidden', 'false');\n\n  if (!iframe.src) {\n    iframe.src = iframe.dataset.src;\n  }\n}\n\nfunction fecharSolicitacao(){\n  const modal = document.getElementById('modalSolicitacao');\n\n  if (!modal) return;\n\n  modal.classList.remove('aberto');\n  modal.setAttribute('aria-hidden', 'true');\n}\n\ndocument.addEventListener('keydown', function(e){\n  if (e.key === 'Escape') {\n    fecharSolicitacao();\n  }\n});\n", mimetype='application/javascript',
+        return Response("const paginasCOOPEX = {\"inicio\":\"/\",\"sobre\":\"/sobre\",\"servicos\":\"/servicos\",\"anuncie\":\"/anuncie\",\"trabalhe\":\"/trabalhe\",\"contato\":\"/contato\"};\nfunction paginaAtual(){\n  const path = location.pathname.replace(/\\/+$/, '') || '/';\n  const old = location.hash.slice(1);\n  if(path === '/' && Object.hasOwn(paginasCOOPEX,old)) return old;\n  return Object.keys(paginasCOOPEX).find(id=>paginasCOOPEX[id]===path)||'inicio';\n}\nfunction mostrarPagina(id,modo='push'){\n  if(!Object.hasOwn(paginasCOOPEX,id)) id='inicio';\n  document.querySelectorAll('.page-section').forEach(sec=>sec.classList.toggle('active',sec.id===id));\n  document.querySelectorAll('.tab-link').forEach(btn=>btn.classList.toggle('active',btn.dataset.page===id));\n  const avaliacoes=document.getElementById('avaliacoesGoogle');\n  if(avaliacoes) avaliacoes.style.display=id==='inicio'?'block':'none';\n  document.body.classList.remove('menu-open');\n  const path=paginasCOOPEX[id]+location.search;\n  if(location.pathname+location.search+location.hash!==path && modo!=='none'){\n    if(modo==='replace')history.replaceState({pagina:id},'',path);\n    else history.pushState({pagina:id},'',path);\n  }\n  const canonical=document.querySelector('link[rel=\"canonical\"]');\n  if(canonical)canonical.href='https://www.coopexentregas.com.br'+paginasCOOPEX[id];\n  const labels={inicio:'Entregas em Natal/RN',sobre:'Sobre',servicos:'Serviços',anuncie:'Divulgue sua marca',trabalhe:'Trabalhe conosco',contato:'Contato'};\n  document.title='COOPEX Entregas | '+labels[id];\n  window.scrollTo(0,0);\n}\ndocument.addEventListener('DOMContentLoaded',()=>{\n  document.querySelectorAll('.tab-link').forEach(btn=>btn.addEventListener('click',function(e){\n    if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;\n    e.preventDefault();mostrarPagina(this.dataset.page||'inicio');\n  }));\n  mostrarPagina(paginaAtual(),'replace');\n});\nwindow.addEventListener('popstate',()=>mostrarPagina(paginaAtual(),'replace'));\nwindow.addEventListener('hashchange',()=>{if(location.hash)mostrarPagina(paginaAtual(),'replace')});\nfunction abrirSolicitacao(){\n  const modal = document.getElementById('modalSolicitacao');\n  const iframe = document.getElementById('iframeSolicitacao');\n\n  if (!modal || !iframe) return;\n\n  modal.classList.add('aberto');\n  modal.setAttribute('aria-hidden', 'false');\n\n  if (!iframe.src) {\n    iframe.src = iframe.dataset.src;\n  }\n}\n\nfunction fecharSolicitacao(){\n  const modal = document.getElementById('modalSolicitacao');\n\n  if (!modal) return;\n\n  modal.classList.remove('aberto');\n  modal.setAttribute('aria-hidden', 'true');\n}\n\ndocument.addEventListener('keydown', function(e){\n  if (e.key === 'Escape') {\n    fecharSolicitacao();\n  }\n});\n", mimetype='application/javascript',
                         headers={'Cache-Control': 'no-store'})
     return _asset_response(filename)
 
@@ -1464,14 +1464,26 @@ def arquivo_db(file_id):
 
 
 @app.route('/')
+@app.route('/sobre')
+@app.route('/servicos')
+@app.route('/anuncie')
+@app.route('/trabalhe')
+@app.route('/contato')
 def index():
+    pagina = request.path.strip('/') or 'inicio'
     if not session.get('site_visitou'):
         _db_run('UPDATE site_access SET total_acessos = COALESCE(total_acessos, 0) + 1, atualizado_em = ? WHERE id = (SELECT id FROM site_access LIMIT 1)', agora_utc_iso())
         session['site_visitou'] = True
 
     parceiros = _objs(_rows('SELECT * FROM partner WHERE ativo = 1 ORDER BY ordem ASC, nome ASC'))
     avaliacoes = _objs(_rows('SELECT * FROM review WHERE ativo = 1 ORDER BY ordem ASC, criado_em DESC'))
-    return render_cf('index.html', parceiros=parceiros, avaliacoes=avaliacoes)
+    return render_cf('index.html', parceiros=parceiros, avaliacoes=avaliacoes, pagina=pagina, canonical_path=request.path)
+
+
+@app.route('/inicio')
+@app.route('/parceiros')
+def antigo_inicio():
+    return redirect('/', code=301)
 
 
 @app.route('/trabalhe-conosco/enviar', methods=['POST'])
@@ -1485,27 +1497,27 @@ def enviar_curriculo():
 
     if not nome or not data_nascimento_str or not escolaridade or not email:
         flash('Preencha todos os campos obrigatórios para enviar o currículo.', 'erro')
-        return redirect(url_for('index') + '#trabalhe')
+        return redirect('/trabalhe')
 
     try:
         nascimento = datetime.strptime(data_nascimento_str, '%Y-%m-%d').date()
     except ValueError:
         flash('Data de nascimento inválida.', 'erro')
-        return redirect(url_for('index') + '#trabalhe')
+        return redirect('/trabalhe')
 
     idade = calcular_idade(nascimento)
     if idade < 21:
         flash('O cadastro só pode ser enviado por candidatos com 21 anos ou mais.', 'erro')
-        return redirect(url_for('index') + '#trabalhe')
+        return redirect('/trabalhe')
 
     if not atividade:
         flash('Para enviar, marque que possui atividade remunerada na CNH.', 'erro')
-        return redirect(url_for('index') + '#trabalhe')
+        return redirect('/trabalhe')
 
     curriculo = salvar_upload(arquivo, 'curriculo', ALLOWED_CURRICULO_EXTENSIONS)
     if not curriculo:
         flash('Envie o currículo em PDF, DOC, DOCX ou imagem.', 'erro')
-        return redirect(url_for('index') + '#trabalhe')
+        return redirect('/trabalhe')
 
     _db_run('''INSERT INTO candidato
                (nome_completo, data_nascimento, idade, escolaridade, email,
@@ -1513,7 +1525,7 @@ def enviar_curriculo():
                VALUES (?, ?, ?, ?, ?, 1, ?, ?)''',
             nome, nascimento.isoformat(), idade, escolaridade, email, curriculo, agora_utc_iso())
     flash('Currículo enviado com sucesso. A COOPEX analisará as informações.', 'ok')
-    return redirect(url_for('index') + '#trabalhe')
+    return redirect('/trabalhe')
 
 
 @app.route('/politica-de-privacidade')
