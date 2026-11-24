@@ -1189,7 +1189,9 @@ def render_cf(template_name, **context):
     # Evita embutir ~CSS volumoso em toda resposta HTML.
     # Os templates ja carregam /static/style.css, que possui cache.
     response = make_response(render_template(template_name, **context))
-    response.headers['Cache-Control'] = 'no-store, max-age=0'
+    response.headers['Cache-Control'] = 'private, no-store, no-cache, max-age=0, must-revalidate'
+    response.headers['CDN-Cache-Control'] = 'no-store'
+    response.headers['Cloudflare-CDN-Cache-Control'] = 'no-store'
     return response
 
 def allowed_file(filename, allowed):
@@ -1873,9 +1875,30 @@ def salvar_configuracoes():
         'imagem_destaque', 'foto_bau', 'anuncio_bau_frente',
         'anuncio_bau_lado', 'anuncio_bau_traseira'
     }
-    for chave in DEFAULTS:
-        if chave not in upload_config_keys and chave in request.form:
-            set_config(chave, request.form[chave])
+    # Salvar somente valores realmente alterados, em uma operação D1.
+    atuais = config_dict()
+    enviados = {chave: request.form[chave] for chave in DEFAULTS
+                if chave not in upload_config_keys and chave in request.form}
+    alterados = {chave: valor for chave, valor in enviados.items()
+                 if atuais.get(chave) != valor}
+    if alterados:
+        try:
+            placeholders = ', '.join(['(?, ?)'] * len(alterados))
+            parametros = [item for par in alterados.items() for item in par]
+            result = _db_run(
+                'INSERT INTO site_config (chave, valor) VALUES ' + placeholders +
+                ' ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor',
+                *parametros
+            )
+            if not result.success:
+                raise RuntimeError('D1 rejected configuration update')
+            gravados = config_dict()
+            if any(gravados.get(k) != v for k, v in alterados.items()):
+                raise RuntimeError('Configuration verification failed')
+        except Exception as exc:
+            print(f'Site configuration save failed: {type(exc).__name__}')
+            flash('Não foi possível confirmar a atualização das informações. Confira os valores e tente novamente.', 'erro')
+            return redirect(url_for('admin_dashboard'))
 
     for campo, prefixo in [
         ('imagem_destaque', 'destaque'),
@@ -1884,12 +1907,20 @@ def salvar_configuracoes():
         ('anuncio_bau_lado', 'anuncio_lado'),
         ('anuncio_bau_traseira', 'anuncio_traseira'),
     ]:
-        valor = salvar_upload(request.files.get(campo), prefixo, ALLOWED_IMAGE_EXTENSIONS)
-        if valor:
-            antigo = get_config(campo, '')
-            set_config(campo, valor)
-            if antigo and antigo != valor:
-                excluir_arquivo_referencia(antigo)
+        arquivo = request.files.get(campo)
+        if not arquivo or not arquivo.filename:
+            continue
+        valor = salvar_upload(arquivo, prefixo, ALLOWED_IMAGE_EXTENSIONS)
+        if not valor:
+            flash('Não foi possível salvar a imagem de ' + campo + '. A imagem anterior foi preservada.', 'erro')
+            return redirect(url_for('admin_dashboard'))
+        antigo = get_config(campo, '')
+        set_config(campo, valor)
+        if get_config(campo) != valor:
+            flash('Não foi possível confirmar a nova imagem de ' + campo + '.', 'erro')
+            return redirect(url_for('admin_dashboard'))
+        if antigo and antigo != valor:
+            excluir_arquivo_referencia(antigo)
 
     flash('Informações do site atualizadas com sucesso.', 'ok')
     return redirect(url_for('admin_dashboard'))
