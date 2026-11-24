@@ -7,7 +7,7 @@
   <meta name="description" content="Site institucional da COOPEX Entregas. Soluções de entrega para empresas, restaurantes, farmácias e estabelecimentos.">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="coopex-liquid crystal-light prism">
+<body class="coopex-liquid crystal-light prism luminous">
   <header class="topo">
     <div class="container nav">
       <a class="brand tab-link{% if pagina|default('inicio') == 'inicio' %} active{% endif %}" href="/" data-page="inicio" aria-label="COOPEX Entregas">
@@ -21,13 +21,13 @@
       <button class="menu-btn" type="button" onclick="document.body.classList.toggle('menu-open')" aria-label="Abrir menu" aria-controls="mainNavigation" aria-expanded="false">☰</button>
 
       <nav class="links" id="mainNavigation" aria-label="Menu principal">
-        <a class="tab-link{% if pagina|default('inicio') == 'inicio' %} active{% endif %}" href="/" data-page="inicio">Início</a>
-        <a class="tab-link{% if pagina|default('inicio') == 'sobre' %} active{% endif %}" href="/sobre" data-page="sobre">Sobre</a>
-        <a class="tab-link{% if pagina|default('inicio') == 'servicos' %} active{% endif %}" href="/servicos" data-page="servicos">Serviços</a>
+        <a class="tab-link{% if pagina|default('inicio') == 'inicio' %} active{% endif %}" href="/" data-page="inicio"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></svg><span>Início</span></a>
+        <a class="tab-link{% if pagina|default('inicio') == 'sobre' %} active{% endif %}" href="/sobre" data-page="sobre"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="9" r="3"/><path d="M5 19a7 7 0 0 1 14 0"/></svg><span>Sobre</span></a>
+        <a class="tab-link{% if pagina|default('inicio') == 'servicos' %} active{% endif %}" href="/servicos" data-page="servicos"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>Serviços</span></a>
         
-        <a class="tab-link{% if pagina|default('inicio') == 'anuncie' %} active{% endif %}" href="/anuncie" data-page="anuncie">Divulgue sua marca</a>
-        <a class="tab-link{% if pagina|default('inicio') == 'trabalhe' %} active{% endif %}" href="/trabalhe" data-page="trabalhe">Trabalhe conosco</a>
-        <a class="tab-link{% if pagina|default('inicio') == 'contato' %} active{% endif %}" href="/contato" data-page="contato">Contato</a>
+        <a class="tab-link{% if pagina|default('inicio') == 'anuncie' %} active{% endif %}" href="/anuncie" data-page="anuncie"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M9 7V4h6v3m-3 11 4-5-4-2-4 2z"/></svg><span>Divulgue sua marca</span></a>
+        <a class="tab-link{% if pagina|default('inicio') == 'trabalhe' %} active{% endif %}" href="/trabalhe" data-page="trabalhe"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3z"/></svg><span>Trabalhe conosco</span></a>
+        <a class="tab-link{% if pagina|default('inicio') == 'contato' %} active{% endif %}" href="/contato" data-page="contato"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h5l2 6-3 2a15 15 0 0 0 5 5l2-3 6 2v5c-9 4-21-8-17-17Z"/></svg><span>Contato</span></a>
       </nav>
     </div>
   </header>
@@ -54,7 +54,7 @@
               </div>
             {% endif %}
 
-            <div class="hero-shade"></div>
+            <div class="hero-shade"></div><div class="hero-prism-ribbon" aria-hidden="true"></div>
 
             <div class="hero-copy">
               <span class="tag">Cooperativa desde 2002 • Natal/RN</span>
@@ -113,7 +113,7 @@
         </div>
       </div>
     </section>
-{% if parceiros %}<section class="home-partners container" aria-label="Empresas parceiras"><div class="partners-heading"><div><span class="eyebrow">CONEXÕES QUE GERAM CONFIANÇA</span><h2>Empresas que caminham com a COOPEX</h2></div><button type="button" class="see-partners" onclick="document.getElementById('allPartners').showModal()">Todos os parceiros ↗</button></div><div class="home-partner-track" tabindex="0" aria-label="Vitrine de parceiros, deslize para ver mais">{% for p in parceiros %}<a class="home-partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">{% if p.logo %}<img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}" loading="lazy" decoding="async">{% else %}<strong>{{ p.nome[:2].upper() }}</strong>{% endif %}<span>{{ p.nome }}</span></a>{% endfor %}</div></section>{% endif %}
+{% if parceiros %}<section class="home-partners container" aria-label="Empresas parceiras"><div class="partners-heading"><div><span class="eyebrow">CONEXÕES QUE GERAM CONFIANÇA</span><h2>Empresas que caminham com a COOPEX</h2></div><button type="button" class="see-partners" onclick="document.getElementById('allPartners').showModal()">Todos os parceiros ↗</button></div><div class="partner-loop-shell"><button class="loop-arrow loop-prev" type="button" aria-label="Parceiro anterior">‹</button><div class="home-partner-track" tabindex="0" aria-label="Vitrine de parceiros, deslize para ver mais"><div class="loop-belt"><div class="loop-set">{% for p in parceiros %}<a class="home-partner" href="{{ url_for('parceiro_ir', partner_id=p.id) }}" target="_blank" rel="noopener" title="{{ p.nome }}">{% if p.logo %}<img src="{{ arquivo_url(p.logo) }}" alt="{{ p.nome }}" loading="lazy" decoding="async">{% else %}<strong>{{ p.nome[:2].upper() }}</strong>{% endif %}<span>{{ p.nome }}</span></a>{% endfor %}</div></div></div><button class="loop-arrow loop-next" type="button" aria-label="Próximo parceiro">›</button></div></section>{% endif %}
     </section>
 
     <section id="sobre" class="page-section{% if pagina|default('inicio') == 'sobre' %} active{% endif %}">
@@ -1693,5 +1693,58 @@ body.prism #trabalhe .bau-img{height:clamp(70px,15vh,125px)!important}
 body.prism #contato .mapa-card iframe{height:clamp(140px,30vh,300px)!important}
 }
 @media(max-width:1049px),(max-height:649px){body.prism{overflow-x:hidden!important}body.prism #sobre .texto-sobre-admin{-webkit-line-clamp:6!important}}
-</style><script>document.addEventListener('DOMContentLoaded',()=>{if(location.hash==='#parceiros')mostrarPagina('inicio');const t=document.querySelector('#inicio .home-partner-track');if(t&&!matchMedia('(prefers-reduced-motion: reduce)').matches){let pause=false;t.addEventListener('mouseenter',()=>pause=true);t.addEventListener('mouseleave',()=>pause=false);t.addEventListener('focusin',()=>pause=true);t.addEventListener('focusout',()=>pause=false);setInterval(()=>{if(!pause&&!document.hidden&&document.querySelector('#inicio.active')){if(t.scrollLeft>=t.scrollWidth-t.clientWidth-3)t.scrollLeft=0;else t.scrollLeft+=1}},50)}})</script><style>.links a.tab-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;white-space:nowrap}.brand.tab-link{text-decoration:none}</style></body>
+</style><style>.links a.tab-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;white-space:nowrap}.brand.tab-link{text-decoration:none}</style><style id="luminous-reference">
+body.prism.luminous{--glass:linear-gradient(155deg,#ffffffeb 0%,#d6e8ff9c 23%,#a7ceff7a 50%,#eef7ffd9 76%,#b3d6ffb0 100%);--edge:0 8px 17px #1649a542,0 2px 5px #1751a42e,inset 0 2px 2px #fff,inset 0 -2px 4px #8cecffc7,inset 2px 0 3px #ffffffa8;--royal:linear-gradient(175deg,#87d8ff 0%,#2684ff 16%,#084be2 35%,#0017b3 68%,#0a30d0 87%,#48caff 100%);background:radial-gradient(ellipse at 8% 24%,#f1f6ff 0,transparent 46%),radial-gradient(ellipse at 94% 7%,#0869e8 0,transparent 35%),radial-gradient(ellipse at 75% 95%,#83c6ff 0,transparent 55%),linear-gradient(128deg,#155bc6 0%,#d7e5ff 13%,#a6c7f5 55%,#65b4fd 100%)!important;color:#071652!important}
+body.prism.luminous:before{position:fixed!important;inset:0!important;content:"";background:linear-gradient(132deg,transparent 3%,#e9fbffbd 3.3%,transparent 6%),linear-gradient(135deg,transparent 78%,#31c6ff80 85%,#dcffffdc 85.2%,#067de377 85.6%,transparent 92%)!important;z-index:-1!important;pointer-events:none}
+body.luminous .container{width:96%!important;max-width:1900px!important}
+body.prism.luminous .topo{padding:4px 0 7px!important}
+body.prism.luminous .topo .container.nav{display:grid!important;grid-template-columns:minmax(160px,18%) minmax(90px,9%) minmax(0,1fr)!important;gap:clamp(8px,2vw,35px)!important;padding:5px 16px!important;min-height:65px!important;background:var(--glass)!important;border:1.5px solid #f9ffff!important;border-radius:34px!important;box-shadow:var(--edge)!important}
+body.prism.luminous .topo .brand .coopex-brand-official{width:clamp(150px,14vw,245px)!important;max-height:65px!important;object-fit:contain!important;mix-blend-mode:multiply!important}
+body.prism.luminous .topo .somos-wrap{position:static!important;transform:none!important;justify-self:center;width:clamp(90px,8vw,140px)!important;height:clamp(43px,5.7vh,64px)!important;padding:3px 10px!important;border:1.5px solid #a5eaff!important;border-radius:21px!important;background:var(--royal)!important;box-shadow:0 6px 14px #01329d65,inset 0 2px 3px #f4ffffbf,inset 0 -3px 4px #61ddff!important}
+body.prism.luminous .topo .somos-wrap img{height:100%!important;width:100%!important;max-width:none!important;object-fit:contain!important;transform:scale(1.18);filter:none!important}
+body.prism.luminous .topo .links{padding:0!important;gap:5px!important;display:flex!important;justify-content:space-between!important;align-items:center!important;width:100%!important;margin:0!important}
+body.prism.luminous .topo .links .tab-link{display:flex!important;flex:1 1 auto;align-items:center;justify-content:center;gap:8px!important;min-height:clamp(38px,5.5vh,55px)!important;border-radius:999px!important;background:linear-gradient(170deg,#ffffffc4,#c2deff7d 45%,#a2caff92 72%,#e8f8ffce)!important;border:1px solid #e9fcff!important;box-shadow:inset 0 2px 2px #fff9,inset 0 -2px 4px #6bbaff78,0 3px 8px #2e5eaa2e!important;color:#07165a!important;font-size:clamp(11px,.9vw,16px)!important;font-weight:750!important;padding:8px 12px!important;white-space:nowrap}
+body.prism.luminous .topo .links .tab-link svg{width:clamp(18px,1.7vw,27px);height:clamp(18px,1.7vw,27px);flex:none}
+body.prism.luminous .topo .links .tab-link.active,body.prism.luminous .btn.primary,body.prism.luminous .floating-delivery,body.prism.luminous .loop-arrow{background:var(--royal)!important;color:white!important;border:1.5px solid #a4eaff!important;box-shadow:0 5px 13px #002eae66,inset 0 2px 3px #fff9,inset 0 -3px 4px #44d9ff!important}
+body.prism.luminous #inicio .hero-banner{border-radius:30px!important;border:1.5px solid #e9ffff!important;background:linear-gradient(120deg,#eaf4ff,#b5d2ff)!important;box-shadow:var(--edge)!important;isolation:isolate}
+body.prism.luminous #inicio .hero-bg{width:67%!important;clip-path:polygon(13% 0,100% 0,100% 100%,0 100%);object-fit:cover!important;object-position:center!important}
+body.prism.luminous #inicio .hero-shade{background:linear-gradient(110deg,#eaf3ffeb 0%,#dbeaffcf 24%,#b3d3ff90 35%,transparent 45%)!important}
+body.luminous .hero-prism-ribbon{position:absolute;top:-12%;left:34%;width:8%;height:124%;transform:skewX(-19deg);background:linear-gradient(90deg,#e4fcffce,#65b8ffad 12%,#0069e8cd 38%,#00c9f69e 72%,#edffff 83%,#4bc8ff50 87%,transparent);box-shadow:-4px 0 14px #dcffffba,5px 0 15px #33cbff9e;z-index:2;pointer-events:none}
+body.prism.luminous #inicio .hero-copy{z-index:3!important;width:41%!important;padding:clamp(14px,2.1vw,44px)!important}
+body.prism.luminous #inicio .hero-copy h1{color:#061053!important;letter-spacing:-.045em!important;font-weight:820!important;font-size:clamp(26px,min(3.05vw,5.3vh),53px)!important;line-height:1.03!important;text-shadow:0 1px 1px #fff8!important}
+body.prism.luminous #inicio .hero-copy>p{color:#08255c!important;font-weight:520!important;font-size:clamp(13px,1vw,19px)!important}
+body.prism.luminous #inicio .actions{display:flex!important;gap:12px!important}
+body.prism.luminous #inicio .actions .btn{flex:1;white-space:nowrap;border-radius:999px!important;min-height:clamp(34px,5.5vh,52px)!important;font-size:clamp(11px,.95vw,17px)!important}
+body.prism.luminous .btn.secondary,body.prism.luminous .see-partners,body.prism.luminous .tag{background:var(--glass)!important;color:#071653!important;border:1px solid #fff!important;box-shadow:var(--edge)!important}
+body.prism.luminous #inicio .selo-utilidade-box{background:var(--glass)!important;border:1.5px solid #fff!important;box-shadow:var(--edge)!important;border-radius:23px!important}
+body.prism.luminous #inicio .selo-utilidade-box strong{color:#071653!important;font-weight:850!important}
+body.prism.luminous #inicio .selo-utilidade-box p{color:#142d60!important}
+body.prism.luminous :is(.reviews-title,.review-card,.home-partners,.home-partner,.footer-royal-grid){background:var(--glass)!important;border:1.5px solid #f3ffff!important;box-shadow:var(--edge)!important}
+body.prism.luminous :is(.reviews-title h2,.review-top strong,.partners-heading h2){color:#061452!important;font-weight:800!important}
+body.prism.luminous :is(.review-card p,.review-date,.eyebrow,.google-pill){color:#10285f!important}
+body.prism.luminous .stars{color:#f5a400!important;font-size:17px!important}
+body.prism.luminous .google-pill{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+body.prism.luminous .google-source{color:#0033d8!important}
+body.prism.luminous .review-card,body.prism.luminous .reviews-title{border-radius:23px!important}
+body.prism.luminous .home-partners{position:relative;border-radius:24px!important;padding:9px 18px!important}
+body.prism.luminous .partners-heading h2{font-size:clamp(17px,1.4vw,25px)!important}
+body.prism.luminous .see-partners{border-radius:999px!important}
+body.luminous .partner-loop-shell{position:relative;padding:0 24px}
+body.luminous #inicio .home-partner-track{display:block!important;overflow-x:auto!important;scroll-snap-type:none!important;scroll-behavior:auto!important;padding:3px 2px 5px!important;scrollbar-width:none!important}
+body.luminous .loop-belt{display:flex;width:max-content;gap:10px}
+body.luminous .loop-set{display:flex;gap:10px;flex:none}
+body.prism.luminous #inicio .home-partner{flex:0 0 clamp(105px,7.5vw,145px)!important;width:clamp(105px,7.5vw,145px)!important;border-radius:15px!important;scroll-snap-align:none!important}
+body.luminous .loop-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:4;display:grid;place-items:center;width:39px;height:39px;border-radius:50%;font-size:30px;line-height:1;cursor:pointer}
+body.luminous .loop-prev{left:-35px}body.luminous .loop-next{right:-35px}
+body.prism.luminous .footer-royal{background:transparent!important;box-shadow:none!important;border:0!important;padding:6px 0!important}
+body.prism.luminous .footer-royal-grid{border-radius:25px!important;padding:2px 16px!important;min-height:40px!important;grid-template-columns:1fr 1fr 1fr!important}
+body.prism.luminous .footer-policy,body.prism.luminous .footer-copy{color:#071653!important;font-weight:700!important}
+body.prism.luminous .footer-logos .footer-logo-somos{display:none!important}
+body.prism.luminous .footer-logos .footer-logo-coopex{width:140px!important;max-height:37px!important}
+body.prism.luminous .floating-delivery{border-radius:999px!important;bottom:10px!important;right:3%!important}
+body.prism.luminous #trabalhe :is(.work-info p,.work-info strong,.bau-details p,.form-note){color:#25446e!important}
+@media(min-width:1050px) and (min-height:650px){body.prism.luminous main>#inicio.active{grid-template-rows:minmax(0,1fr) auto auto!important;gap:12px!important}body.prism.luminous #inicio .hero-copy{justify-content:center!important}body.prism.luminous .reviews-title,body.prism.luminous .review-card{height:clamp(92px,13.7vh,132px)!important;padding:10px 18px!important}body.prism.luminous .home-partner{height:clamp(59px,8.7vh,86px)!important}body.prism.luminous .home-partner img{height:clamp(34px,5.9vh,57px)!important}}
+@media(max-width:1049px){body.prism.luminous .topo .container.nav{grid-template-columns:minmax(0,1fr) auto auto!important;gap:8px!important}body.prism.luminous .topo .links{display:none!important}body.prism.luminous.menu-open .topo .links{display:flex!important;flex-direction:column!important;background:var(--glass)!important}body.prism.luminous #inicio .hero-copy{width:64%!important}body.luminous .hero-prism-ribbon{left:54%}}
+@media(max-width:680px){body.prism.luminous #inicio .hero-copy{width:100%!important;padding:20px!important}body.prism.luminous #inicio .hero-bg{width:100%!important;clip-path:none!important}body.luminous .hero-prism-ribbon{display:none}body.prism.luminous #inicio .hero-shade{background:transparent!important}body.prism.luminous #inicio .hero-copy h1{font-size:32px!important}body.luminous .loop-prev{left:-15px}body.luminous .loop-next{right:-15px}body.prism.luminous .footer-royal-grid{grid-template-columns:1fr!important}body.prism.luminous .footer-royal{padding-bottom:65px!important}}
+</style><script>document.addEventListener('DOMContentLoaded',()=>{const shell=document.querySelector('#inicio .partner-loop-shell');if(!shell)return;const viewport=shell.querySelector('.home-partner-track'),belt=shell.querySelector('.loop-belt'),original=belt.querySelector('.loop-set');if(!original||!original.children.length)return;let period=0,position=0,last=0,hold=0;const reduced=matchMedia('(prefers-reduced-motion: reduce)');function setup(){belt.querySelectorAll('.loop-clone').forEach(e=>e.remove());const w=original.getBoundingClientRect().width;if(w<=0)return;period=w+10;const count=Math.max(2,Math.ceil(viewport.clientWidth/period)+2);for(let i=0;i<count;i++){const clone=original.cloneNode(true);clone.classList.add('loop-clone');clone.setAttribute('aria-hidden','true');clone.querySelectorAll('a').forEach(a=>a.tabIndex=-1);belt.append(clone)}position=viewport.scrollLeft%period;viewport.scrollLeft=position}function step(now){const dt=Math.min(50,now-(last||now));last=now;if(period&&!document.hidden&&document.querySelector('#inicio.active')&&!reduced.matches&&now>hold){position=(position+dt*.045)%period;viewport.scrollLeft=position}requestAnimationFrame(step)}function manual(dir){if(!period)setup();position=(viewport.scrollLeft+dir*(original.children[0].getBoundingClientRect().width+10)+period)%period;viewport.scrollLeft=position;hold=performance.now()+1800}shell.querySelector('.loop-prev').addEventListener('click',()=>manual(-1));shell.querySelector('.loop-next').addEventListener('click',()=>manual(1));viewport.addEventListener('pointerdown',()=>{hold=performance.now()+2500});viewport.addEventListener('touchmove',()=>{hold=performance.now()+2500},{passive:true});viewport.addEventListener('scroll',()=>{if(performance.now()<hold&&period)position=viewport.scrollLeft%period},{passive:true});viewport.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();manual(e.key==='ArrowLeft'?-1:1)}});new ResizeObserver(setup).observe(viewport);setup();requestAnimationFrame(step)});</script></body>
 </html>
