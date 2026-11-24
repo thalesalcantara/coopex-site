@@ -2610,3 +2610,39 @@ for _site_key, _site_value in list(TEMPLATES.items()):
 _somos_attrs = "href=\"https://www.somos.coop.br/\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Visitar o site SomosCoop\""
 TEMPLATES["index.html"] = _site_re.sub(r'<div class="somos-wrap">(\s*<img[^>]+>\s*)</div>', lambda m: '<a class="somos-wrap" '+_somos_attrs+'>'+m.group(1)+'</a>', TEMPLATES["index.html"])
 TEMPLATES["index.html"] = _site_re.sub(r'(<img class="footer-logo-somos"[^>]+>)', lambda m: '<a '+_somos_attrs+'>'+m.group(1)+'</a>', TEMPLATES["index.html"])
+
+# Menu original do Financeiro: mesmas rotas, permissões e estilos, sem duplicar a estrutura.
+_FIN_NAV_ORIGIN = "https://www.financeiro.coopexentregas.com.br"
+_FIN_NAV_HEAD = r'''<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://www.financeiro.coopexentregas.com.br/static/css/admin_light_v8.css?v=20261124">
+<link rel="stylesheet" href="https://www.financeiro.coopexentregas.com.br/static/css/admin_glass_3d_global.css?v=20261124">
+<style>
+body.admin-page{padding-top:68px!important}
+body.admin-page .alv8-top{position:fixed!important;top:0!important;left:0!important;right:0!important;height:68px!important;z-index:5000!important}
+body.admin-page .admin-box{background:var(--cx3-glass)!important;border:1.6px solid #fff!important;border-radius:19px!important;box-shadow:var(--cx3-shadow)!important}
+body.admin-page .admin-container{max-width:none!important;width:100%!important}
+body.admin-page .site-fin-nav{display:none!important}
+@media(max-width:1179px){body.admin-page{padding-top:116px!important}body.admin-page .alv8-top{height:116px!important}}
+@media(max-width:600px){body.admin-page{padding-top:112px!important}body.admin-page .alv8-top{height:112px!important}}
+</style>'''
+_FIN_NAV_BODY = r'''<div id="coopex-shared-menu"><header class="alv8-top"><a class="alv8-brand" href="https://www.financeiro.coopexentregas.com.br/admin/leve/resumo"><span class="alv8-brand-copy"><small>PAINEL COOPEX</small><strong>COOPEX</strong></span></a><nav class="alv8-nav"><a class="alv8-direct" href="https://www.financeiro.coopexentregas.com.br/admin/leve/resumo">Resumo</a><div class="alv8-group"><button type="button">Site <i class="bi bi-chevron-down"></i></button><div class="alv8-menu"><a href="/admin-site/painel">Site</a><a href="/admin-site/card">Card Instagram</a></div></div><span class="alv8-spacer"></span><a class="alv8-direct" href="/admin-site/sair">Sair</a></nav></header></div>
+<script>
+(function(){
+const root=document.getElementById('coopex-shared-menu');
+const origin='https://www.financeiro.coopexentregas.com.br';
+function close(){root.querySelectorAll('.alv8-group.open').forEach(g=>{g.classList.remove('open');g.querySelector('button').setAttribute('aria-expanded','false')})}
+document.addEventListener('click',e=>{const b=e.target.closest('#coopex-shared-menu .alv8-group>button');if(b){e.preventDefault();const g=b.parentElement,open=!g.classList.contains('open');close();if(open){g.classList.add('open');b.setAttribute('aria-expanded','true')}return}if(!e.target.closest('#coopex-shared-menu .alv8-menu'))close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+fetch(origin+'/admin/leve/menu-site',{credentials:'include',cache:'no-store'}).then(r=>{if(!r.ok)throw Error('sessão Financeiro indisponível');return r.text()}).then(html=>{
+const doc=new DOMParser().parseFromString(html,'text/html');if(!doc.querySelector('header.alv8-top'))throw Error('menu indisponível');
+root.replaceChildren(...doc.body.childNodes);doc.head.querySelectorAll('style').forEach(x=>root.appendChild(x));
+root.querySelectorAll('.alv8-group>button').forEach(b=>{b.setAttribute('aria-haspopup','true');b.setAttribute('aria-expanded','false');if(b.textContent.trim().startsWith('Site'))b.classList.add('active')});
+const sair=root.querySelector('.coopex-nav-sair');if(sair)sair.href='/admin-site/sair?financeiro=1';
+}).catch(()=>{});
+})();
+</script>'''
+for _site_admin_template in ("admin_dashboard.html","admin_card.html"):
+    _html = TEMPLATES[_site_admin_template]
+    _html = _site_re.sub(r'<nav class="site-fin-nav"[^>]*>.*?</nav>', lambda m: _FIN_NAV_BODY, _html, count=1, flags=_site_re.S)
+    _html = _html.replace("</head>", _FIN_NAV_HEAD + "</head>", 1)
+    TEMPLATES[_site_admin_template] = _html
