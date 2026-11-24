@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 from flask import (
     Flask, Response, abort, flash, jsonify, redirect, render_template_string,
-    request, send_file, session, url_for
+    request, send_file, session, url_for, render_template, make_response
 )
 from pyodide.ffi import run_sync
 import hashlib
@@ -13,8 +13,10 @@ import secrets
 from werkzeug.utils import secure_filename
 from workers import wsgi
 from templates_cf import TEMPLATES
+from jinja2 import DictLoader
 
 app = Flask(__name__, static_folder=None)
+app.jinja_loader = DictLoader(TEMPLATES)
 app.config['SECRET_KEY'] = 'troque-esta-chave-no-cloudflare'
 app.config['MAX_CONTENT_LENGTH'] = 80 * 1024 * 1024
 
@@ -30,7 +32,7 @@ DEFAULTS = {
     'subtitulo_principal': 'Desde 2002, a COOPEX atua em Natal/RN oferecendo soluções de entrega com cooperados organizados, fardados e suporte operacional.',
     'whatsapp': '84981110706',
     'telefone': '(84) 3234-9025 / 3231-5623 / 98111-0706',
-    'email': 'coopexentregas.rn@gmail.com',
+    'email': 'contato@coopexentregas.com.br',
     'endereco': 'Rua José Freire de Souza, 22 - Lagoa Nova, Natal/RN - CEP 59075-140',
     'instagram': 'coopex.entregas',
     'link_solicitar_entrega': 'https://escalas-2-1.onrender.com/login',
@@ -1186,7 +1188,9 @@ def render_cf(template_name, **context):
 
     # Evita embutir ~CSS volumoso em toda resposta HTML.
     # Os templates ja carregam /static/style.css, que possui cache.
-    return render_template_string(html, **context)
+    response = make_response(render_template(template_name, **context))
+    response.headers['Cache-Control'] = 'no-store, max-age=0'
+    return response
 
 def allowed_file(filename, allowed):
     return bool(filename and '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed)
@@ -1235,9 +1239,16 @@ def salvar_upload(arquivo, prefixo, allowed):
         if storage is None:
             raise RuntimeError('R2 binding unavailable')
         from js import Uint8Array
-        from pyodide.ffi import to_js
-        raw = to_js(memoryview(dados))
-        run_sync(storage.put(key, raw))
+        from pyodide.ffi import create_proxy
+        proxy = create_proxy(dados)
+        try:
+            buffer = proxy.getBuffer('u8')
+            try:
+                run_sync(storage.put(key, buffer.data))
+            finally:
+                buffer.release()
+        finally:
+            proxy.destroy()
         verified = run_sync(storage.head(key))
         if verified is None or int(verified.size) != len(dados):
             raise RuntimeError('Upload size verification failed')
@@ -1249,22 +1260,8 @@ def salvar_upload(arquivo, prefixo, allowed):
                 run_sync(storage.delete(key))
             except Exception:
                 pass
-        # Preserve legacy compatibility with small, verified D1 chunks.
-        try:
-            chunk_size = 256_000
-            for parte, inicio in enumerate(range(0, len(dados), chunk_size)):
-                pedaco = dados[inicio:inicio + chunk_size]
-                _db_run('INSERT INTO file_chunk (file_id, parte, data) VALUES (?, ?, ?)',
-                        file_id, parte, list(pedaco))
-            check = _one('SELECT COALESCE(SUM(length(data)), 0) AS total FROM file_chunk WHERE file_id = ?', file_id)
-            if not check or int(check['total']) != len(dados):
-                raise RuntimeError('D1 upload size verification failed')
-            return f'db:{file_id}'
-        except Exception as exc:
-            print(f'D1 upload failed for file {file_id}: {type(exc).__name__}')
-            _db_run('DELETE FROM file_chunk WHERE file_id = ?', file_id)
-            _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
-            return None
+        _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
+        return None
 
 
 def excluir_arquivo_referencia(valor):
@@ -1877,8 +1874,8 @@ def salvar_configuracoes():
         'anuncio_bau_lado', 'anuncio_bau_traseira'
     }
     for chave in DEFAULTS:
-        if chave not in upload_config_keys:
-            set_config(chave, request.form.get(chave, DEFAULTS[chave]))
+        if chave not in upload_config_keys and chave in request.form:
+            set_config(chave, request.form[chave])
 
     for campo, prefixo in [
         ('imagem_destaque', 'destaque'),
