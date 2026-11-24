@@ -43,7 +43,7 @@
       align-items:center;
     }
   </style>
-</head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"><style>.admin-page .admin-stats-site{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}.admin-page .admin-stats-site .site-stat{display:flex!important;flex-direction:column;justify-content:center;position:relative;min-width:0;min-height:100px;padding:14px 62px 14px 16px!important;background:linear-gradient(135deg,#ffffff,#e6f3ff 58%,#c6e2ff)!important;border:1.6px solid #fff!important;border-radius:18px!important;box-shadow:0 12px 25px #1157994d,inset 0 3px 3px #fff,inset 0 -3px 5px #4c90cc36!important}.admin-page .admin-stats-site .site-stat strong{font-size:28px!important;line-height:1.1;color:#104a99!important;font-weight:900!important}.admin-page .admin-stats-site .site-stat span{font-size:13px!important;font-weight:850!important;color:#194d86!important}.site-stat .stat-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:40px;height:40px;border:1px solid white;border-radius:12px;background:linear-gradient(140deg,#fff,#b7dcff);box-shadow:0 5px 12px #11579936,inset 0 2px 2px white;color:#145ab0;font-size:20px}.site-stat-note{margin:12px 0 0;color:#42658a;font-size:12px}@media(max-width:1050px){.admin-page .admin-stats-site{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:480px){.admin-page .admin-stats-site{grid-template-columns:1fr!important}}</style></head>
 <body class="admin-page">
   <header class="admin-top">
     <div>
@@ -64,11 +64,10 @@
     <section class="admin-box">
       <h2>Estatísticas do site</h2>
       <div class="admin-stats-site">
-        <div>
-          <strong>{{ total_acessos_site or 0 }}</strong>
-          <span>Acessos ao site</span>
-        </div>
-      </div>
+{% for nome, valor, icone in [('Acessos ao site',total_acessos_site,'bi-globe'),('Cliques nas propagandas',total_anuncios,'bi-cursor'),('Currículos cadastrados',total_curriculos,'bi-file-earmark-person'),('Cliques para anunciar',total_interesse,'bi-megaphone')] %}
+<div class="site-stat"><i class="stat-icon bi {{ icone }}" aria-hidden="true"></i><strong>{{ '{:,}'.format(valor or 0).replace(',', '.') }}</strong><span>{{ nome }}</span></div>
+{% endfor %}
+</div><p class="site-stat-note">Acessos por sessão · propagandas: logos de parceiros cadastrados · currículos atualmente cadastrados · cliques para anunciar registrados a partir da implantação.</p>
     </section>
 
     <section class="admin-box">
