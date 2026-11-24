@@ -1192,6 +1192,11 @@ def allowed_file(filename, allowed):
     return bool(filename and '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed)
 
 
+def _storage_key(row):
+    folder = 'privado/' if str(row.get('categoria') or '').lower().startswith('curriculo') else 'publico/'
+    return folder + str(row['id']) + '/' + str(row.get('filename') or '')
+
+
 def salvar_upload(arquivo, prefixo, allowed):
     if not arquivo or not arquivo.filename or not allowed_file(arquivo.filename, allowed):
         return None
@@ -1203,22 +1208,63 @@ def salvar_upload(arquivo, prefixo, allowed):
     if not dados:
         return None
 
+    # Validate image signatures without altering transparency or original bytes.
+    ext = safe.rsplit('.', 1)[-1].lower()
+    if ext in ALLOWED_IMAGE_EXTENSIONS:
+        valid = ((ext == 'png' and dados.startswith(b'\x89PNG\r\n\x1a\n')) or
+                 (ext in ('jpg', 'jpeg') and dados.startswith(b'\xff\xd8\xff')) or
+                 (ext == 'webp' and dados[:4] == b'RIFF' and dados[8:12] == b'WEBP') or
+                 (ext == 'gif' and dados[:6] in (b'GIF87a', b'GIF89a')))
+        if not valid:
+            return None
+
+    mime = {'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+            'webp': 'image/webp', 'gif': 'image/gif'}.get(ext, arquivo.mimetype or 'application/octet-stream')
     file_id = _insert(
         '''INSERT INTO file_upload
            (filename, original_filename, mimetype, categoria, tamanho, criado_em)
            VALUES (?, ?, ?, ?, ?, ?)''',
-        filename, safe, arquivo.mimetype or 'application/octet-stream', prefixo,
-        len(dados), agora_utc_iso()
+        filename, safe, mime, prefixo, len(dados), agora_utc_iso()
     )
+    if not file_id:
+        return None
 
-    for parte, inicio in enumerate(range(0, len(dados), CHUNK_SIZE)):
-        pedaco = dados[inicio:inicio + CHUNK_SIZE]
-        _db_run(
-            'INSERT INTO file_chunk (file_id, parte, data) VALUES (?, ?, ?)',
-            file_id, parte, pedaco
-        )
-
-    return f'db:{file_id}'
+    key = _storage_key({'id': file_id, 'filename': filename, 'categoria': prefixo})
+    storage = getattr(_env(), 'FILES', None)
+    try:
+        if storage is None:
+            raise RuntimeError('R2 binding unavailable')
+        from js import Uint8Array
+        from pyodide.ffi import to_js
+        raw = Uint8Array.new(to_js(memoryview(dados)))
+        run_sync(storage.put(key, raw))
+        verified = run_sync(storage.head(key))
+        if verified is None or int(verified.size) != len(dados):
+            raise RuntimeError('Upload size verification failed')
+        return f'db:{file_id}'
+    except Exception as exc:
+        print(f'R2 upload failed for file {file_id}: {type(exc).__name__}')
+        if storage is not None:
+            try:
+                run_sync(storage.delete(key))
+            except Exception:
+                pass
+        # Preserve legacy compatibility with small, verified D1 chunks.
+        try:
+            chunk_size = 256_000
+            for parte, inicio in enumerate(range(0, len(dados), chunk_size)):
+                pedaco = dados[inicio:inicio + chunk_size]
+                _db_run('INSERT INTO file_chunk (file_id, parte, data) VALUES (?, ?, ?)',
+                        file_id, parte, list(pedaco))
+            check = _one('SELECT COALESCE(SUM(length(data)), 0) AS total FROM file_chunk WHERE file_id = ?', file_id)
+            if not check or int(check['total']) != len(dados):
+                raise RuntimeError('D1 upload size verification failed')
+            return f'db:{file_id}'
+        except Exception as exc:
+            print(f'D1 upload failed for file {file_id}: {type(exc).__name__}')
+            _db_run('DELETE FROM file_chunk WHERE file_id = ?', file_id)
+            _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
+            return None
 
 
 def excluir_arquivo_referencia(valor):
@@ -1228,6 +1274,14 @@ def excluir_arquivo_referencia(valor):
         file_id = int(str(valor).split(':', 1)[1])
     except Exception:
         return
+    row = _one('SELECT * FROM file_upload WHERE id = ? LIMIT 1', file_id)
+    if row:
+        try:
+            storage = getattr(_env(), 'FILES', None)
+            if storage is not None:
+                run_sync(storage.delete(_storage_key(row)))
+        except Exception as exc:
+            print(f'R2 cleanup failed for file {file_id}: {type(exc).__name__}')
     _db_run('DELETE FROM file_chunk WHERE file_id = ?', file_id)
     _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
 
@@ -1436,8 +1490,10 @@ def arquivo_db(file_id):
             obj = run_sync(storage.get(key))
             if obj is not None:
                 blob = run_sync(obj.arrayBuffer())
-                raw = _to_py(blob)
-                return send_file(BytesIO(bytes(raw)),
+                raw = bytes(_to_py(blob))
+                if len(raw) != int(arquivo.get('tamanho') or len(raw)):
+                    raise RuntimeError('Stored R2 file size mismatch')
+                return send_file(BytesIO(raw),
                     mimetype=arquivo.get('mimetype') or 'application/octet-stream',
                     download_name=arquivo.get('original_filename') or arquivo.get('filename'),
                     max_age=86400 if not str(arquivo.get('categoria') or '').lower().startswith('curriculo') else 0)
@@ -1456,10 +1512,14 @@ def arquivo_db(file_id):
             data = bytes(data)
         partes.append(data or b'')
 
+    raw = b''.join(partes)
+    if not raw or len(raw) != int(arquivo.get('tamanho') or len(raw)):
+        abort(404)
     return send_file(
-        BytesIO(b''.join(partes)),
+        BytesIO(raw),
         mimetype=arquivo.get('mimetype') or 'application/octet-stream',
-        download_name=arquivo.get('original_filename') or arquivo.get('filename')
+        download_name=arquivo.get('original_filename') or arquivo.get('filename'),
+        max_age=0 if str(arquivo.get('categoria') or '').lower().startswith('curriculo') else 86400
     )
 
 
@@ -1840,6 +1900,10 @@ def parceiro_novo():
     ordem = int(request.form.get('ordem') or 0)
     ativo = 1 if request.form.get('ativo') == 'on' else 0
     logo = salvar_upload(request.files.get('logo'), 'parceiro', ALLOWED_IMAGE_EXTENSIONS)
+    enviado = request.files.get('logo')
+    if enviado and enviado.filename and not logo:
+        flash('Não foi possível salvar a logo. Envie uma imagem válida e tente novamente.', 'erro')
+        return redirect(url_for('admin_dashboard'))
     _db_run('''INSERT INTO partner
                (nome, link, logo, ativo, ordem, cliques, criado_em)
                VALUES (?, ?, ?, ?, ?, 0, ?)''',
@@ -1862,13 +1926,21 @@ def parceiro_editar(partner_id):
     ordem = int(request.form.get('ordem') or 0)
     ativo = 1 if request.form.get('ativo') == 'on' else 0
     logo = salvar_upload(request.files.get('logo'), 'parceiro', ALLOWED_IMAGE_EXTENSIONS)
-    if logo:
-        excluir_arquivo_referencia(parceiro.get('logo'))
-    else:
-        logo = parceiro.get('logo')
-
-    _db_run('UPDATE partner SET nome = ?, link = ?, logo = ?, ativo = ?, ordem = ? WHERE id = ?',
-            nome, link, logo, ativo, ordem, partner_id)
+    enviado = request.files.get('logo')
+    anterior = parceiro.get('logo')
+    if enviado and enviado.filename and not logo:
+        flash('Não foi possível salvar a nova logo. A imagem anterior foi preservada. Tente um PNG, JPG ou WEBP válido.', 'erro')
+        return redirect(url_for('admin_dashboard'))
+    nova_logo = logo or anterior
+    try:
+        _db_run('UPDATE partner SET nome = ?, link = ?, logo = ?, ativo = ?, ordem = ? WHERE id = ?',
+                nome, link, nova_logo, ativo, ordem, partner_id)
+    except Exception:
+        if logo:
+            excluir_arquivo_referencia(logo)
+        raise
+    if logo and anterior and anterior != logo:
+        excluir_arquivo_referencia(anterior)
     flash('Parceiro atualizado.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
