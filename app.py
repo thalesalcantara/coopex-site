@@ -42,6 +42,60 @@ def favicon_publico():
     return Response(_SEO_FAVICON_SVG, mimetype='image/svg+xml', headers={'Cache-Control': 'public, max-age=86400'})
 
 
+# Pre-render a square transparent icon using standard-library PNG encoding.
+# The artwork is the same six curves and four circles as the existing SVG.
+def _coopex_png():
+    import struct, zlib
+    n = 96
+    scale = 64 / n
+    curves = [(7,18,17,8,30,19,'00194A','09A9F5'),(34,19,46,8,57,18,'003322','00D66B'),(7,45,17,56,30,45,'00194A','09A9F5'),(34,45,46,56,57,45,'003322','00D66B'),(30,19,25,30,31,44,'00417D','078FF0'),(34,19,39,30,33,44,'005B30','00D66B')]
+    pixels = bytearray(n*n*4)
+    def stamp(x,y,r,c):
+        rgb=bytes.fromhex(c)
+        for iy in range(max(0,int((y-r-1)/scale)),min(n,int((y+r+1)/scale)+1)):
+            for ix in range(max(0,int((x-r-1)/scale)),min(n,int((x+r+1)/scale)+1)):
+                d=((ix*scale+scale/2-x)**2+(iy*scale+scale/2-y)**2)**.5
+                alpha=max(0,min(255,int((r+scale/2-d)*255/scale)))
+                if alpha:
+                    k=(iy*n+ix)*4
+                    old=pixels[k+3]
+                    out=alpha+old*(255-alpha)//255
+                    for j in range(3):
+                        pixels[k+j]=(rgb[j]*alpha+pixels[k+j]*old*(255-alpha)//255)//out
+                    pixels[k+3]=out
+    for x,y,cx,cy,ex,ey,dark,light in curves:
+        for radius,color in ((6,dark),(4.5,light)):
+            for i in range(81):
+                t=i/80; q=1-t
+                stamp(q*q*x+2*q*t*cx+t*t*ex,q*q*y+2*q*t*cy+t*t*ey,radius,color)
+    for x,y in ((32,5.8),(32,58.2),(18.5,32),(45.5,32)):
+        stamp(x,y,5.9,'193252'); stamp(x,y,4.5,'ffffff')
+    def chunk(kind,data):
+        return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
+    raw=b''.join(b'\x00'+pixels[y*n*4:(y+1)*n*4] for y in range(n))
+    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',n,n,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b'')
+
+from functools import lru_cache
+_coopex_png = lru_cache(maxsize=1)(_coopex_png)
+
+@app.route('/favicon.png')
+def favicon_png():
+    return Response(_coopex_png(), mimetype='image/png', headers={'Cache-Control':'public, max-age=86400'})
+
+@app.route('/favicon.ico')
+def favicon_ico():
+    import struct
+    png=_coopex_png()
+    data=struct.pack('<HHHBBBBHHII',0,1,1,96,96,0,0,1,32,len(png),22)+png
+    return Response(data,mimetype='image/x-icon',headers={'Cache-Control':'public, max-age=86400'})
+
+for _seo_name, _seo_html in list(TEMPLATES.items()):
+    if '</head>' in _seo_html:
+        _seo_html = _seo_html.replace('</head>', '<link rel="icon" type="image/png" sizes="96x96" href="https://www.coopexentregas.com.br/favicon.png"><link rel="shortcut icon" href="https://www.coopexentregas.com.br/favicon.ico"></head>', 1)
+    if _seo_name == 'index.html':
+        _seo_html = _seo_html.replace('</head>', '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"COOPEX Entregas","alternateName":"COOPEX","url":"https://www.coopexentregas.com.br/"}</script><meta property="og:site_name" content="COOPEX Entregas"></head>',1)
+    TEMPLATES[_seo_name] = _seo_html
+
 app.jinja_loader = DictLoader(TEMPLATES)
 app.config['SECRET_KEY'] = 'troque-esta-chave-no-cloudflare'
 app.config['MAX_CONTENT_LENGTH'] = 12 * 1024 * 1024
@@ -1476,8 +1530,8 @@ def _redirect_public_technical_host():
     # Limit to public read-only pages; do not redirect APIs or admin sessions.
     from urllib.parse import quote
     host = request.host.split(':', 1)[0].lower()
-    public = ('/', '/inicio', '/parceiros', '/sobre', '/servicos', '/anuncie', '/trabalhe', '/contato', '/instagram', '/card-instagram', '/politica-de-privacidade', '/sitemap.xml', '/robots.txt', '/favicon.svg')
-    if host == 'coopex-site.thalesalcantara88.workers.dev' and request.method in ('GET', 'HEAD') and request.path in public:
+    public = ('/', '/inicio', '/parceiros', '/sobre', '/servicos', '/anuncie', '/trabalhe', '/contato', '/instagram', '/card-instagram', '/politica-de-privacidade', '/sitemap.xml', '/robots.txt', '/favicon.svg', '/favicon.png', '/favicon.ico')
+    if host in ('coopex-site.thalesalcantara88.workers.dev', 'coopexentregas.com.br') and request.method in ('GET', 'HEAD') and request.path in public:
         path = {'/inicio':'/', '/parceiros':'/', '/instagram':'/card-instagram'}.get(request.path, request.path)
         target = 'https://www.coopexentregas.com.br' + quote(path, safe='/')
         if request.query_string:
