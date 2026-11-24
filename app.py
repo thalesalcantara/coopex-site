@@ -1729,6 +1729,8 @@ def admin_login():
 @app.route('/admin-site/sair')
 def admin_logout():
     session.clear()
+    if request.args.get('financeiro') == '1':
+        return redirect('https://www.financeiro.coopexentregas.com.br/logout')
     return redirect(url_for('index'))
 
 
