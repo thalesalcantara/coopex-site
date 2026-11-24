@@ -2599,3 +2599,40 @@ for _site_admin_template in ("admin_dashboard.html", "admin_card.html"):
     import re as _site_re
     _site_html = _site_re.sub(r"(<body\b[^>]*>)", lambda m: m.group(1) + _SITE_NAV, _site_html, count=1)
     TEMPLATES[_site_admin_template] = _site_html
+
+
+# Layout administrativo de largura integral e card publico em vidro.
+_SITE_FULL_GLASS = r'''<style>
+body.admin-page{margin:0!important;padding:0!important;background:linear-gradient(145deg,#b8d9f4,#eaf5ff 45%,#c5dff6)!important;font-family:system-ui,-apple-system,sans-serif}
+body.admin-page .admin-container{width:100%!important;max-width:none!important;margin:0!important;padding:10px!important;box-sizing:border-box}
+body.admin-page .admin-top{position:relative!important;inset:auto!important;z-index:1!important;margin:8px 10px!important;padding:12px 16px!important;min-height:64px;height:auto!important;overflow:visible!important}
+body.admin-page .admin-box{padding:16px!important;margin:0 0 12px!important;border-radius:15px!important;background:linear-gradient(125deg,#f9fdff,#d4e9fc)!important;box-shadow:0 5px 15px #16477d35,inset 0 1px 3px white!important}
+body.admin-page .admin-box h2{font-size:19px;margin:0 0 12px}
+body.admin-page .admin-stats-site{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+body.admin-page .admin-stats-site>div{padding:12px!important}
+body.admin-page .admin-stats-site strong{font-size:27px!important}
+body.admin-page .preview-wrap{grid-template-columns:minmax(280px,360px) minmax(0,1fr)!important;gap:16px!important}
+body.admin-page .phone-preview{background:linear-gradient(145deg,#edf8ff,#6b9dce,#16365e)!important;border:1px solid white;box-shadow:0 12px 30px #153e7755,inset 0 2px 5px white!important}
+body.admin-page .site-fin-nav{position:sticky!important;top:0!important;z-index:1000!important;margin:0!important;min-height:64px}
+body.admin-page .site-fin-nav>a:last-child{margin-left:auto}
+@media(max-width:760px){body.admin-page .preview-wrap{grid-template-columns:1fr!important}body.admin-page .admin-container{padding:6px!important}}
+</style>'''
+for _site_admin_template in ("admin_dashboard.html","admin_card.html"):
+    TEMPLATES[_site_admin_template] = TEMPLATES[_site_admin_template].replace("</head>",_SITE_FULL_GLASS+"</head>",1).replace("</nav>",'<a href="/admin-site/sair">↪ Sair</a></nav>',1)
+_SITE_PUBLIC_GLASS = r'''<style>
+html,body{min-height:100%;width:100%;margin:0}
+body{padding:0!important;align-items:stretch!important;background:radial-gradient(ellipse at 15% 0%,#5abcf9,transparent 55%),linear-gradient(145deg,var(--primary),#062450)!important}
+.page{width:100%!important;min-height:100dvh!important;border-radius:0!important;padding:clamp(18px,4vw,48px)!important;box-shadow:none!important}
+.page::before,.page::after{opacity:.15!important;filter:blur(24px)}
+.content{width:100%;max-width:1050px;margin:auto;min-height:calc(100dvh - 96px)!important}
+.name{font-family:system-ui,-apple-system,sans-serif!important;font-weight:850;letter-spacing:-.03em}
+.bio{max-width:680px!important}
+.avatar-wrap{border:1px solid #ffffffc0;background:linear-gradient(145deg,#ffffffb0,#ffffff25)!important;box-shadow:0 10px 28px #001c5260,inset 0 2px 5px white!important}
+.links{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:14px!important;width:100%}
+.link-btn{border-radius:19px!important;min-height:68px!important;background:linear-gradient(135deg,var(--btn),color-mix(in srgb,var(--btn) 78%,var(--primary)))!important;border:1px solid #ffffffd0!important;box-shadow:0 8px 22px #001b534d,inset 0 2px 4px #ffffffc0!important;backdrop-filter:blur(18px)}
+.link-btn:hover{transform:translateY(-2px)}
+.link-icon{border:1px solid #ffffffa0;box-shadow:inset 0 1px 4px #ffffff90}
+.video-box{max-width:800px;width:100%;margin:18px auto!important;border:1px solid #ffffff80}
+@media(max-width:600px){.page{padding:20px 14px!important}.content{min-height:calc(100dvh - 40px)!important}.links{grid-template-columns:1fr}}
+</style>'''
+TEMPLATES["instagram_card.html"] = TEMPLATES["instagram_card.html"].replace("</head>",_SITE_PUBLIC_GLASS+"</head>",1)
