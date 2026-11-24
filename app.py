@@ -1254,28 +1254,21 @@ def salvar_upload(arquivo, prefixo, allowed):
     try:
         if storage is None:
             raise RuntimeError('R2 binding unavailable')
-        from js import Uint8Array
-        from pyodide.ffi import create_proxy
-        proxy = create_proxy(dados)
-        try:
-            buffer = proxy.getBuffer('u8')
-            try:
-                run_sync(storage.put(key, buffer.data))
-            finally:
-                buffer.release()
-        finally:
-            proxy.destroy()
-        verified = run_sync(storage.head(key))
+        # Copy bytes into an independent JavaScript buffer before awaiting I/O.
+        from pyodide.ffi import to_js
+        raw = to_js(dados)
+        verified = run_sync(storage.put(key, raw))
         if verified is None or int(verified.size) != len(dados):
             raise RuntimeError('Upload size verification failed')
         return f'db:{file_id}'
     except Exception as exc:
-        print(f'R2 upload failed for file {file_id}: {type(exc).__name__}')
+        print(f'R2 upload failed for file {file_id}: {type(exc).__name__}: {exc}')
         if storage is not None:
             try:
                 run_sync(storage.delete(key))
-            except Exception:
-                pass
+            except Exception as cleanup_exc:
+                print(f'R2 cleanup failed for file {file_id}: {cleanup_exc}')
+                return None
         _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
         return None
 
