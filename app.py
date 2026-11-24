@@ -1463,7 +1463,15 @@ def inject_global():
 def static_asset(filename):
     # As logos fixas pertencem ao repositorio publico original.
     # O binding ASSETS nem sempre as serviu apos a migracao.
-    if filename in ('img/coopex-nome-entregas.png', 'img/somos-coop.png', 'selo.png'):
+    if filename in (
+        'img/coopex-nome-entregas.png',
+        'img/coopex-oficial-v2.webp',
+        'img/coopex-oficial-3d.webp',
+        'img/coopex-transparente.png',
+        'img/somos-coop.png',
+        'img/somos-coop-v2.png',
+        'selo.png',
+    ):
         return redirect('https://raw.githubusercontent.com/thalesalcantara/coopex-site/main/static/' + filename, code=302)
     # O CSS principal é servido diretamente pelo Worker para não depender
     # do binding ASSETS. O site e o painel administrativo usam este arquivo.
