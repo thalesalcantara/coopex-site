@@ -1236,7 +1236,7 @@ def salvar_upload(arquivo, prefixo, allowed):
             raise RuntimeError('R2 binding unavailable')
         from js import Uint8Array
         from pyodide.ffi import to_js
-        raw = Uint8Array.new(to_js(memoryview(dados)))
+        raw = to_js(memoryview(dados))
         run_sync(storage.put(key, raw))
         verified = run_sync(storage.head(key))
         if verified is None or int(verified.size) != len(dados):
@@ -1269,21 +1269,25 @@ def salvar_upload(arquivo, prefixo, allowed):
 
 def excluir_arquivo_referencia(valor):
     if not valor or not str(valor).startswith('db:'):
-        return
+        return not bool(valor)
     try:
         file_id = int(str(valor).split(':', 1)[1])
-    except Exception:
-        return
-    row = _one('SELECT * FROM file_upload WHERE id = ? LIMIT 1', file_id)
-    if row:
-        try:
+        row = _one('SELECT * FROM file_upload WHERE id = ? LIMIT 1', file_id)
+        if row:
             storage = getattr(_env(), 'FILES', None)
-            if storage is not None:
-                run_sync(storage.delete(_storage_key(row)))
-        except Exception as exc:
-            print(f'R2 cleanup failed for file {file_id}: {type(exc).__name__}')
-    _db_run('DELETE FROM file_chunk WHERE file_id = ?', file_id)
-    _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
+            if storage is None:
+                raise RuntimeError('R2 binding unavailable')
+            key = _storage_key(row)
+            run_sync(storage.delete(key))
+            if run_sync(storage.head(key)) is not None:
+                raise RuntimeError('R2 deletion not confirmed')
+        _db_run('DELETE FROM file_chunk WHERE file_id = ?', file_id)
+        _db_run('DELETE FROM file_upload WHERE id = ?', file_id)
+        return True
+    except Exception as exc:
+        # Keep metadata for retry rather than orphaning an object.
+        print(f'File cleanup failed: {type(exc).__name__}')
+        return False
 
 
 def get_config(chave, default=''):
@@ -1490,7 +1494,8 @@ def arquivo_db(file_id):
             obj = run_sync(storage.get(key))
             if obj is not None:
                 blob = run_sync(obj.arrayBuffer())
-                raw = bytes(_to_py(blob))
+                from js import Uint8Array
+                raw = bytes(_to_py(Uint8Array.new(blob)))
                 if len(raw) != int(arquivo.get('tamanho') or len(raw)):
                     raise RuntimeError('Stored R2 file size mismatch')
                 return send_file(BytesIO(raw),
@@ -1727,7 +1732,9 @@ def candidato_excluir(candidato_id):
     candidato = _one('SELECT * FROM candidato WHERE id = ? LIMIT 1', candidato_id)
     if not candidato:
         abort(404)
-    excluir_arquivo_referencia(candidato.get('curriculo'))
+    if not excluir_arquivo_referencia(candidato.get('curriculo')):
+        flash('Não foi possível confirmar a exclusão do currículo. O cadastro foi mantido para permitir nova tentativa.', 'erro')
+        return redirect(url_for('admin_dashboard'))
     _db_run('DELETE FROM candidato WHERE id = ?', candidato_id)
     flash('Currículo excluído com sucesso.', 'ok')
     return redirect(url_for('admin_dashboard'))
@@ -1784,9 +1791,9 @@ def salvar_card_configuracoes():
         valor = salvar_upload(request.files.get(campo), prefixo, allowed)
         if valor:
             antigo = get_config(campo, '')
-            if antigo:
-                excluir_arquivo_referencia(antigo)
             set_config(campo, valor)
+            if antigo and antigo != valor:
+                excluir_arquivo_referencia(antigo)
 
     flash('Card do Instagram atualizado com sucesso.', 'ok')
     return redirect(url_for('admin_card'))
@@ -1829,14 +1836,18 @@ def card_link_editar(link_id):
     ordem = int(request.form.get('ordem') or 0)
     ativo = 1 if request.form.get('ativo') == 'on' else 0
     icone = salvar_upload(request.files.get('icone'), 'card_icone', ALLOWED_IMAGE_EXTENSIONS)
-    if icone:
-        excluir_arquivo_referencia(link.get('icone'))
-    else:
-        icone = link.get('icone')
+    anterior = link.get('icone')
+    enviado = request.files.get('icone')
+    if enviado and enviado.filename and not icone:
+        flash('Não foi possível salvar o novo ícone. O anterior foi preservado.', 'erro')
+        return redirect(url_for('admin_card'))
+    icone = icone or anterior
 
     _db_run('''UPDATE card_link SET titulo = ?, subtitulo = ?, url = ?, icone = ?,
                ativo = ?, ordem = ? WHERE id = ?''',
             titulo, subtitulo, url, icone, ativo, ordem, link_id)
+    if anterior and icone != anterior:
+        excluir_arquivo_referencia(anterior)
     flash('Link atualizado.', 'ok')
     return redirect(url_for('admin_card'))
 
@@ -1879,9 +1890,9 @@ def salvar_configuracoes():
         valor = salvar_upload(request.files.get(campo), prefixo, ALLOWED_IMAGE_EXTENSIONS)
         if valor:
             antigo = get_config(campo, '')
-            if antigo:
-                excluir_arquivo_referencia(antigo)
             set_config(campo, valor)
+            if antigo and antigo != valor:
+                excluir_arquivo_referencia(antigo)
 
     flash('Informações do site atualizadas com sucesso.', 'ok')
     return redirect(url_for('admin_dashboard'))
@@ -1939,8 +1950,10 @@ def parceiro_editar(partner_id):
         if logo:
             excluir_arquivo_referencia(logo)
         raise
-    if logo and anterior and anterior != logo:
-        excluir_arquivo_referencia(anterior)
+    if logo and anterior and anterior != logo and str(anterior).startswith('db:'):
+        if not excluir_arquivo_referencia(anterior):
+            flash('Nova logo salva. A limpeza da imagem anterior ainda não foi confirmada.', 'erro')
+            return redirect(url_for('admin_dashboard'))
     flash('Parceiro atualizado.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
@@ -2022,14 +2035,18 @@ def avaliacao_editar(review_id):
     except ValueError:
         nota = 5
     foto = salvar_upload(request.files.get('foto'), 'avaliacao', ALLOWED_IMAGE_EXTENSIONS)
-    if foto:
-        excluir_arquivo_referencia(avaliacao.get('foto'))
-    else:
-        foto = avaliacao.get('foto')
+    anterior = avaliacao.get('foto')
+    enviado = request.files.get('foto')
+    if enviado and enviado.filename and not foto:
+        flash('Não foi possível salvar a nova foto. A anterior foi preservada.', 'erro')
+        return redirect(url_for('admin_dashboard'))
+    foto = foto or anterior
 
     _db_run('''UPDATE review SET nome = ?, empresa = ?, comentario = ?, nota = ?,
                data_avaliacao = ?, link = ?, foto = ?, ativo = ?, ordem = ? WHERE id = ?''',
             nome, empresa, comentario, nota, data_avaliacao, link, foto, ativo, ordem, review_id)
+    if anterior and foto != anterior:
+        excluir_arquivo_referencia(anterior)
     flash('Avaliação atualizada.', 'ok')
     return redirect(url_for('admin_dashboard'))
 
