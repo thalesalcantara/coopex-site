@@ -1471,6 +1471,22 @@ def ensure_seed():
 
 
 @app.before_request
+def _redirect_public_technical_host():
+    # Keep technical Worker URL from competing with the official site in search.
+    # Limit to public read-only pages; do not redirect APIs or admin sessions.
+    from urllib.parse import quote
+    host = request.host.split(':', 1)[0].lower()
+    public = ('/', '/inicio', '/parceiros', '/sobre', '/servicos', '/anuncie', '/trabalhe', '/contato', '/instagram', '/card-instagram', '/politica-de-privacidade', '/sitemap.xml', '/robots.txt', '/favicon.svg')
+    if host == 'coopex-site.thalesalcantara88.workers.dev' and request.method in ('GET', 'HEAD') and request.path in public:
+        path = {'/inicio':'/', '/parceiros':'/', '/instagram':'/card-instagram'}.get(request.path, request.path)
+        target = 'https://www.coopexentregas.com.br' + quote(path, safe='/')
+        if request.query_string:
+            target += '?' + request.query_string.decode('ascii', errors='ignore')
+        return redirect(target, code=301)
+    return None
+
+
+@app.before_request
 def _bootstrap():
     # D1 ja foi inicializado e restaurado. Nao executar dezenas de
     # INSERT OR IGNORE em todas as requisicoes: isso aumenta a latencia
