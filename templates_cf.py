@@ -2605,3 +2605,8 @@ _SITE_FAVICON = "<link rel=\"icon\" type=\"image/svg+xml\" sizes=\"any\" href=\"
 for _site_key, _site_value in list(TEMPLATES.items()):
     if '</head>' in _site_value:
         TEMPLATES[_site_key] = _site_value.replace('</head>', _SITE_FAVICON + '</head>', 1)
+
+# Logos SomosCoop apontam ao portal oficial sem retirar o visitante do site.
+_somos_attrs = "href=\"https://www.somos.coop.br/\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Visitar o site SomosCoop\""
+TEMPLATES["index.html"] = _site_re.sub(r'<div class="somos-wrap">(\s*<img[^>]+>\s*)</div>', lambda m: '<a class="somos-wrap" '+_somos_attrs+'>'+m.group(1)+'</a>', TEMPLATES["index.html"])
+TEMPLATES["index.html"] = _site_re.sub(r'(<img class="footer-logo-somos"[^>]+>)', lambda m: '<a '+_somos_attrs+'>'+m.group(1)+'</a>', TEMPLATES["index.html"])
