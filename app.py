@@ -1546,6 +1546,21 @@ def arquivo_db(file_id):
     )
 
 
+@app.route('/sitemap.xml')
+def sitemap_publico():
+    base = 'https://www.coopexentregas.com.br'
+    paths = ('/', '/sobre', '/servicos', '/anuncie', '/trabalhe', '/contato', '/card-instagram', '/politica-de-privacidade')
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    xml += ''.join('<url><loc>' + base + path + '</loc></url>\n' for path in paths)
+    xml += '</urlset>'
+    return Response(xml, mimetype='application/xml', headers={'Cache-Control': 'public, max-age=3600'})
+
+
+@app.route('/robots.txt')
+def robots_publico():
+    return Response('User-agent: *\nAllow: /\nDisallow: /admin-site\nDisallow: /admin-coopex\nDisallow: /card-link/\nDisallow: /parceiro/\nDisallow: /api/\nSitemap: https://www.coopexentregas.com.br/sitemap.xml\n', mimetype='text/plain', headers={'Cache-Control': 'public, max-age=3600'})
+
+
 @app.route('/')
 @app.route('/sobre')
 @app.route('/servicos')
