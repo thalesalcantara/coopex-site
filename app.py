@@ -1566,6 +1566,21 @@ def antigo_inicio():
     return redirect('/', code=301)
 
 
+@app.route('/anunciar-marca')
+def anunciar_marca():
+    import re
+    numero = re.sub(r'[^0-9]', '', str(get_config('whatsapp', DEFAULTS.get('whatsapp', ''))))
+    if not numero:
+        return redirect('/anuncie')
+    if len(numero) in (10, 11):
+        numero = '55' + numero
+    _db_run("""INSERT INTO site_config (chave, valor) VALUES ('__cliques_anunciar', '1')
+        ON CONFLICT(chave) DO UPDATE SET valor=CAST(COALESCE(CAST(site_config.valor AS INTEGER),0)+1 AS TEXT)""")
+    resposta = redirect('https://wa.me/' + numero)
+    resposta.headers['Cache-Control'] = 'no-store'
+    return resposta
+
+
 @app.route('/trabalhe-conosco/enviar', methods=['POST'])
 def enviar_curriculo():
     nome = request.form.get('nome_completo', '').strip()
@@ -1728,6 +1743,12 @@ def admin_dashboard():
     candidatos = _objs(_rows('SELECT * FROM candidato ORDER BY criado_em DESC LIMIT 100'))
     contador = _one('SELECT total_acessos FROM site_access LIMIT 1')
     total_acessos_site = int(contador['total_acessos'] or 0) if contador else 0
+    totais = _one("""SELECT (SELECT COALESCE(SUM(cliques),0) FROM partner) AS anuncios,
+        (SELECT COUNT(*) FROM candidato) AS curriculos,
+        (SELECT valor FROM site_config WHERE chave='__cliques_anunciar') AS interesse""") or {}
+    total_anuncios = int(totais.get('anuncios') or 0)
+    total_curriculos = int(totais.get('curriculos') or 0)
+    total_interesse = int(totais.get('interesse') or 0)
 
     return render_cf(
         'admin_dashboard.html',
@@ -1735,7 +1756,10 @@ def admin_dashboard():
         avaliacoes=avaliacoes,
         candidatos=candidatos,
         configs=config_dict(),
-        total_acessos_site=total_acessos_site
+        total_acessos_site=total_acessos_site,
+        total_anuncios=total_anuncios,
+        total_curriculos=total_curriculos,
+        total_interesse=total_interesse
     )
 
 
