@@ -18,7 +18,8 @@ from jinja2 import DictLoader
 app = Flask(__name__, static_folder=None)
 app.jinja_loader = DictLoader(TEMPLATES)
 app.config['SECRET_KEY'] = 'troque-esta-chave-no-cloudflare'
-app.config['MAX_CONTENT_LENGTH'] = 80 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 12 * 1024 * 1024
+app.config['MAX_FORM_MEMORY_SIZE'] = 512 * 1024
 
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov'}
@@ -1210,7 +1211,10 @@ def salvar_upload(arquivo, prefixo, allowed):
     safe = secure_filename(arquivo.filename)
     filename = f'{prefixo}_{datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")}_{safe}'
     arquivo.stream.seek(0)
-    dados = arquivo.read()
+    dados = arquivo.read(5 * 1024 * 1024 + 1) if prefixo != 'card_video' else arquivo.read(10 * 1024 * 1024 + 1)
+    limite = 10 * 1024 * 1024 if prefixo == 'card_video' else 5 * 1024 * 1024
+    if len(dados) > limite:
+        return None
     if not dados:
         return None
 
@@ -1494,7 +1498,7 @@ def arquivo_db(file_id):
             if obj is not None:
                 blob = run_sync(obj.arrayBuffer())
                 from js import Uint8Array
-                raw = bytes(_to_py(Uint8Array.new(blob)))
+                raw = Uint8Array.new(blob).to_bytes()
                 if len(raw) != int(arquivo.get('tamanho') or len(raw)):
                     raise RuntimeError('Stored R2 file size mismatch')
                 return send_file(BytesIO(raw),
