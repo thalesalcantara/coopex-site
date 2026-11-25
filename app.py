@@ -1685,6 +1685,12 @@ def sitemap_publico():
     return Response(xml, mimetype='application/xml', headers={'Cache-Control': 'public, max-age=3600'})
 
 
+# IndexNow ownership proof: public UTF-8 key, not an authentication secret.
+@app.route('/cf9d9ecc3dae4f4088b07f305647dafa.txt', methods=['GET', 'HEAD'])
+def indexnow_ownership():
+    return Response('cf9d9ecc3dae4f4088b07f305647dafa', content_type='text/plain; charset=utf-8', headers={'Cache-Control':'public, max-age=3600'})
+
+
 @app.route('/robots.txt')
 def robots_publico():
     return Response('User-agent: *\nAllow: /\nDisallow: /admin-site\nDisallow: /admin-coopex\nDisallow: /card-link/\nDisallow: /parceiro/\nDisallow: /api/\nSitemap: https://www.coopexentregas.com.br/sitemap.xml\n', mimetype='text/plain', headers={'Cache-Control': 'public, max-age=3600'})
