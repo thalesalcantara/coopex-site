@@ -2681,3 +2681,71 @@ html body .page:before{background:linear-gradient(125deg,transparent 20%,rgba(21
 
 # Responsive public home: preserve content and glass relief without clipping.
 TEMPLATES['index.html'] = TEMPLATES['index.html'].replace('</head>', "\n<style id=\"coopex-fit-cards\">\nbody.prism.luminous #inicio .hero-copy{box-sizing:border-box!important;height:auto!important;min-height:0!important}\nbody.prism.luminous #inicio .selo-utilidade-box{flex-shrink:0!important;height:auto!important;min-height:0!important}\nbody.prism.luminous #inicio .selo-utilidade-box p{overflow:visible!important;white-space:normal!important;line-height:1.25!important}\nbody.prism.luminous #inicio .home-partners{overflow:visible!important}\nbody.luminous #inicio .partner-loop-shell{padding:0 42px!important;min-width:0!important}\nbody.luminous #inicio .loop-prev{left:0!important}\nbody.luminous #inicio .loop-next{right:0!important}\nbody.luminous #inicio .home-partner-track{padding:8px 5px 10px!important;box-sizing:border-box!important}\nbody.prism.luminous #inicio .home-partner{height:auto!important;min-height:90px!important;flex:0 0 clamp(112px,8vw,150px)!important;width:clamp(112px,8vw,150px)!important;padding:6px!important;box-sizing:border-box!important;justify-content:center!important;overflow:visible!important}\nbody.prism.luminous #inicio .home-partner img{height:42px!important;max-width:100%!important;object-fit:contain!important;flex-shrink:0!important}\nbody.prism.luminous #inicio .home-partner span{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;display:block!important;line-height:1.15!important;overflow-wrap:anywhere!important}\n@media(min-width:1050px) and (min-height:650px){\nbody.prism.luminous{height:auto!important;min-height:100dvh!important;overflow-y:auto!important}\nbody.prism.luminous main{overflow:visible!important;min-height:0!important}\nbody.prism.luminous main>#inicio.active{grid-template-rows:auto auto auto!important;overflow:visible!important;flex:0 0 auto!important}\nbody.prism.luminous #inicio .hero{height:auto!important;min-height:0!important}\nbody.prism.luminous #inicio .hero-container{height:auto!important}\nbody.prism.luminous #inicio .hero-banner{height:auto!important;min-height:clamp(370px,46vh,520px)!important;display:flex!important;align-items:center!important}\nbody.prism.luminous #inicio .hero-copy{position:relative!important;inset:auto!important;padding:18px clamp(20px,2.5vw,40px)!important;flex-shrink:0!important}\nbody.prism.luminous #inicio .hero-copy h1{font-size:clamp(26px,min(2.65vw,4.9vh),43px)!important}\nbody.prism.luminous #inicio .hero-copy>p{font-size:clamp(13px,1.7vh,16px)!important}\nbody.prism.luminous #inicio .reviews-title,body.prism.luminous #inicio .review-card{height:auto!important;min-height:105px!important;overflow:visible!important}\nbody.prism.luminous #inicio .review-card p{-webkit-line-clamp:unset!important;display:block!important;overflow:visible!important}\n}\n@media(max-width:680px){body.luminous #inicio .partner-loop-shell{padding:0 30px!important}body.luminous #inicio .loop-arrow{width:28px!important;height:28px!important;font-size:23px!important}}\n</style>" + '</head>', 1)
+
+
+# Final public-home layout: compact desktop, accessible mobile, no footer brand duplication.
+_home = TEMPLATES["index.html"]
+_home = _site_re.sub(r'<img class="footer-logo-coopex"[^>]*>', '', _home, count=1)
+_home = _home.replace('PRIVACIDADE E SEGURANÇA', 'Política de Privacidade e Segurança', 1)
+_home = _site_re.sub(r'<span class="google-pill"><strong>G</strong> Avaliações no Google</span>\s*<h2>O que os clientes dizem</h2>\s*<p>.*?</p>', '''<span class="google-pill"><strong>G</strong> Avaliações no Google</span>
+          <a class="google-rating" href="https://www.google.com/maps/search/?api=1&amp;query=COOPEX%20Entregas%20Natal%20RN" target="_blank" rel="noopener" aria-label="Última nota conhecida: 4,7 de 5. Consulte o Google para a nota atual."><b>4,7</b><span class="rating-stars" aria-hidden="true">★★★★★</span></a>
+          <small class="rating-note">Última nota conhecida · 25/11/2026</small>
+          <a class="google-source" href="https://www.google.com/maps/search/?api=1&amp;query=COOPEX%20Entregas%20Natal%20RN" target="_blank" rel="noopener">Ver avaliações no Google ↗</a>''', _home, count=1, flags=_site_re.S)
+_home = _home.replace('</body>', '''<style id="coopex-home-final">
+body.prism.luminous .footer-logos{display:none!important}
+body.prism.luminous .footer-royal-grid{grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important}
+body.prism.luminous a.footer-policy{color:#0645bd!important;text-decoration:underline!important;text-underline-offset:3px;font-weight:800!important;opacity:1!important}
+body.prism.luminous #inicio .review-top :is(.avatar-google,.avatar-google-img){width:36px!important;height:36px!important;min-width:36px!important;max-width:36px!important;aspect-ratio:1!important;border-radius:50%!important;object-fit:cover!important;padding:0!important;flex:0 0 36px!important;overflow:hidden!important}
+body.prism.luminous #inicio .google-rating{display:flex;align-items:center;gap:8px;text-decoration:none!important;color:#071653!important;line-height:1.05;margin:4px 0}
+body.prism.luminous #inicio .google-rating b{font-size:32px;font-weight:850;letter-spacing:-1px}
+body.prism.luminous #inicio .rating-stars{font-size:17px;letter-spacing:1px;color:#9b6100}
+body.prism.luminous #inicio .rating-note{display:block;font-size:10px;color:#314b70;line-height:1.2}
+body.prism.luminous #inicio .reviews-title .google-source{display:inline-block;font-size:11px;text-decoration:underline;margin-top:5px}
+@media(min-width:1050px) and (min-height:650px){
+body.prism.luminous:has(#inicio.active){display:flex!important;flex-direction:column!important;height:auto!important;min-height:100dvh!important;overflow-y:auto!important}
+body.prism.luminous:has(#inicio.active) .topo{flex:none!important;padding:3px 0 6px!important}
+body.prism.luminous:has(#inicio.active) .topo .container.nav{min-height:54px!important;padding:3px 12px!important}
+body.prism.luminous:has(#inicio.active) .topo .brand .coopex-brand-official{max-height:48px!important}
+body.prism.luminous:has(#inicio.active) .topo .somos-wrap{height:42px!important}
+body.prism.luminous:has(#inicio.active) main{flex:1 0 auto!important;display:flex!important;flex-direction:column!important;min-height:0!important;overflow:visible!important}
+body.prism.luminous main>#inicio.active{display:grid!important;flex:1 0 auto!important;grid-template-rows:minmax(min-content,1fr) auto auto!important;gap:7px!important;overflow:visible!important;padding:0!important;margin:0!important}
+body.prism.luminous #inicio .hero{padding:0!important;min-height:0!important;height:auto!important}
+body.prism.luminous #inicio .hero-container{height:100%!important;min-height:0!important}
+body.prism.luminous #inicio .hero-banner{height:100%!important;min-height:0!important;align-items:stretch!important}
+body.prism.luminous #inicio .hero-copy{height:auto!important;min-height:0!important;position:relative!important;padding:clamp(9px,1.5vh,18px) clamp(15px,1.9vw,30px)!important;width:41%!important;justify-content:center!important;gap:0!important}
+body.prism.luminous #inicio .hero-copy .tag{font-size:11px!important;padding:4px 8px!important;margin:0!important;line-height:1.15!important}
+body.prism.luminous #inicio .hero-copy h1{font-size:clamp(23px,min(2.55vw,4.1vh),42px)!important;line-height:1.04!important;margin:6px 0!important}
+body.prism.luminous #inicio .hero-copy>p{font-size:clamp(12px,1.65vh,15px)!important;line-height:1.25!important;margin:0 0 7px!important}
+body.prism.luminous #inicio .actions{gap:7px!important;margin:0!important}
+body.prism.luminous #inicio .actions .btn{min-height:32px!important;padding:5px 7px!important;font-size:12px!important;line-height:1.15!important}
+body.prism.luminous #inicio .selo-utilidade-box{margin:7px 0 0!important;padding:6px 9px!important;gap:8px!important;min-height:0!important}
+body.prism.luminous #inicio .selo-utilidade-box img{height:38px!important;width:38px!important;flex:none!important}
+body.prism.luminous #inicio .selo-utilidade-box strong{font-size:13px!important;line-height:1.15!important}
+body.prism.luminous #inicio .selo-utilidade-box p{font-size:12px!important;line-height:1.2!important;margin:2px 0 0!important;display:block!important;overflow:visible!important}
+body.prism.luminous #inicio .home-reviews{padding:0!important;margin:0!important}
+body.prism.luminous #inicio .reviews-grid{grid-template-columns:minmax(170px,.8fr) minmax(0,3fr)!important;gap:8px!important}
+body.prism.luminous #inicio .reviews-cards{gap:8px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+body.prism.luminous #inicio :is(.reviews-title,.review-card){height:auto!important;min-height:104px!important;padding:8px 10px!important;overflow:visible!important;border-radius:18px!important}
+body.prism.luminous #inicio .review-top{gap:7px!important;margin:0!important;min-width:0!important}
+body.prism.luminous #inicio .review-top strong{font-size:12px!important;line-height:1.15!important}
+body.prism.luminous #inicio .review-top small{font-size:10px!important;line-height:1.1!important}
+body.prism.luminous #inicio .review-card .stars{font-size:13px!important;line-height:1!important;margin:3px 0!important}
+body.prism.luminous #inicio .review-card p{font-size:12px!important;line-height:1.25!important;margin:3px 0!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important}
+body.prism.luminous #inicio .review-card:focus p,body.prism.luminous #inicio .review-card:hover p{-webkit-line-clamp:unset!important}
+body.prism.luminous #inicio .review-date{font-size:10px!important;line-height:1.1!important}
+body.prism.luminous #inicio .home-partners{margin:0 auto!important;padding:5px 13px!important}
+body.prism.luminous #inicio .partners-heading{margin:0 0 3px!important;gap:8px!important}
+body.prism.luminous #inicio .partners-heading h2{font-size:17px!important;line-height:1.15!important;margin:0!important}
+body.prism.luminous #inicio .eyebrow{font-size:9px!important;line-height:1!important}
+body.prism.luminous #inicio .see-partners{padding:4px 10px!important;min-height:26px!important;font-size:11px!important}
+body.prism.luminous #inicio .home-partner-track{padding:3px 3px 5px!important}
+body.prism.luminous #inicio .home-partner{min-height:65px!important;height:auto!important;aspect-ratio:auto!important;padding:4px!important;gap:2px!important}
+body.prism.luminous #inicio .home-partner img{height:35px!important;width:100%!important}
+body.prism.luminous #inicio .home-partner span{font-size:10px!important;line-height:1.1!important}
+body.prism.luminous .footer-royal{flex:none!important;padding:5px 0!important}
+body.prism.luminous .footer-royal-grid{min-height:34px!important;padding:3px 12px!important}
+body.prism.luminous .footer-end .floating-delivery{min-height:30px!important;padding:4px 10px!important}
+}
+@media(max-width:1049px){body.prism.luminous .footer-royal-grid{grid-template-columns:1fr!important}body.prism.luminous .footer-policy{justify-self:center!important}body.prism.luminous .footer-end{grid-column:1!important;justify-content:center!important}}
+</style></body>''', 1)
+TEMPLATES["index.html"] = _home
