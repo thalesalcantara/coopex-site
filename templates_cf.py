@@ -2749,3 +2749,30 @@ body.prism.luminous .footer-end .floating-delivery{min-height:30px!important;pad
 @media(max-width:1049px){body.prism.luminous .footer-royal-grid{grid-template-columns:1fr!important}body.prism.luminous .footer-policy{justify-self:center!important}body.prism.luminous .footer-end{grid-column:1!important;justify-content:center!important}}
 </style></body>''', 1)
 TEMPLATES["index.html"] = _home
+
+
+# Consistent full-width public layout: same gutters for every tab.
+TEMPLATES["index.html"] = TEMPLATES["index.html"].replace("</body>", """<style id="coopex-full-width">
+body.prism.luminous{--site-gutter:clamp(10px,1.2vw,22px)}
+body.prism.luminous main{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+body.prism.luminous main>.page-section{width:100%!important;max-width:none!important;margin-inline:0!important;box-sizing:border-box}
+body.prism.luminous main .container,body.prism.luminous .footer-royal-grid,body.prism.luminous .topo .container.nav,body.prism.luminous #sobre .info-grid-site,body.prism.luminous #inicio .home-partners{width:calc(100% - 2 * var(--site-gutter))!important;max-width:none!important;margin-inline:auto!important;box-sizing:border-box}
+body.prism.luminous main .container .container,body.prism.luminous main .container .info-grid-site{width:100%!important}
+body.prism.luminous #servicos .seo-service-links{width:calc(100% - 2 * var(--site-gutter))!important;max-width:none!important;margin:8px auto!important;padding:10px 14px!important;box-sizing:border-box;border:1px solid #ffffffc9;border-radius:20px;background:var(--glass);box-shadow:var(--edge);gap:6px!important;flex-shrink:0}
+body.prism.luminous #servicos .seo-service-links a{flex:1 1 180px;text-align:center;font-size:12px;text-decoration:none;border:1px solid #ffffffa0;background:#e4f1ffb0!important;padding:5px 8px!important}
+@media(min-width:1050px){
+body.prism.luminous main>.page-section:not(#inicio)>.secao{padding:8px 0!important}
+body.prism.luminous #servicos .secao{display:flex!important;align-items:stretch!important;flex:1 1 auto!important}
+body.prism.luminous #servicos .secao>.container{display:flex!important;flex-direction:column;gap:12px;min-height:0}
+body.prism.luminous #servicos .center{margin:0 auto!important}
+body.prism.luminous #servicos .center h2{font-size:clamp(28px,2.6vw,44px)!important;margin:6px 0!important}
+body.prism.luminous #servicos .center p{margin:4px 0!important}
+body.prism.luminous #servicos .cards{width:100%!important;max-width:none!important;flex:1 1 auto;gap:12px!important;margin:0!important;align-items:stretch!important}
+body.prism.luminous #servicos .card{min-height:0!important;padding:clamp(14px,1.4vw,25px)!important}
+body.prism.luminous #servicos .card-icon{width:56px!important;height:56px!important;margin-bottom:8px!important}
+body.prism.luminous #servicos .service-intro{margin-bottom:8px!important}
+body.prism.luminous #servicos .card ul{gap:3px!important}
+body.prism.luminous #servicos .card li{padding-block:6px!important}
+}
+@media(max-width:680px){body.prism.luminous{--site-gutter:10px}}
+</style></body>""", 1)
