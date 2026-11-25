@@ -2959,3 +2959,19 @@ document.getElementById('site-contact-form')?.addEventListener('submit',async fu
 });
 </script></body>""",1)
 TEMPLATES["index.html"] = _public
+
+
+# Curriculum form: identity and contact fields for the six-month renewal rule.
+_public = TEMPLATES["index.html"]
+_public = _public.replace('<label>Data de nascimento', '''<div class="candidate-identity"><label>CPF<input name="cpf" required inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00"></label>
+<label>Telefone / WhatsApp<input name="telefone" type="tel" required autocomplete="tel" maxlength="15" placeholder="(84) 99999-9999"></label></div>
+<label>Data de nascimento''', 1)
+_public = _public.replace('O sistema bloqueia envio para menor de 21 anos ou sem atividade remunerada marcada.', 'Envie uma única vez. Você poderá renovar sua candidatura após seis meses. Arquivo de até 4 MB. É necessário ter 21 anos ou mais e atividade remunerada na CNH.',1)
+_public = _public.replace("</body>", """<style id="candidate-identity-fields">
+.candidate-identity{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.candidate-identity label{min-width:0}
+body.prism.luminous #trabalhe .work-form{gap:8px!important}
+body.prism.luminous #trabalhe .work-form .form-note{line-height:1.3!important}
+@media(max-width:520px){.candidate-identity{grid-template-columns:1fr}}
+</style></body>""",1)
+TEMPLATES["index.html"] = _public
