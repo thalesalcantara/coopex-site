@@ -2838,7 +2838,8 @@ function abrirClienteIntegrado(){
  document.body.classList.add('customer-embedded');
  document.body.classList.remove('menu-open');
  const link=document.querySelector('a.customer-access');if(link)link.setAttribute('aria-current','page');
- window.scrollTo(0,0);
+ window.scrollTo({top:0,left:0,behavior:'instant'});
+ document.documentElement.scrollTop=0;document.body.scrollTop=0;
 }
 function fecharClienteIntegrado(){
  const section=document.getElementById('cliente-integrado');if(section){section.hidden=true;section.classList.remove('active');section.style.removeProperty('display');}
@@ -2875,5 +2876,22 @@ body.prism.luminous.customer-embedded>main>:not(#cliente-integrado){display:none
 body.prism.luminous.customer-embedded>main>#cliente-integrado.active{display:flex!important;flex:1 1 0!important;height:auto!important;min-height:0!important;overflow:hidden!important;padding:6px var(--site-gutter,12px)!important}
 body.prism.luminous.customer-embedded .customer-embed-shell{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
 body.prism.luminous.customer-embedded #customer-embed-frame{flex:1 1 0!important;min-height:0!important;height:100%!important;width:100%!important}
+</style></body>""",1)
+TEMPLATES["index.html"] = _public
+
+
+# Allocate real viewport space to the customer tab, including header/footer.
+_public = TEMPLATES["index.html"]
+_public = _public.replace("</body>", """<style id="customer-viewport-final">
+html:has(body.customer-embedded),html:has(body.customer-embedded) body{margin:0!important;padding:0!important;overflow:hidden!important;height:100%!important;scroll-behavior:auto!important}
+html body.prism.luminous.customer-embedded{display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;grid-template-columns:minmax(0,1fr)!important;gap:0!important;box-sizing:border-box!important;width:100%!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important}
+html body.prism.luminous.customer-embedded>.topo,html body.prism.luminous.customer-embedded>.footer-royal{position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:0!important;margin:0!important;padding:4px 0!important;box-sizing:border-box!important}
+html body.prism.luminous.customer-embedded>.topo .container.nav{min-height:0!important;margin-block:0!important}
+html body.prism.luminous.customer-embedded>.footer-royal .footer-royal-grid{margin-block:0!important;min-height:0!important}
+html body.prism.luminous.customer-embedded>main{display:block!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;margin:0!important;padding:0!important;box-sizing:border-box!important}
+html body.prism.luminous.customer-embedded>main>#cliente-integrado.active{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:4px var(--site-gutter,12px)!important;box-sizing:border-box!important;overflow:hidden!important;animation:none!important}
+html body.prism.luminous.customer-embedded .customer-embed-shell{display:block!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:0!important;box-sizing:border-box!important;overflow:hidden!important}
+html body.prism.luminous.customer-embedded #customer-embed-frame{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:0!important;border:0!important}
+@media(max-width:680px){html body.prism.luminous.customer-embedded>.footer-royal .footer-royal-grid{gap:3px!important;padding:3px 8px!important}html body.prism.luminous.customer-embedded>.footer-royal .footer-end{flex-direction:row!important;gap:5px!important}html body.prism.luminous.customer-embedded>.footer-royal .floating-delivery{width:auto!important;min-height:30px!important}}
 </style></body>""",1)
 TEMPLATES["index.html"] = _public
