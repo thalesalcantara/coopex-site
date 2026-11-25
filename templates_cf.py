@@ -2895,3 +2895,16 @@ html body.prism.luminous.customer-embedded #customer-embed-frame{display:block!i
 @media(max-width:680px){html body.prism.luminous.customer-embedded>.footer-royal .footer-royal-grid{gap:3px!important;padding:3px 8px!important}html body.prism.luminous.customer-embedded>.footer-royal .footer-end{flex-direction:row!important;gap:5px!important}html body.prism.luminous.customer-embedded>.footer-royal .floating-delivery{width:auto!important;min-height:30px!important}}
 </style></body>""",1)
 TEMPLATES["index.html"] = _public
+
+
+# Footer: icon-only delivery shortcut and bold copyright.
+_public = TEMPLATES["index.html"]
+_public = _site_re.sub(r'(<button\b[^>]*class="floating-delivery"[^>]*>\s*<span>.*?</span>)\s*<strong>Solicitar entrega</strong>', lambda m: m.group(1), _public, count=1, flags=_site_re.S)
+_public = _public.replace('aria-label="Solicitar entrega">', 'aria-label="Solicitar entrega" title="Solicitar entrega">', 1)
+_public = _public.replace("</body>", """<style id="coopex-footer-icon-only">
+html body.prism.luminous .footer-royal .footer-copy{font-weight:800!important}
+html body.prism.luminous .footer-royal .footer-end .floating-delivery{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 44px!important;width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;max-height:44px!important;padding:0!important;border-radius:50%!important}
+html body.prism.luminous .footer-royal .footer-end .floating-delivery span{margin:0!important;display:grid!important;place-items:center!important;font-size:20px!important;width:auto!important;height:auto!important;background:none!important;box-shadow:none!important}
+html body.prism.luminous .footer-royal .footer-end .floating-delivery strong{display:none!important}
+</style></body>""",1)
+TEMPLATES["index.html"] = _public
