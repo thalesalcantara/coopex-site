@@ -2779,13 +2779,13 @@ body.prism.luminous #servicos .card li{padding-block:6px!important}
 
 
 # Public customer access: direct navigation to the unified Financeiro/Supervisao site.
-_customer_url = "https://www.financeiro.coopexentregas.com.br/"
+_customer_url = "https://www.financeiro.coopexentregas.com.br/cliente/"
 _public = TEMPLATES["index.html"]
 _customer_button = '<a class="tab-link customer-access" href="' + _customer_url + '"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>Área do Cliente</span></a>'
-_public, _customer_count = _site_re.subn(r'(<a\b[^>]*data-page="servicos"[^>]*>.*?</a>)', lambda m: m.group(1) + _customer_button, _public, count=1, flags=_site_re.S)
+_public, _customer_count = _site_re.subn(r'(<a\b[^>]*data-page="inicio"[^>]*>.*?</a>)', lambda m: m.group(1) + _customer_button, _public, count=1, flags=_site_re.S)
 _public = _public.replace('onclick="abrirSolicitacao()"', 'onclick="window.location.assign(\'' + _customer_url + '\')"')
 _public = _public.replace("</body>", """<style id="coopex-customer-access">
-body.prism.luminous .topo .links a.customer-access{background:linear-gradient(155deg,#7decb8,#20ae72 42%,#087e4b 90%)!important;color:#fff!important;border:1.5px solid #baffd9!important;box-shadow:0 5px 13px #087e4b55,inset 0 2px 3px #ffffff8c,inset 0 -3px 5px #005b3c55!important;font-weight:800!important;text-decoration:none!important}
+body.prism.luminous .topo .links a.customer-access{background:linear-gradient(155deg,#70d9ff,#1677ee 42%,#0829bc 90%)!important;color:#fff!important;border:1.5px solid #a4eaff!important;box-shadow:0 5px 13px #002eae66,inset 0 2px 3px #ffffff8c,inset 0 -3px 5px #002b9b55!important;font-weight:800!important;text-decoration:none!important}
 body.prism.luminous .topo .links a.customer-access:hover{filter:brightness(1.09)}
 @media(min-width:1180px){body.prism.luminous .topo .container.nav{grid-template-columns:minmax(140px,15%) minmax(76px,8%) minmax(0,1fr)!important;gap:clamp(5px,.8vw,14px)!important}body.prism.luminous .topo .links .tab-link{gap:5px!important;padding-inline:clamp(5px,.55vw,12px)!important;font-size:clamp(10px,.77vw,14px)!important;min-width:0!important}}
 </style></body>""", 1)
