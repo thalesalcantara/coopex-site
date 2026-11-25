@@ -2314,4 +2314,47 @@ def api_parceiros():
     })
 
 
+
+# Transactional email: credentials live only in Worker secrets.
+def _site_send_email(subject, body, reply_to, attachment=None):
+    import json
+    from js import fetch, JSON
+    key = getattr(_env(), 'RESEND_API_KEY', None)
+    sender = getattr(_env(), 'SITE_MAIL_FROM', None)
+    if not key or not sender:
+        raise RuntimeError('Serviço de e-mail ainda não configurado.')
+    payload = {'from': str(sender), 'to': ['contato@coopexentregas.com.br'],
+               'subject': subject, 'text': body, 'reply_to': reply_to}
+    if attachment:
+        payload['attachments'] = [attachment]
+    options = {'method': 'POST', 'headers': {'Authorization': 'Bearer '+str(key),
+               'Content-Type': 'application/json'}, 'body': json.dumps(payload)}
+    response = run_sync(fetch('https://api.resend.com/emails', JSON.parse(json.dumps(options))))
+    if not response.ok:
+        raise RuntimeError('Serviço de e-mail não aceitou o envio.')
+
+def _site_valid_email(value):
+    return bool(_seo_re.fullmatch(r'[^@\s]{1,100}@[^@\s]{1,140}\.[^@\s]{2,30}', value))
+
+@app.route('/contato/enviar', methods=['POST'])
+def enviar_mensagem_contato():
+    if request.form.get('website'):
+        return jsonify(ok=False, mensagem='Não foi possível enviar.'), 400
+    nome = request.form.get('nome','').strip()
+    email = request.form.get('email','').strip()
+    telefone = request.form.get('telefone','').strip()
+    assunto = request.form.get('assunto','').strip()
+    mensagem = request.form.get('mensagem','').strip()
+    if not (2 <= len(nome) <= 120 and _site_valid_email(email) and len(telefone) <= 30
+            and assunto in ('Elogio','Reclamação','Sugestão','Dúvida','Outros assuntos')
+            and 5 <= len(mensagem) <= 4000):
+        return jsonify(ok=False, mensagem='Confira os campos obrigatórios.'), 400
+    try:
+        _site_send_email('Contato pelo site COOPEX — '+assunto,
+            f'Nome: {nome}\nE-mail: {email}\nTelefone: {telefone}\nAssunto: {assunto}\n\n{mensagem}', email)
+    except Exception:
+        return jsonify(ok=False, mensagem='Envio temporariamente indisponível. Utilize nosso WhatsApp.'), 503
+    return jsonify(ok=True, mensagem='Mensagem enviada com sucesso! Agradecemos seu contato.')
+
+
 Default = wsgi.entrypoint(app)
