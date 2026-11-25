@@ -2998,3 +2998,25 @@ html body.prism.luminous #contato .topic-options input:focus-visible+span{outlin
 @media(max-width:680px){html body.prism.luminous #contato .contato-grid{grid-template-areas:"channels" "commercial" "message" "map"!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto auto!important}}
 </style></body>""",1)
 TEMPLATES["index.html"] = _public
+
+
+# Footer matches the supplied SVG reference, with live accessible text and link.
+_public = TEMPLATES["index.html"]
+_footer_reference = '''<footer class="footer-royal footer-reference">
+<div class="container footer-royal-grid">
+<span class="footer-reference-brand">COOPEX Entregas · Desde 2002</span>
+<a class="footer-reference-policy" href="{{ url_for('politica_privacidade') }}"><svg viewBox="0 0 20 24" width="18" height="22" aria-hidden="true" fill="none" stroke="#1251b8" stroke-width="1.4"><path d="M2 4 L10 1 L18 4 V12 Q18 18 10 22 Q2 18 2 12 Z"/><path d="M6 11 L9 14 L14 7"/></svg><span>Política de Privacidade e Segurança</span></a>
+<span class="footer-reference-copy">© 2026 · Todos os direitos reservados</span>
+</div></footer>'''
+_public = _site_re.sub(r'<footer\b[^>]*class="[^"]*\bfooter-royal\b[^"]*"[^>]*>.*?</footer>', lambda m: _footer_reference, _public, count=1, flags=_site_re.S)
+_public = _public.replace("</body>", """<style id="footer-svg-reference">
+html body.prism.luminous footer.footer-reference{background:none!important;border:0!important;box-shadow:none!important;padding:5px var(--site-gutter,12px) 7px!important;margin:0!important;min-height:0!important;box-sizing:border-box!important}
+html body.prism.luminous footer.footer-reference .footer-royal-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr)!important;align-items:center!important;justify-items:stretch!important;gap:12px!important;width:100%!important;max-width:none!important;min-height:36px!important;height:auto!important;margin:0!important;padding:6px 16px!important;box-sizing:border-box!important;border:1px solid #c4d7ed!important;border-radius:12px!important;background:linear-gradient(180deg,#ffffff 0%,#dbeafa 100%)!important;box-shadow:0 2px 5px #396da633!important;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important}
+html body.prism.luminous footer.footer-reference .footer-reference-brand{font-size:11px!important;font-weight:700!important;color:#16386c!important;text-align:left!important;line-height:1.3!important}
+html body.prism.luminous footer.footer-reference .footer-reference-policy{display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;background:none!important;box-shadow:none!important;border:0!important;padding:0!important;margin:0!important;color:#124ebe!important;text-decoration:none!important;font-size:10.5px!important;font-weight:600!important;line-height:1.3!important}
+html body.prism.luminous footer.footer-reference .footer-reference-policy span{text-decoration:underline!important}
+html body.prism.luminous footer.footer-reference .footer-reference-policy svg{display:block!important;flex:0 0 18px!important;width:18px!important;height:22px!important}
+html body.prism.luminous footer.footer-reference .footer-reference-copy{font-size:10px!important;font-weight:400!important;color:#405979!important;text-align:right!important;line-height:1.3!important}
+@media(max-width:600px){html body.prism.luminous footer.footer-reference .footer-royal-grid{grid-template-columns:1fr!important;justify-items:center!important;gap:5px!important;padding:8px!important}html body.prism.luminous footer.footer-reference .footer-reference-brand,html body.prism.luminous footer.footer-reference .footer-reference-copy{text-align:center!important}}
+</style></body>""",1)
+TEMPLATES["index.html"] = _public
