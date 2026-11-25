@@ -2407,4 +2407,23 @@ def enviar_mensagem_contato():
     return jsonify(ok=True, mensagem='Mensagem enviada com sucesso! Agradecemos seu contato.')
 
 
+@app.get('/area-do-cliente')
+@app.get('/area-do-cliente/')
+def area_cliente_publica():
+    # O site permanece na origem oficial; o iframe usa a origem exata do OAuth.
+    # Subdomínios HTTPS do mesmo domínio são same-site para os cookies Lax.
+    html = """<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>Área do Cliente | COOPEX Entregas</title><link rel="icon" href="/favicon.svg">
+    <style>*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:system-ui,sans-serif}
+    body{display:flex;flex-direction:column;background:linear-gradient(145deg,#f4f9ff,#dcecff);color:#103975}
+    header{display:flex;align-items:center;gap:14px;padding:10px clamp(12px,3vw,40px);min-height:54px;background:#f6fbfff2;border-bottom:1px solid #c7dff8;box-shadow:0 3px 12px #124ba51c}
+    header a{font-size:14px;color:#0a4db3;font-weight:700;text-decoration:none}header strong{font-size:14px;margin-left:auto}
+    iframe{display:block;border:0;flex:1;width:100%;min-height:0;background:#e6f2ff}
+    </style></head><body><header><a href="/">← Voltar ao site</a><strong>Área do Cliente</strong></header>
+    <iframe src="https://www.financeiro.coopexentregas.com.br/cliente/" title="Área do Cliente COOPEX" allow="geolocation; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </body></html>"""
+    return Response(html,mimetype='text/html',headers={'Cache-Control':'no-store','Permissions-Policy':'geolocation=(self "https://www.financeiro.coopexentregas.com.br" "https://financeiro.coopexentregas.com.br"), clipboard-write=(self "https://www.financeiro.coopexentregas.com.br" "https://financeiro.coopexentregas.com.br")'})
+
+
 Default = wsgi.entrypoint(app)
