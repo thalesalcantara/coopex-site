@@ -1,0 +1,61 @@
+name: IndexNow COOPEX
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'templates_cf.py'
+      - 'templates/**'
+      - 'static/**'
+      - '.github/workflows/indexnow.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: indexnow-production
+  cancel-in-progress: true
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Notify IndexNow from public sitemap
+        env:
+          SITE: https://www.coopexentregas.com.br
+          INDEXNOW_KEY: cf9d9ecc3dae4f4088b07f305647dafa
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.error
+          import xml.etree.ElementTree as ET
+          from urllib.parse import urlsplit
+          site = os.environ["SITE"]
+          key = os.environ["INDEXNOW_KEY"]
+          host = urlsplit(site).netloc
+          key_url = site + "/" + key + ".txt"
+          # Allow the independent Cloudflare build time to publish.
+          time.sleep(90)
+          def get(url):
+              with urllib.request.urlopen(url, timeout=15) as response:
+                  if urlsplit(response.geturl()).netloc != host:
+                      raise RuntimeError("Unexpected redirect host")
+                  return response.read()
+          for attempt in range(4):
+              try:
+                  if get(key_url).decode("utf-8").strip() != key:
+                      raise RuntimeError("Key verification failed")
+                  root = ET.fromstring(get(site + "/sitemap.xml"))
+                  urls = sorted({e.text.strip() for e in root.findall(".//{*}loc") if e.text})
+                  if not urls or any(urlsplit(u).scheme != "https" or urlsplit(u).netloc != host for u in urls):
+                      raise RuntimeError("Invalid sitemap URLs")
+                  break
+              except Exception:
+                  if attempt == 3:
+                      raise
+                  time.sleep(15)
+          payload = json.dumps({"host": host, "key": key, "keyLocation": key_url, "urlList": urls}).encode("utf-8")
+          request = urllib.request.Request("https://api.indexnow.org/indexnow", data=payload, headers={"Content-Type": "application/json; charset=utf-8"}, method="POST")
+          with urllib.request.urlopen(request, timeout=20) as response:
+              if response.status not in (200, 202):
+                  raise RuntimeError(f"Unexpected IndexNow status {response.status}")
+              print(f"IndexNow HTTP {response.status}: {len(urls)} URLs submitted")
+          PY
