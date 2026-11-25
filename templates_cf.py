@@ -2920,3 +2920,42 @@ html body.prism.luminous .footer-royal .footer-end{justify-content:flex-end!impo
 @media(max-width:680px){html body.prism.luminous .footer-royal .footer-end{justify-content:center!important}}
 </style></body>""",1)
 TEMPLATES["index.html"] = _public
+
+
+# Contact form and dedicated commercial WhatsApp.
+_public = TEMPLATES["index.html"]
+_public = _site_re.sub(r'<button\b[^>]*>Solicitar entrega agora</button>', '<a class="btn primary full" href="https://wa.me/5584981110706?text=Ol%C3%A1%2C%20gostaria%20de%20solicitar%20uma%20proposta%20comercial%20da%20COOPEX." target="_blank" rel="noopener noreferrer">Solicitar proposta comercial</a>', _public, count=1)
+_contact_form = '''<form id="site-contact-form" class="contato-card contact-message" action="/contato/enviar" method="post">
+<h3>Envie uma mensagem</h3>
+<p>Elogios, reclamações, sugestões e dúvidas.</p>
+<div class="contact-fields">
+<label>Nome completo<input name="nome" required maxlength="120" autocomplete="name"></label>
+<label>E-mail<input name="email" type="email" required maxlength="250" autocomplete="email"></label>
+<label>Telefone / WhatsApp<input name="telefone" type="tel" maxlength="30" autocomplete="tel"></label>
+<label>Assunto<select name="assunto" required><option value="">Selecione</option><option>Elogio</option><option>Reclamação</option><option>Sugestão</option><option>Dúvida</option><option>Outros assuntos</option></select></label>
+<label class="contact-full">Mensagem<textarea name="mensagem" required minlength="5" maxlength="4000" rows="3"></textarea></label>
+</div><div hidden aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
+<button class="btn primary full" type="submit">Enviar mensagem</button>
+<p id="site-contact-feedback" role="status" aria-live="polite"></p>
+</form>'''
+_public = _public.replace('<div class="mapa-card">', _contact_form+'<div class="mapa-card">', 1)
+_public = _public.replace("</body>", """<style id="coopex-contact-message">
+body.prism.luminous #contato .contact-message{padding:14px!important;min-width:0;display:flex;flex-direction:column;gap:7px}
+body.prism.luminous #contato .contact-message h3,body.prism.luminous #contato .contact-message p{margin:0!important}
+.contact-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.contact-fields label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:#173763}
+.contact-fields :is(input,select,textarea){width:100%;min-width:0;box-sizing:border-box;border:1px solid #fff;border-radius:10px;background:linear-gradient(145deg,#c4dff9,#edf7ff);padding:8px 10px;font:inherit;color:#173763}
+.contact-fields textarea{resize:vertical;min-height:66px}
+.contact-full{grid-column:1/-1}
+body.prism.luminous #contato .contact-message .btn{min-height:36px!important;margin:0!important}
+#site-contact-feedback:empty{display:none}
+@media(min-width:1050px){body.prism.luminous #contato .contato-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.1fr)!important;align-items:stretch!important;gap:10px!important}body.prism.luminous #contato .contact-message{grid-column:3;grid-row:1/3}body.prism.luminous #contato .mapa-card{grid-column:1/3!important}body.prism.luminous #contato .mapa-card iframe{height:clamp(140px,24vh,250px)!important}}
+@media(max-width:680px){.contact-fields{grid-template-columns:1fr}}
+</style><script>
+document.getElementById('site-contact-form')?.addEventListener('submit',async function(e){
+ e.preventDefault();const btn=this.querySelector('button[type=submit]'),out=document.getElementById('site-contact-feedback');btn.disabled=true;out.textContent='Enviando...';
+ try{const r=await fetch(this.action,{method:'POST',body:new FormData(this)});const j=await r.json();out.textContent=j.mensagem||'Não foi possível enviar.';if(r.ok&&j.ok)this.reset();}
+ catch(e){out.textContent='Não foi possível enviar. Utilize nosso WhatsApp.';}finally{btn.disabled=false;}
+});
+</script></body>""",1)
+TEMPLATES["index.html"] = _public
