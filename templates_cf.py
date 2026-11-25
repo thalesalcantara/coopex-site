@@ -2932,7 +2932,7 @@ _contact_form = '''<form id="site-contact-form" class="contato-card contact-mess
 <label>Nome completo<input name="nome" required maxlength="120" autocomplete="name"></label>
 <label>E-mail<input name="email" type="email" required maxlength="250" autocomplete="email"></label>
 <label>Telefone / WhatsApp<input name="telefone" type="tel" maxlength="30" autocomplete="tel"></label>
-<label>Assunto<select name="assunto" required><option value="">Selecione</option><option>Elogio</option><option>Reclamação</option><option>Sugestão</option><option>Dúvida</option><option>Outros assuntos</option></select></label>
+<fieldset class="contact-topics contact-full"><legend>Qual o motivo do contato?</legend><div class="topic-options"><label><input type="radio" name="assunto" value="Elogio" required><span>☺ Elogio</span></label><label><input type="radio" name="assunto" value="Reclamação"><span>! Reclamação</span></label><label><input type="radio" name="assunto" value="Sugestão"><span>✦ Sugestão</span></label><label><input type="radio" name="assunto" value="Dúvida"><span>? Dúvida</span></label><label><input type="radio" name="assunto" value="Outros assuntos"><span>… Outros assuntos</span></label></div></fieldset>
 <label class="contact-full">Mensagem<textarea name="mensagem" required minlength="5" maxlength="4000" rows="3"></textarea></label>
 </div><div hidden aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
 <button class="btn primary full" type="submit">Enviar mensagem</button>
@@ -2973,5 +2973,28 @@ _public = _public.replace("</body>", """<style id="candidate-identity-fields">
 body.prism.luminous #trabalhe .work-form{gap:8px!important}
 body.prism.luminous #trabalhe .work-form .form-note{line-height:1.3!important}
 @media(max-width:520px){.candidate-identity{grid-template-columns:1fr}}
+</style></body>""",1)
+TEMPLATES["index.html"] = _public
+
+
+# Explicit contact grid: each card owns its area, including the map.
+_public = TEMPLATES["index.html"]
+_public = _public.replace("</body>", """<style id="contact-grid-no-overlap">
+html body.prism.luminous #contato .contato-grid{display:grid!important;grid-template-areas:"channels commercial message" "channels map message"!important;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr) minmax(0,1.15fr)!important;grid-template-rows:auto minmax(0,1fr)!important;gap:12px!important;align-items:stretch!important}
+html body.prism.luminous #contato .contato-grid>div:first-child{grid-area:channels!important;position:relative!important;inset:auto!important;margin:0!important;padding:18px!important;min-width:0!important;min-height:0!important}
+html body.prism.luminous #contato .contato-grid>div.contato-card{grid-area:commercial!important;position:relative!important;inset:auto!important;margin:0!important;padding:16px!important;min-height:0!important}
+html body.prism.luminous #contato .contato-grid>.mapa-card{grid-area:map!important;position:relative!important;inset:auto!important;margin:0!important;padding:8px!important;min-height:0!important;display:flex!important}
+html body.prism.luminous #contato .mapa-card iframe{display:block!important;width:100%!important;height:clamp(155px,26vh,270px)!important;min-height:0!important;align-self:stretch!important}
+html body.prism.luminous #contato .contato-grid>.contact-message{grid-area:message!important;position:relative!important;inset:auto!important;margin:0!important;padding:16px!important;min-height:0!important}
+html body.prism.luminous #contato .contact-topics{margin:0;padding:0;border:0;min-width:0}
+html body.prism.luminous #contato .contact-topics legend{font-size:12px;font-weight:800;color:#173763;margin-bottom:6px}
+html body.prism.luminous #contato .topic-options{display:flex;flex-wrap:wrap;gap:5px}
+html body.prism.luminous #contato .topic-options label{position:relative;display:inline-flex;cursor:pointer;flex:0 1 auto}
+html body.prism.luminous #contato .topic-options input{position:absolute;opacity:0;width:1px;height:1px;padding:0}
+html body.prism.luminous #contato .topic-options span{padding:7px 9px;border:1px solid #fff;border-radius:13px;background:linear-gradient(145deg,#eef8ff,#b7d7fa);color:#153f79;font-size:12px;font-weight:700;box-shadow:0 2px 5px #123c7022}
+html body.prism.luminous #contato .topic-options input:checked+span{background:linear-gradient(155deg,#2499f4,#063bbf);color:white;box-shadow:0 2px 6px #0c47c955}
+html body.prism.luminous #contato .topic-options input:focus-visible+span{outline:2px solid #094ac8;outline-offset:2px}
+@media(max-width:1049px){html body.prism.luminous #contato .contato-grid{grid-template-areas:"channels commercial" "message map"!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:auto auto!important}}
+@media(max-width:680px){html body.prism.luminous #contato .contato-grid{grid-template-areas:"channels" "commercial" "message" "map"!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto auto!important}}
 </style></body>""",1)
 TEMPLATES["index.html"] = _public
