@@ -1762,17 +1762,67 @@ def enviar_curriculo():
         flash('Para enviar, marque que possui atividade remunerada na CNH.', 'erro')
         return redirect('/trabalhe')
 
-    curriculo = salvar_upload(arquivo, 'curriculo', ALLOWED_CURRICULO_EXTENSIONS)
-    if not curriculo:
-        flash('Envie o currículo em PDF, DOC, DOCX ou imagem.', 'erro')
+    import base64
+    import calendar
+    cpf = _seo_re.sub(r'\D', '', request.form.get('cpf',''))
+    telefone = _seo_re.sub(r'\D', '', request.form.get('telefone',''))
+    def digito(base):
+        resto = sum(int(v)*p for v,p in zip(base, range(len(base)+1,1,-1))) % 11
+        return str(0 if resto < 2 else 11-resto)
+    if (len(cpf)!=11 or len(set(cpf))==1 or cpf[9]!=digito(cpf[:9])
+            or cpf[10]!=digito(cpf[:10]) or len(telefone) not in (10,11)
+            or not _site_valid_email(email) or len(nome)>120 or len(escolaridade)>100):
+        flash('Confira CPF, telefone e demais dados do cadastro.', 'erro')
         return redirect('/trabalhe')
-
-    _db_run('''INSERT INTO candidato
-               (nome_completo, data_nascimento, idade, escolaridade, email,
-                atividade_remunerada, curriculo, criado_em)
-               VALUES (?, ?, ?, ?, ?, 1, ?, ?)''',
-            nome, nascimento.isoformat(), idade, escolaridade, email, curriculo, agora_utc_iso())
-    flash('Currículo enviado com sucesso. A COOPEX analisará as informações.', 'ok')
+    filename = secure_filename(arquivo.filename or '') if arquivo else ''
+    if not filename or '.' not in filename or filename.rsplit('.',1)[1].lower() not in ALLOWED_CURRICULO_EXTENSIONS:
+        flash('Envie um currículo em PDF, DOC, DOCX ou imagem.', 'erro')
+        return redirect('/trabalhe')
+    data = arquivo.read(4*1024*1024+1)
+    if not data or len(data)>4*1024*1024:
+        flash('O currículo deve ter até 4 MB.', 'erro')
+        return redirect('/trabalhe')
+    secret = getattr(_env(),'SITE_CPF_HASH_KEY',None)
+    if not secret or not getattr(_env(),'RESEND_API_KEY',None) or not getattr(_env(),'SITE_MAIL_FROM',None):
+        flash('Envio temporariamente indisponível. Tente novamente mais tarde.', 'erro')
+        return redirect('/trabalhe')
+    fingerprint = hmac.new(str(secret).encode(),cpf.encode(),hashlib.sha256).hexdigest()
+    now = datetime.now(timezone.utc)
+    month = now.month+6
+    year = now.year+(month-1)//12
+    month = (month-1)%12+1
+    next_date = now.replace(year=year,month=month,day=min(now.day,calendar.monthrange(year,month)[1]))
+    token = secrets.token_hex(16)
+    try:
+        _db_run("""CREATE TABLE IF NOT EXISTS candidatura_envio (
+            cpf_hash TEXT PRIMARY KEY, proximo_envio TEXT NOT NULL,
+            reserva_ate TEXT NOT NULL, token TEXT NOT NULL)""")
+        result = _db_run("""INSERT INTO candidatura_envio(cpf_hash,proximo_envio,reserva_ate,token)
+            VALUES(?,?,?,?) ON CONFLICT(cpf_hash) DO UPDATE SET
+            reserva_ate=excluded.reserva_ate,token=excluded.token
+            WHERE candidatura_envio.proximo_envio<=? AND candidatura_envio.reserva_ate<=?""",
+            fingerprint,now.isoformat(),(now+timedelta(minutes=15)).isoformat(),token,now.isoformat(),now.isoformat())
+        row = _one('SELECT * FROM candidatura_envio WHERE cpf_hash=?',fingerprint)
+        if not row or row['token']!=token:
+            when = row['proximo_envio'] if row else now.isoformat()
+            if when>now.isoformat():
+                date_text=datetime.fromisoformat(when).strftime('%d/%m/%Y')
+                flash('Você já possui candidatura cadastrada. Próximo envio permitido: '+date_text+'.', 'erro')
+            else:
+                flash('Já existe um envio em processamento. Aguarde antes de tentar novamente.', 'erro')
+            return redirect('/trabalhe')
+        body = (f'Nome: {nome}\nCPF: {cpf}\nTelefone: {telefone}\nE-mail: {email}\n'
+                f'Nascimento: {nascimento.strftime("%d/%m/%Y")}\nIdade: {idade}\n'
+                f'Escolaridade: {escolaridade}\nAtividade remunerada na CNH: Sim\n'
+                f'Data do cadastro: {now.strftime("%d/%m/%Y %H:%M")} UTC')
+        _site_send_email('Candidato à vaga de entregador — '+nome,body,email,
+            {'filename':filename,'content':base64.b64encode(data).decode('ascii')})
+        _db_run('UPDATE candidatura_envio SET proximo_envio=?,reserva_ate=? WHERE cpf_hash=? AND token=?',
+                next_date.isoformat(),now.isoformat(),fingerprint,token)
+    except Exception:
+        flash('Não foi possível confirmar o envio. Aguarde 15 minutos antes de tentar novamente.', 'erro')
+        return redirect('/trabalhe')
+    flash('Currículo enviado com sucesso! Não envie novamente. Você poderá renovar sua candidatura em '+next_date.strftime('%d/%m/%Y')+'. Entraremos em contato caso surja uma oportunidade.', 'ok')
     return redirect('/trabalhe')
 
 
