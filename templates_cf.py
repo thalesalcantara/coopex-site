@@ -2908,3 +2908,15 @@ html body.prism.luminous .footer-royal .footer-end .floating-delivery span{margi
 html body.prism.luminous .footer-royal .footer-end .floating-delivery strong{display:none!important}
 </style></body>""",1)
 TEMPLATES["index.html"] = _public
+
+
+# Remove the redundant footer delivery shortcut; preserve header and hero actions.
+_public = TEMPLATES["index.html"]
+_public = _site_re.sub(r'<button\b[^>]*class="floating-delivery"[^>]*>.*?</button>', '', _public, count=1, flags=_site_re.S)
+_public = _public.replace("</body>", """<style id="coopex-footer-no-delivery">
+html body.prism.luminous .footer-royal .floating-delivery{display:none!important}
+html body.prism.luminous .footer-royal .footer-copy{font-weight:800!important}
+html body.prism.luminous .footer-royal .footer-end{justify-content:flex-end!important}
+@media(max-width:680px){html body.prism.luminous .footer-royal .footer-end{justify-content:center!important}}
+</style></body>""",1)
+TEMPLATES["index.html"] = _public
