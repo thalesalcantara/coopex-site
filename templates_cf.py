@@ -2802,3 +2802,42 @@ body.prism.luminous .topo .links a.customer-access svg{width:20px;height:20px;fl
 document.addEventListener('click',function(e){const link=e.target.closest('a.customer-access');if(!link)return;e.preventDefault();e.stopImmediatePropagation();window.location.href=link.href;},true);
 </script></body>""",1)
 TEMPLATES["index.html"] = _public
+
+
+# Embedded customer portal: keep institutional navigation and footer visible.
+_public = TEMPLATES["index.html"]
+_public = _public.replace('onclick="window.location.assign(\'' + _customer_url + '\')"', 'onclick="abrirClienteIntegrado()"')
+_public = _public.replace("window.location.href=link.href;", "abrirClienteIntegrado();")
+_public = _public.replace("</main>", '''<section id="cliente-integrado" hidden aria-label="Área do Cliente">
+<div class="customer-embed-shell"><iframe id="customer-embed-frame" title="Área do Cliente COOPEX — cadastro, login e pedidos" data-src="https://www.financeiro.coopexentregas.com.br/cliente/" allow="geolocation; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+</section></main>''', 1)
+_public = _public.replace("</body>", """<style id="customer-embedded-layout">
+body.prism.luminous #cliente-integrado[hidden]{display:none!important}
+body.prism.luminous.customer-embedded main>.page-section{display:none!important}
+body.prism.luminous.customer-embedded{display:flex!important;flex-direction:column!important;min-height:100dvh!important;height:auto!important}
+body.prism.luminous.customer-embedded main{flex:1 0 auto!important;display:flex!important;flex-direction:column!important;overflow:visible!important;min-height:0!important}
+body.prism.luminous.customer-embedded #cliente-integrado{display:flex!important;flex:1 0 auto;flex-direction:column;width:100%;min-width:0;padding:8px var(--site-gutter,12px);box-sizing:border-box}
+body.prism.luminous .customer-embed-shell{flex:1;min-width:0;border-radius:22px;overflow:hidden;border:1px solid #fff;background:var(--glass);box-shadow:var(--edge)}
+body.prism.luminous #customer-embed-frame{display:block;width:100%;height:max(420px,calc(100dvh - 150px));border:0;background:transparent}
+body.prism.luminous.customer-embedded .topo .links .tab-link.active{background:var(--glass)!important;color:#102d65!important;box-shadow:var(--edge)!important}
+body.prism.luminous.customer-embedded .footer-royal{flex:none!important}
+@media(max-width:680px){body.prism.luminous #customer-embed-frame{height:max(450px,calc(100dvh - 155px))}body.prism.luminous .customer-embed-shell{border-radius:14px}}
+</style><script>
+function abrirClienteIntegrado(){
+ const section=document.getElementById('cliente-integrado'),frame=document.getElementById('customer-embed-frame');
+ if(!section||!frame)return;
+ if(!frame.getAttribute('src'))frame.src=frame.dataset.src;
+ section.hidden=false;
+ document.body.classList.add('customer-embedded');
+ document.body.classList.remove('menu-open');
+ const link=document.querySelector('a.customer-access');if(link)link.setAttribute('aria-current','page');
+ window.scrollTo(0,0);
+}
+function fecharClienteIntegrado(){
+ const section=document.getElementById('cliente-integrado');if(section)section.hidden=true;
+ document.body.classList.remove('customer-embedded');
+ const link=document.querySelector('a.customer-access');if(link)link.removeAttribute('aria-current');
+}
+document.addEventListener('click',function(e){if(e.target.closest('#mainNavigation a[data-page]'))fecharClienteIntegrado();},true);
+</script></body>""",1)
+TEMPLATES["index.html"] = _public
