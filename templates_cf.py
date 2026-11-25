@@ -2782,7 +2782,12 @@ body.prism.luminous #servicos .card li{padding-block:6px!important}
 _customer_url = "https://www.financeiro.coopexentregas.com.br/cliente/"
 _public = TEMPLATES["index.html"]
 _customer_button = '<a class="tab-link customer-access" href="' + _customer_url + '"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>Área do Cliente</span></a>'
-_public, _customer_count = _site_re.subn(r'(<a\b[^>]*data-page="inicio"[^>]*>.*?</a>)', lambda m: m.group(1) + _customer_button, _public, count=1, flags=_site_re.S)
+# Scope insertion to the navigation; the brand logo also has data-page="inicio".
+def _insert_customer_nav(m):
+    nav = m.group(0)
+    nav, count = _site_re.subn(r'(<a\b[^>]*data-page="inicio"[^>]*>.*?</a>)', lambda item: item.group(1) + _customer_button, nav, count=1, flags=_site_re.S)
+    return nav
+_public = _site_re.sub(r'<nav\b[^>]*id="mainNavigation"[^>]*>.*?</nav>', _insert_customer_nav, _public, count=1, flags=_site_re.S)
 _public = _public.replace('onclick="abrirSolicitacao()"', 'onclick="window.location.assign(\'' + _customer_url + '\')"')
 _public = _public.replace("</body>", """<style id="coopex-customer-access">
 body.prism.luminous .topo .links a.customer-access{background:linear-gradient(155deg,#70d9ff,#1677ee 42%,#0829bc 90%)!important;color:#fff!important;border:1.5px solid #a4eaff!important;box-shadow:0 5px 13px #002eae66,inset 0 2px 3px #ffffff8c,inset 0 -3px 5px #002b9b55!important;font-weight:800!important;text-decoration:none!important}
@@ -2840,4 +2845,18 @@ function fecharClienteIntegrado(){
 }
 document.addEventListener('click',function(e){if(e.target.closest('#mainNavigation a[data-page]'))fecharClienteIntegrado();},true);
 </script></body>""",1)
+TEMPLATES["index.html"] = _public
+
+# Desktop header: explicitly bound the icons and keep all seven pills inside the nav.
+_public = TEMPLATES["index.html"]
+_public = _public.replace("</body>", """<style id="customer-header-fixed">
+body.prism.luminous #mainNavigation>a{box-sizing:border-box;min-width:0!important;white-space:nowrap!important}
+body.prism.luminous #mainNavigation>a>svg{width:20px!important;height:20px!important;max-width:20px!important;max-height:20px!important;flex:0 0 20px!important;display:block!important}
+body.prism.luminous #mainNavigation>a>span{min-width:0;line-height:1.15!important}
+@media(min-width:1180px){
+body.prism.luminous .topo .container.nav{grid-template-columns:minmax(100px,13%) minmax(75px,8%) minmax(0,1fr)!important;gap:8px!important;min-height:65px!important}
+body.prism.luminous #mainNavigation{grid-column:3!important;grid-row:1!important;display:flex!important;flex-wrap:nowrap!important;gap:4px!important;min-width:0!important;width:100%!important}
+body.prism.luminous #mainNavigation>a{display:flex!important;flex:1 1 auto!important;align-items:center!important;justify-content:center!important;gap:4px!important;padding:8px clamp(4px,.45vw,9px)!important;font-size:clamp(10px,.76vw,14px)!important;min-height:40px!important}
+}
+</style></body>""",1)
 TEMPLATES["index.html"] = _public
