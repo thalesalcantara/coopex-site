@@ -2790,3 +2790,15 @@ body.prism.luminous .topo .links a.customer-access:hover{filter:brightness(1.09)
 @media(min-width:1180px){body.prism.luminous .topo .container.nav{grid-template-columns:minmax(140px,15%) minmax(76px,8%) minmax(0,1fr)!important;gap:clamp(5px,.8vw,14px)!important}body.prism.luminous .topo .links .tab-link{gap:5px!important;padding-inline:clamp(5px,.55vw,12px)!important;font-size:clamp(10px,.77vw,14px)!important;min-width:0!important}}
 </style></body>""", 1)
 TEMPLATES["index.html"] = _public
+
+
+# External links must not be handled as internal page tabs.
+_public = TEMPLATES["index.html"]
+_public = _public.replace('class="tab-link customer-access"', 'class="customer-access"')
+_public = _public.replace("</body>", """<style id="customer-direct-link">
+body.prism.luminous .topo .links a.customer-access{display:flex!important;flex:1 1 auto;align-items:center;justify-content:center;gap:5px;min-height:clamp(38px,5.5vh,55px);padding:8px 12px!important;border-radius:999px!important;white-space:nowrap!important;cursor:pointer!important;pointer-events:auto!important;position:relative;z-index:2;font-size:clamp(11px,.8vw,14px)!important}
+body.prism.luminous .topo .links a.customer-access svg{width:20px;height:20px;flex:none}
+</style><script>
+document.addEventListener('click',function(e){const link=e.target.closest('a.customer-access');if(!link)return;e.preventDefault();e.stopImmediatePropagation();window.location.href=link.href;},true);
+</script></body>""",1)
+TEMPLATES["index.html"] = _public
