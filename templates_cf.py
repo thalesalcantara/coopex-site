@@ -2813,7 +2813,7 @@ TEMPLATES["index.html"] = _public
 _public = TEMPLATES["index.html"]
 _public = _public.replace('onclick="window.location.assign(\'' + _customer_url + '\')"', 'onclick="abrirClienteIntegrado()"')
 _public = _public.replace("window.location.href=link.href;", "abrirClienteIntegrado();")
-_public = _public.replace("</main>", '''<section id="cliente-integrado" hidden aria-label="Área do Cliente">
+_public = _public.replace("</main>", '''<section id="cliente-integrado" class="page-section customer-page" hidden aria-label="Área do Cliente">
 <div class="customer-embed-shell"><iframe id="customer-embed-frame" title="Área do Cliente COOPEX — cadastro, login e pedidos" data-src="https://www.financeiro.coopexentregas.com.br/cliente/" allow="geolocation; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
 </section></main>''', 1)
 _public = _public.replace("</body>", """<style id="customer-embedded-layout">
@@ -2831,15 +2831,18 @@ body.prism.luminous.customer-embedded .footer-royal{flex:none!important}
 function abrirClienteIntegrado(){
  const section=document.getElementById('cliente-integrado'),frame=document.getElementById('customer-embed-frame');
  if(!section||!frame)return;
+ if(document.body.classList.contains('customer-embedded'))return;
  if(!frame.getAttribute('src'))frame.src=frame.dataset.src;
- section.hidden=false;
+ document.querySelectorAll('main > .page-section').forEach(p=>{if(p!==section){p.dataset.customerWasActive=p.classList.contains('active')?'1':'0';p.classList.remove('active');p.hidden=true;p.style.setProperty('display','none','important');}});
+ section.hidden=false;section.classList.add('active');section.style.setProperty('display','flex','important');
  document.body.classList.add('customer-embedded');
  document.body.classList.remove('menu-open');
  const link=document.querySelector('a.customer-access');if(link)link.setAttribute('aria-current','page');
  window.scrollTo(0,0);
 }
 function fecharClienteIntegrado(){
- const section=document.getElementById('cliente-integrado');if(section)section.hidden=true;
+ const section=document.getElementById('cliente-integrado');if(section){section.hidden=true;section.classList.remove('active');section.style.removeProperty('display');}
+ document.querySelectorAll('main > .page-section[data-customer-was-active]').forEach(p=>{p.hidden=false;p.style.removeProperty('display');p.classList.toggle('active',p.dataset.customerWasActive==='1');delete p.dataset.customerWasActive;});
  document.body.classList.remove('customer-embedded');
  const link=document.querySelector('a.customer-access');if(link)link.removeAttribute('aria-current');
 }
@@ -2858,5 +2861,19 @@ body.prism.luminous .topo .container.nav{grid-template-columns:minmax(100px,13%)
 body.prism.luminous #mainNavigation{grid-column:3!important;grid-row:1!important;display:flex!important;flex-wrap:nowrap!important;gap:4px!important;min-width:0!important;width:100%!important}
 body.prism.luminous #mainNavigation>a{display:flex!important;flex:1 1 auto!important;align-items:center!important;justify-content:center!important;gap:4px!important;padding:8px clamp(4px,.45vw,9px)!important;font-size:clamp(10px,.76vw,14px)!important;min-height:40px!important}
 }
+</style></body>""",1)
+TEMPLATES["index.html"] = _public
+
+# Customer tab is a single viewport workspace, not a section appended below home.
+_public = TEMPLATES["index.html"]
+_public = _public.replace("</body>", """<style id="customer-tab-viewport">
+html:has(body.customer-embedded){height:100%;overflow:hidden!important}
+body.prism.luminous.customer-embedded{height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
+body.prism.luminous.customer-embedded>.topo,body.prism.luminous.customer-embedded>.footer-royal{flex:0 0 auto!important;position:relative!important;inset:auto!important}
+body.prism.luminous.customer-embedded>main{flex:1 1 0!important;min-height:0!important;height:auto!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
+body.prism.luminous.customer-embedded>main>:not(#cliente-integrado){display:none!important}
+body.prism.luminous.customer-embedded>main>#cliente-integrado.active{display:flex!important;flex:1 1 0!important;height:auto!important;min-height:0!important;overflow:hidden!important;padding:6px var(--site-gutter,12px)!important}
+body.prism.luminous.customer-embedded .customer-embed-shell{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
+body.prism.luminous.customer-embedded #customer-embed-frame{flex:1 1 0!important;min-height:0!important;height:100%!important;width:100%!important}
 </style></body>""",1)
 TEMPLATES["index.html"] = _public
