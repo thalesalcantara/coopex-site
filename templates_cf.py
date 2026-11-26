@@ -3036,7 +3036,7 @@ _public = _site_re.sub(r'(<section id="contato"[^>]*>.*?)(</div>\s*</div>\s*</se
 _contact_dialogs = '''
 <dialog id="cx-contact-hours" class="cx-contact-dialog" aria-labelledby="cx-hours-title"><div class="cx-contact-dialog-head"><h2 id="cx-hours-title">Horários de atendimento</h2><button type="button" class="cx-dialog-close" aria-label="Fechar">×</button></div><p>{{ cfg.horario_atendimento }}</p><p>Para confirmar atendimento aos domingos e feriados, fale com nossa equipe pelo WhatsApp.</p><a class="btn primary full" href="https://wa.me/55{{ cfg.whatsapp|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '') }}" target="_blank" rel="noopener">Consultar atendimento</a></dialog>
 <dialog id="cx-contact-help" class="cx-contact-dialog" aria-labelledby="cx-help-title"><div class="cx-contact-dialog-head"><h2 id="cx-help-title">Central de ajuda</h2><button type="button" class="cx-dialog-close" aria-label="Fechar">×</button></div><details><summary>Como solicitar uma entrega?</summary><p>Entre na Área do Cliente, informe os endereços de coleta e entrega e consulte o valor antes de confirmar.</p></details><details><summary>Como acompanhar meu pedido?</summary><p>Acesse a Área do Cliente e consulte o histórico de pedidos e o acompanhamento disponível.</p></details><details><summary>Como pagar pela entrega?</summary><p>As opções de pagamento disponíveis são apresentadas na solicitação do pedido.</p></details><details><summary>Como contratar um entregador fixo?</summary><p>Use o botão Solicitar proposta comercial na página de contato para conversar com nossa equipe.</p></details><button type="button" class="btn primary full cx-go-customer">Acessar Área do Cliente</button></dialog>
-<dialog id="cx-contact-region" class="cx-contact-dialog" aria-labelledby="cx-region-title"><div class="cx-contact-dialog-head"><h2 id="cx-region-title">Região de atendimento</h2><button type="button" class="cx-dialog-close" aria-label="Fechar">×</button></div><p>Atendemos Natal e Grande Natal, incluindo Parnamirim, Macaíba, São Gonçalo do Amarante, Extremoz e Nísia Floresta. Consulte disponibilidade para sua rota.</p><iframe title="Mapa da região de atendimento da COOPEX" data-src="https://maps.google.com/maps?q=Natal%20Grande%20Natal%20RN%20Brasil&t=&z=10&ie=UTF8&iwloc=&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><button type="button" class="btn primary full cx-go-customer">Consultar valor da entrega</button></dialog>
+<dialog id="cx-contact-region" class="cx-contact-dialog" aria-labelledby="cx-region-title"><div class="cx-contact-dialog-head"><h2 id="cx-region-title">Região de atendimento</h2><button type="button" class="cx-dialog-close" aria-label="Fechar">×</button></div><p>Atendemos Natal e Grande Natal, incluindo Parnamirim, Macaíba, São Gonçalo do Amarante, Extremoz e Nísia Floresta. Consulte disponibilidade para sua rota.</p><div id="cx-region-map" role="region" aria-label="Limites municipais da região atendida"></div><p id="cx-region-status" role="status">Carregando limites municipais…</p><div class="cx-region-legend"><span></span> Municípios atendidos · limites IBGE</div><button type="button" class="btn primary full cx-go-customer">Consultar valor da entrega</button></dialog>
 '''
 _public = _public.replace("</body>", _contact_dialogs+"""<style id="cx-contact-tools-style">
 html body.prism.luminous #contato .contact-list a[href^="mailto:"]{min-width:0!important}
@@ -3057,5 +3057,49 @@ document.querySelectorAll('.cx-contact-dialog').forEach(d=>{d.querySelector('.cx
 function cxContactCustomer(){document.querySelectorAll('.cx-contact-dialog[open]').forEach(d=>d.close());if(typeof abrirClienteIntegrado==='function')abrirClienteIntegrado();}
 document.getElementById('cx-contact-track')?.addEventListener('click',cxContactCustomer);
 document.querySelectorAll('.cx-go-customer').forEach(b=>b.addEventListener('click',cxContactCustomer));
+</script></body>""",1)
+TEMPLATES["index.html"] = _public
+
+# Mapa regional: seis limites municipais IBGE, carregados somente ao abrir.
+_public = TEMPLATES["index.html"]
+_public = _public.replace("</body>", """<style>
+#cx-region-map{height:clamp(235px,39vh,360px);width:100%;border-radius:14px;border:1px solid #79b5ef;background:#dcecfb;overflow:hidden}
+#cx-region-status{font-size:12px;margin:5px 0}.cx-region-legend{display:flex;align-items:center;gap:7px;color:#244c85;font-size:12px;margin:8px 0}.cx-region-legend span{width:17px;height:12px;background:#1874dc55;border:2px solid #1260c6;border-radius:3px}
+#cx-contact-region{width:min(760px,calc(100% - 24px))}
+</style><script>
+(function(){
+ const cities=[['Natal','2408102'],['Parnamirim','2403251'],['Macaíba','2407104'],['São Gonçalo do Amarante','2412005'],['Extremoz','2403608'],['Nísia Floresta','2408201']];
+ let map=null,busy=false,complete=false;
+ const layers=new Map();
+ const out=document.getElementById('cx-region-status');
+ function leaflet(){
+  if(window.L)return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+   if(!document.getElementById('cx-region-leaflet-css')){const css=document.createElement('link');css.id='cx-region-leaflet-css';css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.append(css);}
+   const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.onload=resolve;script.onerror=()=>{script.remove();reject(Error('Mapa indisponível'))};document.head.append(script);
+  });
+ }
+ async function carregar(){
+  if(busy)return; if(complete){map.invalidateSize();return;}busy=true;
+  try{
+   await leaflet();
+   if(!map){map=L.map('cx-region-map',{scrollWheelZoom:false}).setView([-5.94,-35.30],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);}
+   map.invalidateSize();
+   await Promise.allSettled(cities.filter(c=>!layers.has(c[1])).map(async ([name,id])=>{
+    const response=await fetch('https://servicodados.ibge.gov.br/api/v3/malhas/municipios/'+id+'?formato=application%2Fvnd.geo%2Bjson&qualidade=minima');
+    if(!response.ok)throw Error('Limite indisponível');
+    const geo=await response.json();
+    const layer=L.geoJSON(geo,{style:{color:'#075ac5',weight:2,fillColor:'#2585ed',fillOpacity:.29},onEachFeature:(f,l)=>l.bindTooltip(name,{sticky:true})}).addTo(map);
+    if(!layer.getBounds().isValid()){map.removeLayer(layer);throw Error('Geometria inválida');}
+    layers.set(id,layer);
+   }));
+   if(layers.size){const bounds=L.featureGroup([...layers.values()]).getBounds();map.fitBounds(bounds,{padding:[16,16]});}
+   complete=layers.size===cities.length;
+   out.textContent=complete?'6 municípios demarcados.':('Limites carregados: '+layers.size+' de 6. Reabra o mapa para tentar novamente.');
+  }catch(e){out.textContent='Não foi possível carregar os limites agora. Reabra o mapa para tentar novamente.';}
+  finally{busy=false;}
+ }
+ document.querySelector('[data-contact-dialog="cx-contact-region"]')?.addEventListener('click',()=>requestAnimationFrame(carregar));
+})();
 </script></body>""",1)
 TEMPLATES["index.html"] = _public
