@@ -1839,23 +1839,26 @@ def admin_site_sso():
     from js import fetch, JSON
     codigo = request.form.get('codigo', '')
     if not re.fullmatch(r'[A-Za-z0-9_-]{43}', codigo):
-        abort(403)
+        return render_template_string('<h2>Autorização inválida ou expirada</h2><p>Volte à Supervisão e clique novamente em Site.</p><a href="https://www.financeiro.coopexentregas.com.br/admin/site/entrar">Tentar novamente</a>'), 403
     try:
         options = {"method":"POST", "headers":{"Content-Type":"application/json"},
                    "body":json.dumps({"codigo":codigo}), "redirect":"error"}
-        resp = run_sync(fetch("https://www.financeiro.coopexentregas.com.br/admin/site/sso/resgatar",
+        # Origin Render confirmado: evita redirects entre aliases e regras do CDN.
+        resp = run_sync(fetch("https://financas-dxsu.onrender.com/admin/site/sso/resgatar",
                               JSON.parse(json.dumps(options))))
         if not resp.ok:
-            abort(403)
-        dados = json.loads(run_sync(resp.text()))
-    except Exception:
-        abort(403)
+            print("SSO site: resgate HTTP", int(resp.status))
+            raise ValueError("resgate recusado")
+        dados = json.loads(str(run_sync(resp.text())))
+    except Exception as exc:
+        print("SSO site: falha resgate", type(exc).__name__)
+        return render_template_string('<h2>Não foi possível validar o acesso</h2><p>Retorne ao Financeiro e tente novamente.</p><a href="https://www.financeiro.coopexentregas.com.br/admin/site/entrar">Tentar novamente</a>'), 403
     if dados.get("ok") is not True or dados.get("destino") not in ("painel","card"):
         abort(403)
     session.clear()
     session['site_admin_logado'] = True
     session['site_admin_usuario'] = str(dados.get("usuario") or "Financeiro")[:100]
-    response = redirect(url_for('admin_dashboard' if dados["destino"] == "painel" else 'admin_card'), code=303)
+    response = redirect('/admin-site/painel' if dados["destino"] == "painel" else '/admin-site/card', code=303)
     response.headers['Cache-Control'] = 'no-store'
     response.headers['Referrer-Policy'] = 'no-referrer'
     return response
