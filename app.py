@@ -2489,6 +2489,20 @@ def area_cliente_publica():
 
 
 from card_premium import instalar as instalar_card_premium
-_card_premium_publico = instalar_card_premium(app, get_config, set_config, _db_run, _rows, card_config_dict, arquivo_url, login_required)
+def _card_premium_upload(arq, tipo):
+    # Restrict formats and reuse verified R2 storage; no new finance dependency.
+    permitidos = {'mp4','webm'} if tipo == 'video' else ALLOWED_IMAGE_EXTENSIONS
+    if not allowed_file(arq.filename, permitidos):
+        return ''
+    if tipo == 'video':
+        cab = arq.stream.read(16)
+        arq.stream.seek(0)
+        ext = arq.filename.rsplit('.',1)[-1].lower()
+        if not ((ext=='mp4' and cab[4:8]==b'ftyp') or (ext=='webm' and cab[:4]==bytes.fromhex('1a45dfa3'))):
+            return ''
+    ref=salvar_upload(arq, 'card_video' if tipo=='video' else 'card_premium_imagem', permitidos)
+    return arquivo_url(ref) if ref else ''
+
+_card_premium_publico = instalar_card_premium(app, get_config, set_config, _db_run, _rows, card_config_dict, arquivo_url, login_required, _card_premium_upload)
 
 Default = wsgi.entrypoint(app)
