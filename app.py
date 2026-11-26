@@ -2039,6 +2039,9 @@ def candidato_excluir(candidato_id):
 @app.route('/instagram')
 @app.route('/card-instagram')
 def card_instagram():
+    premium = _card_premium_publico()
+    if premium is not None:
+        return premium
     links = _objs(_rows('SELECT * FROM card_link WHERE ativo = 1 ORDER BY ordem ASC, criado_em ASC'))
     return render_cf('instagram_card.html', card=card_config_dict(), links=links)
 
@@ -2057,6 +2060,13 @@ def card_link_ir(link_id):
 @app.route('/admin-coopex/card')
 @app.route('/admin-site/card')
 def admin_card():
+    if not login_required():
+        return redirect(url_for('admin_login'))
+    return redirect('/admin-site/card/editor')
+
+
+@app.get('/admin-site/card/legado')
+def admin_card_legado():
     if not login_required():
         return redirect(url_for('admin_login'))
     links = _objs(_rows('SELECT * FROM card_link ORDER BY ordem ASC, criado_em ASC'))
@@ -2477,5 +2487,8 @@ def area_cliente_publica():
     </body></html>"""
     return Response(html,mimetype='text/html',headers={'Cache-Control':'no-store','Permissions-Policy':'geolocation=(self "https://www.financeiro.coopexentregas.com.br" "https://financeiro.coopexentregas.com.br"), clipboard-write=(self "https://www.financeiro.coopexentregas.com.br" "https://financeiro.coopexentregas.com.br")'})
 
+
+from card_premium import instalar as instalar_card_premium
+_card_premium_publico = instalar_card_premium(app, get_config, set_config, _db_run, _rows, card_config_dict, arquivo_url, login_required)
 
 Default = wsgi.entrypoint(app)
