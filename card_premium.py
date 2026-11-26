@@ -98,13 +98,16 @@ def instalar(app, get_config, set_config, db_run, rows, card_config_dict, arquiv
 
     # Store each small video block separately in R2. Only a completed manifest
     # makes the video public; no request needs to parse a large multipart body.
-    VIDEO_BLOCK=128*1024
+    VIDEO_BLOCK=32*1024
     VIDEO_MAX=10*1024*1024
     def video_bucket():
         return request.environ['workers.env'].FILES
     def video_put(key,raw):
-        from pyodide.ffi import run_sync,to_js
-        obj=run_sync(video_bucket().put(key,to_js(raw)))
+        from pyodide.ffi import run_sync
+        from js import Uint8Array
+        from pyodide.ffi import to_js
+        buf=Uint8Array.new(to_js(list(raw)))
+        obj=run_sync(video_bucket().put(key,buf.buffer))
         if obj is None or int(obj.size)!=len(raw):raise RuntimeError('R2 size mismatch')
     def video_get(bucket,key):
         from pyodide.ffi import run_sync
@@ -135,9 +138,10 @@ def instalar(app, get_config, set_config, db_run, rows, card_config_dict, arquiv
         u=session.get('card_video_upload') or {}
         if u.get('id')!=vid or not re.fullmatch(r'[0-9a-f]{32}',vid):return video_fail('Envio expirado.')
         size=u['size'];expected=min(VIDEO_BLOCK,size-index*VIDEO_BLOCK)
-        if expected<=0 or index not in (u['next'],u['next']-1) or request.content_length!=expected:return video_fail('Bloco inválido.')
+        if expected<=0 or index not in (u['next'],u['next']-1) or not request.content_length or request.content_length>48000:return video_fail('Bloco inválido.')
         try:
-            raw=request.get_data(cache=False)
+            import base64
+            raw=base64.b64decode(request.get_json()['data'],validate=True)
             if len(raw)!=expected:return video_fail('Bloco incompleto.')
             if index==0 and not ((u['ext']=='mp4' and raw[4:8]==b'ftyp') or (u['ext']=='webm' and raw[:4]==bytes.fromhex('1a45dfa3'))):return video_fail('Formato de vídeo inválido.')
             video_put(video_prefix(vid)+str(index),raw)
@@ -470,11 +474,11 @@ async function comprimirFundo(file){
 
 async function enviarVideoBlocos(file,progress){
  const api='/admin-site/card/editor/video/';
- const call=async(path,body,ctype)=>{const r=await fetch(api+path,{method:'POST',headers:{'X-Card-CSRF':csrf,'Content-Type':ctype},body});let j;try{j=await r.json()}catch(e){throw Error('Falha no envio do vídeo (HTTP '+r.status+').')}if(!r.ok||!j.ok)throw Error(j.erro||'Falha no envio');return j};
+ const call=async(path,body,ctype)=>{const r=await fetch(api+path,{method:'POST',headers:{'X-Card-CSRF':csrf,'Content-Type':ctype},body});let j;try{j=await r.json()}catch(e){throw Error('Falha na etapa '+path.split('/').slice(1).join('/')+' (HTTP '+r.status+').')}if(!r.ok||!j.ok)throw Error(j.erro||'Falha no envio');return j};
  const start=await call('iniciar',JSON.stringify({size:file.size,ext:file.name.split('.').pop().toLowerCase()}),'application/json');
  for(let offset=0,index=0;offset<file.size;offset+=start.block,index++){
   const part=file.slice(offset,Math.min(file.size,offset+start.block));
-  await call(start.id+'/parte/'+index,part,'application/octet-stream');
+  const bytes=new Uint8Array(await part.arrayBuffer());let binary='';for(let k=0;k<bytes.length;k+=8192)binary+=String.fromCharCode(...bytes.subarray(k,k+8192));await call(start.id+'/parte/'+index,JSON.stringify({data:btoa(binary)}),'application/json');
   const pct=Math.round(Math.min(file.size,offset+start.block)*100/file.size);progress.value=pct;status('Enviando vídeo: '+pct+'%');
  }
  status('Concluindo vídeo…');return await call(start.id+'/concluir','{}','application/json');
@@ -491,7 +495,7 @@ function props(){const root=$('props');root.replaceChildren();const h=document.c
  if(aba==='Páginas internas'){const a=document.createElement('div');a.className='actions';button(a,'Adicionar página',()=>change(()=>{pid=uid();d.paginas.push({id:pid,nome:'Nova página',blocos:[]});bid=null}));root.append(a);for(const p of d.paginas){const row=document.createElement('div');row.className='layer-row';button(row,p.nome,()=>{pid=p.id;bid=null;menu();props();preview()},p.id===pid?'active':'');if(d.paginas.length>1)button(row,'Excluir',()=>{if(confirm('Excluir a página '+p.nome+' e seus elementos?'))change(()=>{d.paginas=d.paginas.filter(x=>x.id!==p.id);if(pid===p.id){pid=d.paginas[0].id;bid=null}for(const q of d.paginas)for(const b of q.blocos)if(b.destino===p.id){b.destino='';b.acao='link'}})},'delete-layer');root.append(row)}field(f,'Nome da página',pg(),'nome');field(f,'Posição do menu',d,'menu','select',[['superior','Superior'],['inferior','Inferior'],['nenhum','Oculto']]);if(d.paginas.length>1)button(root,'Excluir página selecionada',()=>{if(confirm('Excluir esta página do rascunho?'))change(()=>{d.paginas=d.paginas.filter(x=>x.id!==pid);pid=d.paginas[0].id;bid=null})});}
  if(aba==='Elementos'||aba==='Redes sociais'){const b=block();if(!b){const p=document.createElement('p');p.textContent='Selecione um elemento no celular ou na lista de camadas para personalizá-lo.';root.append(p);button(root,'Aplicar modelo Premium COOPEX',aplicarModelo,'btn primary');button(root,'Editar cabeçalho',()=>{aba='Cabeçalho';props();menu()});}
  else {const actions=document.createElement('div');actions.className='actions';button(actions,'▣ Duplicar',()=>change(()=>{const n=copy(b);n.id=uid();pg().blocos.splice(pg().blocos.indexOf(b)+1,0,n);bid=n.id}));button(actions,'Excluir',()=>change(()=>{pg().blocos=pg().blocos.filter(x=>x.id!==bid);bid=null}));root.append(actions);
- if(subaba==='Conteúdo'){if(b.tipo==='video'){const h=document.createElement('h3');h.textContent='Origem do vídeo';root.append(h);uploadField(f,'⇧ Enviar vídeo do dispositivo (MP4 / WebM · até 10 MB)',b,'imagem','video');field(f,'Ou endereço do vídeo',b,'imagem','text',null,true);if(b.imagem){const v=document.createElement('video');v.src=b.imagem;v.muted=true;v.preload='metadata';v.style.cssText='width:100%;max-height:110px;border-radius:12px';f.append(v);button(f,'Remover vídeo',()=>change(()=>b.imagem=''))}field(f,'Reprodução automática',b,'autoplay','checkbox');field(f,'Repetir',b,'repetir','checkbox');field(f,'Exibir controles',b,'controles','checkbox');field(f,'Som do vídeo',b,'som','checkbox');uploadField(f,'Capa do vídeo',b,'capa_video');if(b.capa_video){const im=document.createElement('img');im.src=b.capa_video;im.style.cssText='width:100%;border-radius:10px';f.append(im);button(f,'Remover capa',()=>change(()=>b.capa_video=''))}}
+ if(subaba==='Conteúdo'){if(b.tipo==='video'){const h=document.createElement('h3');h.textContent='Origem do vídeo';root.append(h);uploadField(f,'⇧ Enviar vídeo do dispositivo (MP4 / WebM · até 10 MB)',b,'imagem','video');field(f,'Ou endereço do vídeo',b,'imagem','text',null,true);if(b.imagem){const v=document.createElement('video');v.src=b.imagem;v.muted=true;v.preload='metadata';v.style.cssText='width:100%;max-height:110px;border-radius:12px';f.append(v);button(f,'Remover vídeo do card',()=>{change(()=>b.imagem='');status('Vídeo removido. Publique o card.')},'btn')}field(f,'Reprodução automática',b,'autoplay','checkbox');field(f,'Repetir',b,'repetir','checkbox');field(f,'Exibir controles',b,'controles','checkbox');field(f,'Som do vídeo',b,'som','checkbox');uploadField(f,'Capa do vídeo',b,'capa_video');if(b.capa_video){const im=document.createElement('img');im.src=b.capa_video;im.style.cssText='width:100%;border-radius:10px';f.append(im);button(f,'Remover capa',()=>change(()=>b.capa_video=''))}}
  else{field(f,'Título',b,'titulo','text',null,true);field(f,'Descrição',b,'texto','textarea',null,true);field(f,'Endereço do link',b,'url','text',null,true);uploadField(f,'Enviar imagem',b,'imagem');uploadField(f,'Enviar imagem do ícone',b,'icone_imagem');field(f,'Ícone (símbolo)',b,'icone');field(f,'Abrir como',b,'acao','select',[['link','Mesmo local'],['nova','Nova aba'],['pagina','Página interna'],['janela','Janela']]);field(f,'Página de destino',b,'destino','select',[['','Selecione'],...d.paginas.map(x=>[x.id,x.nome])])}field(f,'Ocultar elemento',b,'oculto','checkbox')}
  if(subaba==='Estilo'){field(f,'Formato',b,'estilo','select',choices(['vidro','solido','contorno','capsula','3d','transparente']));field(f,'Cor',b,'cor','color');field(f,'Texto',b,'texto_cor','color');field(f,'Largura %',b,'largura','range',[20,100]);field(f,'Altura px',b,'altura','range',[16,600]);field(f,'Cantos',b,'raio','range',[0,80]);field(f,'Fonte',b,'fonte','range',[10,42]);field(f,'Opacidade',b,'opacidade','range',[10,100]);field(f,'Sombra',b,'sombra','range',[0,40]);field(f,'Alinhamento',b,'alinhamento','select',[['left','Esquerda'],['center','Centro'],['right','Direita']])}
  if(subaba==='Animação')field(f,'Efeito',b,'animacao','select',choices(['nenhuma','pulsar','flutuar','brilhar']));
