@@ -1843,8 +1843,8 @@ def admin_site_sso():
     try:
         options = {"method":"POST", "headers":{"Content-Type":"application/json"},
                    "body":json.dumps({"codigo":codigo}), "redirect":"error"}
-        # Origin Render confirmado: evita redirects entre aliases e regras do CDN.
-        resp = run_sync(fetch("https://financas-dxsu.onrender.com/admin/site/sso/resgatar",
+        # Usar o domínio oficial do Financeiro; o origin Render pode redirecionar.
+        resp = run_sync(fetch("https://www.financeiro.coopexentregas.com.br/admin/site/sso/resgatar",
                               JSON.parse(json.dumps(options))))
         if not resp.ok:
             print("SSO site: resgate HTTP", int(resp.status))
