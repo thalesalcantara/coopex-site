@@ -156,7 +156,7 @@ function desenhar(host,d,pid,editar=false,onSelect=null,onMove=null,onResize=nul
  const grid=el('main','cp-grid');grid.style.gap=t.espaco+'px';host.append(grid);
  for(const b of pg.blocos){if(b.oculto&&!editar)continue;
   const node=el('article','cp-bloco '+b.estilo+' '+b.animacao+(b.oculto?' oculto':''));
-  node.dataset.bid=b.id;node.dataset.tipo=b.tipo;Object.assign(node.style,{width:'calc('+b.largura+'% - '+(b.largura<100?t.espaco:0)+'px)',minHeight:b.altura+'px',borderRadius:(b.estilo==='capsula'?999:b.raio)+'px',fontSize:b.fonte+'px',color:b.texto_cor,backgroundColor:b.cor+Math.round(b.opacidade*2.55).toString(16).padStart(2,'0'),boxShadow:'0 5px '+b.sombra+'px #15284c33',textAlign:b.alinhamento});
+  node.dataset.bid=b.id;node.dataset.tipo=b.tipo;if(b.tipo==='video')node.style.height=b.altura+'px';Object.assign(node.style,{width:'calc('+b.largura+'% - '+(b.largura<100?t.espaco:0)+'px)',minHeight:b.altura+'px',borderRadius:(b.estilo==='capsula'?999:b.raio)+'px',fontSize:b.fonte+'px',color:b.texto_cor,backgroundColor:b.cor+Math.round(b.opacidade*2.55).toString(16).padStart(2,'0'),boxShadow:'0 5px '+b.sombra+'px #15284c33',textAlign:b.alinhamento});
   if(b.tipo==='divisor'){node.append(el('hr'))}else if(b.tipo==='espaco'){node.style.background='transparent';node.style.boxShadow='none'}else{
    if(b.imagem){const im=el(b.tipo==='video'?'video':'img','cp-media');im.src=b.imagem;if(im.tagName==='VIDEO'){im.controls=b.controles!==false;im.preload='metadata';im.playsInline=true;im.poster=b.capa_video||'';im.autoplay=!editar&&!!b.autoplay;im.loop=!!b.repetir;im.muted=!b.som}else{im.alt=b.titulo;im.loading='lazy'}node.append(im)}
    if(b.tipo==='faq'){const det=el('details');det.append(el('summary','',b.titulo),el('p','',b.texto));node.append(det)}
@@ -176,7 +176,7 @@ function desenhar(host,d,pid,editar=false,onSelect=null,onMove=null,onResize=nul
       const dx=(ev.clientX-startX)/scale,dy=(ev.clientY-startY)/scale;
       if(!moved&&Math.hypot(ev.clientX-startX,ev.clientY-startY)<5)return;
       moved=true;node.style.outline='1px solid #54d9ff';
-      if(resize){nw=Math.max(full*.2,Math.min(full,w+(rx?dx:lx?-dx:0)));nh=Math.max(16,Math.min(600,h+(by?dy:ty?-dy:0)));node.style.width=(nw/full*100)+'%';node.style.minHeight=nh+'px'}
+      if(resize){nw=Math.max(full*.2,Math.min(full,w+(rx?dx:lx?-dx:0)));nh=Math.max(16,Math.min(600,h+(by?dy:ty?-dy:0)));node.style.width=(nw/full*100)+'%';node.style.minHeight=nh+'px';if(b.tipo==='video')node.style.height=nh+'px'}
       else{node.style.opacity='.6';const over=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('[data-bid]');if(over&&over!==node&&grid.contains(over))target=over.dataset.bid}
     };
     const finish=ev=>{node.onpointermove=null;node.onpointerup=null;node.onpointercancel=null;node.style.opacity='';node.style.outline='';if(!moved)return;ev.preventDefault();node.onclick=null;if(resize)onResize(pg.id,b.id,Math.round(nw/full*100),Math.round(nh));else if(target)onMove(pg.id,b.id,target);else onSelect(pg.id,b.id)};
@@ -208,6 +208,11 @@ CSS += r"""
 .premium-wave .cp-bloco[data-tipo="botao"]:is(.vidro,[class~="3d"]) .cp-label{display:flex;align-items:center;gap:10px;justify-content:center;position:relative;z-index:1}
 .premium-wave .cp-arrow{box-shadow:inset 0 1px 2px #ffffff,0 3px 6px #001c5099;background:linear-gradient(145deg,#fff,#d2efff);font-weight:700}
 .premium-wave .cp-grid{padding:2px 2px 10px;overflow:visible}
+"""
+CSS += r"""
+.premium-wave .cp-bloco[data-tipo="video"],.cp-bloco[data-tipo="video"]{padding:0!important;display:flex;justify-content:stretch;align-items:stretch;overflow:hidden;box-sizing:border-box}
+.cp-bloco[data-tipo="video"] .cp-media,.premium-wave .cp-bloco[data-tipo="video"] .cp-media{display:block;width:100%;height:100%;min-height:inherit;max-height:none;aspect-ratio:16/9;object-fit:cover;border-radius:inherit}
+.cp-bloco[data-tipo="video"] .cp-video-placeholder,.premium-wave .cp-bloco[data-tipo="video"] .cp-video-placeholder{flex:1;display:grid;place-items:center;width:100%;min-height:inherit;border:0!important;border-radius:inherit;box-shadow:none!important;margin:0;background:radial-gradient(ellipse at 75% 15%,#1789da,#062b63 66%,#051528)}
 """
 PUBLICO="""<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{data.tema.nome}} | COOPEX</title><meta name="description" content="{{data.tema.bio}}"><meta property="og:title" content="{{data.tema.nome}}"><meta property="og:description" content="{{data.tema.bio}}"><meta property="og:image" content="https://www.coopexentregas.com.br/static/img/coopex-oficial-v2.webp"><link rel="canonical" href="https://www.coopexentregas.com.br/instagram"><link rel="icon" href="/favicon.svg"><style>"""+CSS+"""html,body{min-height:100%;background:#e3efff}#pagina{min-height:100dvh}</style></head><body><div id="pagina"></div><noscript><p>{{data.tema.nome}}</p>{% for p in data.paginas %}{% for b in p.blocos %}{% if not b.oculto and b.url %}<a href="{{b.url}}">{{b.titulo}}</a>{% endif %}{% endfor %}{% endfor %}</noscript><script>{{render_js|safe}}
 const data={{data|tojson}};desenhar(document.getElementById('pagina'),data,data.paginas[0].id);
