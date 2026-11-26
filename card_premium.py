@@ -95,6 +95,108 @@ def instalar(app, get_config, set_config, db_run, rows, card_config_dict, arquiv
         session.setdefault('card_editor_csrf',secrets.token_urlsafe(32))
         data=carregar('__card_premium_rascunho') or carregar('__card_premium_publicado') or inicial()
         return resposta(render_template_string(EDITOR, data=data, csrf=session['card_editor_csrf'], render_js=RENDER_JS))
+
+    # Store each small video block separately in R2. Only a completed manifest
+    # makes the video public; no request needs to parse a large multipart body.
+    VIDEO_BLOCK=128*1024
+    VIDEO_MAX=10*1024*1024
+    def video_bucket():
+        return request.environ['workers.env'].FILES
+    def video_put(key,raw):
+        from pyodide.ffi import run_sync,to_js
+        obj=run_sync(video_bucket().put(key,to_js(raw)))
+        if obj is None or int(obj.size)!=len(raw):raise RuntimeError('R2 size mismatch')
+    def video_get(bucket,key):
+        from pyodide.ffi import run_sync
+        from js import Uint8Array
+        obj=run_sync(bucket.get(key))
+        if obj is None:raise FileNotFoundError(key)
+        return Uint8Array.new(run_sync(obj.arrayBuffer())).to_bytes()
+    def video_auth():
+        return login_required() and secrets.compare_digest(request.headers.get('X-Card-CSRF',''),session.get('card_editor_csrf','')) and bool(session.get('card_editor_csrf'))
+    def video_fail(msg,status=400):
+        return jsonify(ok=False,erro=msg),status
+    def video_prefix(vid):
+        return 'publico/card-video-blocos/'+vid+'/'
+    @app.post('/admin-site/card/editor/video/iniciar')
+    def video_iniciar():
+        if not video_auth():return video_fail('Sessão inválida. Atualize a página.',403)
+        d=request.get_json(silent=True) or {}
+        try:
+            size=int(d.get('size',0));ext=str(d.get('ext','')).lower()
+        except (ValueError,TypeError,AttributeError):return video_fail('Arquivo inválido')
+        if not 0<size<=VIDEO_MAX or ext not in ('mp4','webm'):return video_fail('Use MP4 ou WebM de até 10 MB.')
+        vid=secrets.token_hex(16)
+        session['card_video_upload']={'id':vid,'size':size,'ext':ext,'next':0}
+        return jsonify(ok=True,id=vid,block=VIDEO_BLOCK)
+    @app.post('/admin-site/card/editor/video/<vid>/parte/<int:index>')
+    def video_parte(vid,index):
+        if not video_auth():return video_fail('Sessão inválida.',403)
+        u=session.get('card_video_upload') or {}
+        if u.get('id')!=vid or not re.fullmatch(r'[0-9a-f]{32}',vid):return video_fail('Envio expirado.')
+        size=u['size'];expected=min(VIDEO_BLOCK,size-index*VIDEO_BLOCK)
+        if expected<=0 or index not in (u['next'],u['next']-1) or request.content_length!=expected:return video_fail('Bloco inválido.')
+        try:
+            raw=request.get_data(cache=False)
+            if len(raw)!=expected:return video_fail('Bloco incompleto.')
+            if index==0 and not ((u['ext']=='mp4' and raw[4:8]==b'ftyp') or (u['ext']=='webm' and raw[:4]==bytes.fromhex('1a45dfa3'))):return video_fail('Formato de vídeo inválido.')
+            video_put(video_prefix(vid)+str(index),raw)
+            u['next']=max(u['next'],index+1)
+            session['card_video_upload']=u
+            return jsonify(ok=True)
+        except Exception as exc:
+            print('Card video block:',type(exc).__name__,str(exc)[:180])
+            return video_fail('Falha ao armazenar bloco no R2.',500)
+    @app.post('/admin-site/card/editor/video/<vid>/concluir')
+    def video_concluir(vid):
+        if not video_auth():return video_fail('Sessão inválida.',403)
+        u=session.get('card_video_upload') or {}
+        if u.get('id')!=vid or not re.fullmatch(r'[0-9a-f]{32}',vid):return video_fail('Envio expirado.')
+        count=(u['size']+VIDEO_BLOCK-1)//VIDEO_BLOCK
+        if u['next']!=count:return video_fail('Envio incompleto.')
+        try:
+            video_put(video_prefix(vid)+'manifest.json',json.dumps({'size':u['size'],'ext':u['ext']}).encode())
+            session.pop('card_video_upload',None)
+            return jsonify(ok=True,url='/card-video/'+vid)
+        except Exception as exc:
+            print('Card video finalize:',type(exc).__name__,str(exc)[:180])
+            return video_fail('Falha ao concluir o vídeo.',500)
+    @app.get('/card-video/<vid>')
+    def video_publico(vid):
+        from flask import Response,stream_with_context
+        if not re.fullmatch(r'[0-9a-f]{32}',vid):abort(404)
+        bucket=video_bucket();prefix=video_prefix(vid)
+        try:
+            meta=json.loads(video_get(bucket,prefix+'manifest.json'))
+            size=int(meta['size']);ext=meta['ext']
+            if not 0<size<=VIDEO_MAX or ext not in ('mp4','webm'):abort(404)
+        except (FileNotFoundError,ValueError,KeyError):abort(404)
+        headers={'Accept-Ranges':'bytes','Cache-Control':'public, max-age=86400','Content-Type':'video/'+ext}
+        first=0;last=size-1;code=200
+        rng=request.headers.get('Range','')
+        if rng:
+            m=re.fullmatch(r'bytes=(\d*)-(\d*)',rng)
+            if not m or not (m[1] or m[2]):return Response(status=416,headers={'Content-Range':'bytes */'+str(size)})
+            if m[1]:
+                first=int(m[1]);last=min(size-1,int(m[2])) if m[2] else size-1
+            else:
+                first=max(0,size-int(m[2]))
+            if first>=size or last<first:return Response(status=416,headers={'Content-Range':'bytes */'+str(size)})
+            code=206
+            # Keep open-ended requests small on memory-constrained Workers.
+            if m[1] and not m[2]:last=min(last,first+4*VIDEO_BLOCK-1)
+            headers['Content-Range']=f'bytes {first}-{last}/{size}'
+        headers['Content-Length']=str(last-first+1)
+        if request.method=='HEAD':return Response(status=code,headers=headers)
+        def parts():
+            for index in range(first//VIDEO_BLOCK,last//VIDEO_BLOCK+1):
+                raw=video_get(bucket,prefix+str(index))
+                lo=max(0,first-index*VIDEO_BLOCK);hi=min(len(raw),last-index*VIDEO_BLOCK+1)
+                yield raw[lo:hi]
+        if last-first+1<=4*VIDEO_BLOCK:
+            return Response(b''.join(parts()),status=code,headers=headers)
+        return Response(stream_with_context(parts()),status=code,headers=headers)
+
     @app.post('/admin-site/card/editor/upload')
     def upload_card_premium():
         if not login_required():return jsonify(ok=False,erro='Sessão expirada. Entre novamente no painel.'),401
@@ -365,7 +467,19 @@ async function comprimirFundo(file){
  throw Error('Não foi possível reduzir a imagem para 50 KB');
  }finally{URL.revokeObjectURL(url)}
 }
-function uploadField(parent,label,obj,key,tipo='imagem'){const l=document.createElement('label');l.className='wide';l.textContent=label;const e=document.createElement('input');e.type='file';e.accept=tipo==='video'?'video/mp4,video/webm':'image/png,image/jpeg,image/webp,image/gif';e.onchange=async()=>{let file=e.files[0];if(!file)return;const max=key==='fundo'?50000:(tipo==='video'?10:5)*1024*1024;if(key==='fundo'&&file.size>max){status('Otimizando imagem de fundo…');try{file=await comprimirFundo(file);status('Imagem otimizada: '+(file.size/1000).toFixed(1)+' KB')}catch(err){status(err.message||'Não foi possível otimizar a imagem');return}}if(file.size>max){status('Arquivo excede o limite permitido');return}const fd=new FormData();fd.append('arquivo',file);fd.append('tipo',tipo);fd.append('destino',key);status('Enviando arquivo…');try{const r=await fetch('/admin-site/card/editor/upload',{method:'POST',headers:{'X-Card-CSRF':csrf},body:fd});const ct=r.headers.get('content-type')||'';if(!ct.includes('application/json'))throw Error(r.redirected||r.status===401||r.status===403?'Sessão expirada ou inválida. Atualize a página.':'Servidor não concluiu o envio (HTTP '+r.status+'). Tente novamente.');const j=await r.json();if(!r.ok||!j.ok)throw Error(j.erro||'Falha no envio');change(()=>{obj[key]=j.url;if(key==='fundo'&&d.tema.capa===j.url)d.tema.capa=''});status('Arquivo enviado')}catch(err){status(err.message||'Falha ao enviar')}};l.append(e);parent.append(l)}
+
+async function enviarVideoBlocos(file,progress){
+ const api='/admin-site/card/editor/video/';
+ const call=async(path,body,ctype)=>{const r=await fetch(api+path,{method:'POST',headers:{'X-Card-CSRF':csrf,'Content-Type':ctype},body});let j;try{j=await r.json()}catch(e){throw Error('Falha no envio do vídeo (HTTP '+r.status+').')}if(!r.ok||!j.ok)throw Error(j.erro||'Falha no envio');return j};
+ const start=await call('iniciar',JSON.stringify({size:file.size,ext:file.name.split('.').pop().toLowerCase()}),'application/json');
+ for(let offset=0,index=0;offset<file.size;offset+=start.block,index++){
+  const part=file.slice(offset,Math.min(file.size,offset+start.block));
+  await call(start.id+'/parte/'+index,part,'application/octet-stream');
+  const pct=Math.round(Math.min(file.size,offset+start.block)*100/file.size);progress.value=pct;status('Enviando vídeo: '+pct+'%');
+ }
+ status('Concluindo vídeo…');return await call(start.id+'/concluir','{}','application/json');
+}
+function uploadField(parent,label,obj,key,tipo='imagem'){const l=document.createElement('label');l.className='wide';l.textContent=label;const e=document.createElement('input');e.type='file';e.accept=tipo==='video'?'video/mp4,video/webm':'image/png,image/jpeg,image/webp,image/gif';e.onchange=async()=>{let file=e.files[0];if(!file)return;const max=key==='fundo'?50000:(tipo==='video'?10:5)*1024*1024;if(key==='fundo'&&file.size>max){status('Otimizando imagem de fundo…');try{file=await comprimirFundo(file);status('Imagem otimizada: '+(file.size/1000).toFixed(1)+' KB')}catch(err){status(err.message||'Não foi possível otimizar a imagem');return}}if(file.size>max){status('Arquivo excede o limite permitido');return}if(tipo==='video'){const progress=document.createElement('progress');progress.max=100;progress.value=0;progress.style.width='100%';l.append(progress);e.disabled=true;try{status('Preparando vídeo…');const j=await enviarVideoBlocos(file,progress);change(()=>{obj[key]=j.url});status('Vídeo enviado. Publique o card.')}catch(err){status(err.message||'Falha no envio do vídeo')}finally{e.disabled=false;progress.remove()}return}const fd=new FormData();fd.append('arquivo',file);fd.append('tipo',tipo);fd.append('destino',key);status('Enviando arquivo…');try{const r=await fetch('/admin-site/card/editor/upload',{method:'POST',headers:{'X-Card-CSRF':csrf},body:fd});const ct=r.headers.get('content-type')||'';if(!ct.includes('application/json'))throw Error(r.redirected||r.status===401||r.status===403?'Sessão expirada ou inválida. Atualize a página.':'Servidor não concluiu o envio (HTTP '+r.status+'). Tente novamente.');const j=await r.json();if(!r.ok||!j.ok)throw Error(j.erro||'Falha no envio');change(()=>{obj[key]=j.url;if(key==='fundo'&&d.tema.capa===j.url)d.tema.capa=''});status('Arquivo enviado')}catch(err){status(err.message||'Falha ao enviar')}};l.append(e);parent.append(l)}
 function aplicarModelo(){change(()=>{const t=d.tema;Object.assign(t,{modelo_ref:true,estilo:'3d',fundo:'',primaria:'#073a97',secundaria:'#020b22',texto:'#ffffff',avatar:108,espaco:8,fonte:15,cabecalho:'premium',alinhamento:'center',subtitulo:'Desde 2002',bio:'Soluções em entregas, coletas e logística para empresas e pessoas em Natal e em todo o RN.',localizacao:'Natal/RN · Todo o Rio Grande do Norte'});const p=pg(),all=p.blocos;const mk=(tipo,titulo,url='',icone='')=>({id:uid(),tipo,titulo,url,icone,texto:'',imagem:'',cor:'#0865c9',texto_cor:'#ffffff',largura:100,altura:48,raio:25,fonte:15,opacidade:100,sombra:14,alinhamento:'center',estilo:'3d',animacao:'nenhuma',acao:'link',destino:'',oculto:false,controles:true});const pick=(re,title,url,icon)=>{const b=all.find(x=>x.tipo==='botao'&&re.test(x.titulo));const v=b||mk('botao',title,url,icon);Object.assign(v,{titulo:title,icone:icon,icone_imagem:'',estilo:'3d',cor:'#0865c9',texto_cor:'#ffffff',altura:48,raio:25,fonte:15,opacidade:100,sombra:14,largura:100,oculto:false});return v};let video=all.find(x=>x.tipo==='video')||mk('video','Vídeo de apresentação');Object.assign(video,{largura:100,altura:145,raio:16,estilo:'3d',oculto:false});const chosen=[video,pick(/solicit.*entreg|entrega!/i,'Solicitar Entrega','/area-do-cliente','🏍️'),pick(/trabalhe|curr[ií]culo/i,'Trabalhe Conosco','/trabalhe','♟'),pick(/orçamento|orcamento/i,'Solicitar Orçamento','/contato','▤')];const social=[];for(const [re,icon,label,url] of [[/instagram/i,'◎','Instagram','https://www.instagram.com/coopex.entregas/'],[/facebook/i,'f','Facebook',''],[/whats|fale conosco/i,'☎','WhatsApp',''],[/telegram/i,'➤','Telegram',''],[/youtube/i,'▶','YouTube',''],[/e-mail|email/i,'✉','E-mail','']]){const b=all.find(x=>!chosen.includes(x)&&re.test(x.titulo)&&x.url);if(!b&&!url)continue;const v=b||mk('rede',label,url,icon);Object.assign(v,{tipo:'rede',titulo:label,icone:icon,icone_imagem:'',texto:'',largura:20,altura:46,raio:12,fonte:18,opacidade:100,sombra:8,estilo:'3d',oculto:false,cor:label==='WhatsApp'?'#109b56':label==='YouTube'?'#d81323':label==='Instagram'?'#b52a86':'#0865c9'});social.push(v)}const used=new Set([...chosen,...social].map(x=>x.id));p.blocos=[...chosen,...social,...all.filter(x=>!used.has(x.id))];bid=video.id;aba='Elementos';subaba='Conteúdo'})}
 function escolher(p,b){pid=p;bid=b;aba='Elementos';subaba='Conteúdo';menu();props();preview()}
 function adicionar(tipo){change(()=>{bid=uid();pg().blocos.push({id:bid,tipo,titulo:tipo==='video'?'Vídeo de apresentação':kinds[tipo],texto:'',url:'',imagem:'',icone:'',cor:'#0865c9',texto_cor:'#ffffff',largura:100,altura:tipo==='video'?128:44,raio:tipo==='video'?18:24,fonte:14,opacidade:100,sombra:14,alinhamento:'center',estilo:'3d',animacao:'nenhuma',acao:'link',destino:'',oculto:false,controles:true});aba='Elementos';subaba='Conteúdo'})}
