@@ -1833,34 +1833,53 @@ def politica_privacidade():
 
 @app.post('/admin-site/sso')
 def admin_site_sso():
-    """Resgata um código efêmero de uso único diretamente no Financeiro."""
+    """Validação local da autorização assinada pelo Financeiro, sem HTTP externo."""
+    import base64
+    import hashlib
+    import hmac
     import json
     import re
-    from js import fetch, JSON
-    codigo = request.form.get('codigo', '')
-    if not re.fullmatch(r'[A-Za-z0-9_-]{43}', codigo):
-        return render_template_string('<h2>Autorização inválida ou expirada</h2><p>Volte à Supervisão e clique novamente em Site.</p><a href="https://www.financeiro.coopexentregas.com.br/admin/site/entrar">Tentar novamente</a>'), 403
+    import time
+    token = request.form.get('autorizacao', '')
+    def negar():
+        response = make_response(render_template_string('<h2>Autorização inválida ou expirada</h2><p>Volte ao Financeiro e clique novamente em Site.</p><a href="https://www.financeiro.coopexentregas.com.br/admin/site/entrar">Tentar novamente</a>'), 403)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
     try:
-        options = {"method":"POST", "headers":{"Content-Type":"application/json"},
-                   "body":json.dumps({"codigo":codigo}), "redirect":"error"}
-        # Usar o domínio oficial do Financeiro; o origin Render pode redirecionar.
-        resp = run_sync(fetch("https://www.financeiro.coopexentregas.com.br/admin/site/sso/resgatar",
-                              JSON.parse(json.dumps(options))))
-        if not resp.ok:
-            print("SSO site: resgate HTTP", int(resp.status))
-            raise ValueError("resgate recusado")
-        dados = json.loads(str(run_sync(resp.text())))
+        secret = str(getattr(_env(), 'COOPEX_SITE_SSO_SIGN_KEY', '') or '')
+        if len(secret)<64 or len(token)>2048:
+            return negar()
+        body, signature = token.split('.')
+        if not re.fullmatch(r'[A-Za-z0-9_-]+',body) or not re.fullmatch(r'[0-9a-f]{64}',signature):
+            return negar()
+        expected=hmac.new(secret.encode(),b'coopex-site-sso-v2:'+body.encode('ascii'),hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected,signature):
+            return negar()
+        dados=json.loads(base64.urlsafe_b64decode(body+'='*(-len(body)%4)))
+        now=int(time.time())
+        if (dados.get('iss')!='coopex-financeiro' or dados.get('aud')!='coopex-site-admin'
+            or dados.get('destino') not in ('painel','card') or dados.get('master') is not True
+            or not isinstance(dados.get('uid'),int) or dados['uid']<=0
+            or not isinstance(dados.get('iat'),int) or not isinstance(dados.get('exp'),int)
+            or not dados['iat']-5<=now<dados['exp'] or not 0<dados['exp']-dados['iat']<=90
+            or not re.fullmatch(r'[0-9a-f]{64}',str(dados.get('jti','')))):
+            return negar()
+        # Uso único atômico no D1, inclusive entre instâncias do Worker.
+        _db_run('CREATE TABLE IF NOT EXISTS site_sso_usados (jti TEXT PRIMARY KEY, exp INTEGER NOT NULL)')
+        result=_db_run('INSERT OR IGNORE INTO site_sso_usados(jti,exp) VALUES (?,?)',dados['jti'],dados['exp'])
+        meta=_to_py(result.meta) or {}
+        if int(meta.get('changes',0))!=1:
+            return negar()
+        _db_run('DELETE FROM site_sso_usados WHERE exp < ?',now-120)
     except Exception as exc:
-        print("SSO site: falha resgate", type(exc).__name__)
-        return render_template_string('<h2>Não foi possível validar o acesso</h2><p>Retorne ao Financeiro e tente novamente.</p><a href="https://www.financeiro.coopexentregas.com.br/admin/site/entrar">Tentar novamente</a>'), 403
-    if dados.get("ok") is not True or dados.get("destino") not in ("painel","card"):
-        abort(403)
+        print('SSO v2 site:',type(exc).__name__)
+        return negar()
     session.clear()
-    session['site_admin_logado'] = True
-    session['site_admin_usuario'] = str(dados.get("usuario") or "Financeiro")[:100]
-    response = redirect('/admin-site/painel' if dados["destino"] == "painel" else '/admin-site/card', code=303)
-    response.headers['Cache-Control'] = 'no-store'
-    response.headers['Referrer-Policy'] = 'no-referrer'
+    session['site_admin_logado']=True
+    session['site_admin_usuario']=str(dados.get('usuario') or 'Financeiro')[:100]
+    response=redirect('/admin-site/painel' if dados['destino']=='painel' else '/admin-site/card',code=303)
+    response.headers['Cache-Control']='no-store'
+    response.headers['Referrer-Policy']='no-referrer'
     return response
 
 
