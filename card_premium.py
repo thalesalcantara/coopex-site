@@ -211,6 +211,16 @@ body{background:radial-gradient(ellipse at 82% 45%,#0a2547,#020c20 65%);color:#f
  .studio-bottom{margin:0;padding:7px 10px;min-width:0;overflow:hidden}.studio-bottom h3{margin:0 0 5px;font-size:12px}.model-strip{gap:7px;overflow-x:auto;overflow-y:hidden}.model-strip button{min-height:43px;min-width:85px;padding:4px;border-radius:12px;font-size:10px}.model-strip img{height:28px;width:28px}
 }
 @media(min-width:1001px) and (max-height:740px){body{gap:5px;padding:5px}.studio-brand img{width:30px;height:30px}.studio-top,.studio-tools{padding:4px 8px}.studio-top button,.studio-tools button,.studio-tools a,.studio-top a{padding:6px 9px}.studio-bottom{padding:5px 8px}.model-strip button{min-height:34px}.library button{min-height:39px}.library button span{font-size:15px}}
+ 
+.workspace .preview{display:flex;align-items:center;justify-content:center;isolation:isolate;background:radial-gradient(ellipse at 50% 48%,#12497555,transparent 70%)!important}
+.workspace .preview .phone{background:linear-gradient(145deg,#fbfdff,#7893ad 24%,#e9f4ff 49%,#354c62 75%,#dce9f4);border-style:solid;border-color:#b8cfdf;box-shadow:0 0 0 1px #edf8ff,0 0 0 3px #20364f,0 12px 32px #0009,0 0 25px #0ab7ff55;overflow:hidden;max-width:none!important;flex:none}
+.phone .screen{background:#02091b;box-shadow:0 0 0 1px #000;overflow:hidden}
+.phone .screen-bar{background:#030c21;line-height:1;align-items:center;box-sizing:border-box}
+.phone .screen-inner{position:relative;scrollbar-width:none;overscroll-behavior:contain}
+.phone .screen-inner::-webkit-scrollbar{display:none}
+.phone #preview{margin:0!important;max-width:none!important;box-sizing:border-box}
+.phone .notch{background:linear-gradient(180deg,#02040a,#000);box-shadow:inset 0 -1px #ffffff19;border-radius:30px}
+.preview-note{background:transparent!important;color:#b9d8f3;bottom:0}
 </style></head><body><header class="studio-top"><div class="studio-brand"><img src="/static/img/coopex-oficial-v2.webp" alt=""><div><strong>COOPEX</strong><small>Configuração do Instagram</small></div></div><nav id="studio-nav"></nav><span id="status" class="studio-status">Rascunho</span><a href="/admin-site/painel">Painel</a><a href="/admin-site/card/legado" title="Configuração anterior">⚙</a></header><div class="studio-tools"><div class="toolgroup"><button id="undo">↶ Desfazer</button><button id="redo">↷ Refazer</button></div><div class="device" id="devices"></div><div class="toolgroup"><a href="/instagram" target="_blank" rel="noopener">◉ Visualizar</a><button id="save">▣ Salvar</button><button id="publish">➤ Publicar</button></div></div><div class="workspace"><aside class="panel left-studio" id="menu"></aside><section class="panel" id="props"></section><section class="preview"><div class="phone" id="phone"><div class="notch"></div><div class="screen"><div class="screen-bar"><span>10:24</span><span>▮▮▮ ◉ ▰</span></div><div class="screen-inner" id="screen-inner"><div id="preview"></div></div></div></div><small class="preview-note" id="fitnotice"></small></section></div><section class="studio-bottom"><h3>▧ Modelos de Cabeçalho</h3><div class="model-strip" id="models"></div></section><script>{{render_js|safe}}
 let d={{data|tojson}},csrf={{csrf|tojson}},pid=d.paginas[0].id,bid=null,aba='Elementos',subaba='Conteúdo',past=[],future=[],timer,seq=0,saved=0,queue=Promise.resolve();
 const $=id=>document.getElementById(id),copy=o=>JSON.parse(JSON.stringify(o)),uid=()=>crypto.randomUUID(),pg=()=>d.paginas.find(x=>x.id===pid)||d.paginas[0],block=()=>pg().blocos.find(x=>x.id===bid);
@@ -218,7 +228,28 @@ const kinds={botao:'Botão / link',titulo:'Título',texto:'Texto',imagem:'Imagem
 function status(t){$('status').textContent=t}
 function change(fn,redraw=true){past.push(copy(d));if(past.length>80)past.shift();future=[];fn();seq++;preview();if(redraw){menu();props()}status('Alterações não publicadas');clearTimeout(timer);timer=setTimeout(()=>save(false),1200)}
 function preview(){desenhar($('preview'),d,pid,true,(p,b)=>{pid=p;bid=b;aba='Elementos';subaba='Conteúdo';menu();props();preview()},(p,from,to)=>{if(from===to)return;change(()=>{const arr=d.paginas.find(x=>x.id===p).blocos,i=arr.findIndex(x=>x.id===from),j=arr.findIndex(x=>x.id===to);if(i>=0&&j>=0)arr.splice(j,0,arr.splice(i,1)[0])})},(p,b,w,h)=>change(()=>{const x=d.paginas.find(x=>x.id===p).blocos.find(x=>x.id===b);x.largura=Math.max(20,Math.min(100,w));x.altura=Math.max(16,Math.min(600,h))}));for(const n of $('preview').querySelectorAll('[data-bid]'))n.classList.toggle('selected',n.dataset.bid===bid);ajustarPrevia()}
-function ajustarPrevia(){const phone=$('phone'),p=$('preview'),shell=$('screen-inner'),panel=phone.parentElement;const desktop=phone.classList.contains('desktop');if(innerWidth>1000){const availableH=Math.max(140,panel.clientHeight-26),availableW=Math.max(100,panel.clientWidth-18),logicalW=Number(phone.dataset.deviceWidth)||390,logicalH=logicalW>=768?980:844;const scale=Math.min(availableH/(logicalH+44),availableW/(logicalW+24));if(desktop){phone.style.width=availableW+'px';phone.style.height=availableH+'px'}else{phone.style.width=Math.floor((logicalW+24)*scale)+'px';phone.style.height=Math.floor((logicalH+44)*scale)+'px'}}const logicalW=desktop?shell.clientWidth:(Number(phone.dataset.deviceWidth)||390),logicalH=desktop?shell.clientHeight:(logicalW>=768?980:844);p.style.transform='none';p.style.transformOrigin='top left';p.style.width=logicalW+'px';p.style.maxWidth='none';p.style.minHeight=logicalH+'px';const real=p.scrollHeight,ratio=Math.min(shell.clientWidth/Math.max(1,logicalW),shell.clientHeight/Math.max(1,real));p.style.transform='scale('+ratio+')';$('fitnotice').textContent=real>logicalH+3?'Conteúdo excede a tela real. Reduza blocos ou divida em páginas.':'Prévia completa · sem rolagem';}window.addEventListener('resize',ajustarPrevia);document.addEventListener('load',e=>{if(e.target.tagName==='IMG'&&e.target.closest('#preview'))ajustarPrevia()},true);
+function ajustarPrevia(){
+ const phone=$('phone'),p=$('preview'),shell=$('screen-inner'),panel=phone.parentElement;
+ const desktop=phone.classList.contains('desktop'),logicalW=desktop?Math.max(280,panel.clientWidth-36):(Number(phone.dataset.deviceWidth)||390),logicalH=desktop?Math.max(300,panel.clientHeight-50):(logicalW>=768?1024:844);
+ const statusH=desktop?0:28,frame=desktop?8:12;
+ const availableW=Math.max(120,panel.clientWidth-28),availableH=Math.max(200,panel.clientHeight-30);
+ const scale=Math.min(availableW/(logicalW+frame*2),availableH/(logicalH+statusH+frame*2));
+ phone.style.width=Math.floor((logicalW+frame*2)*scale)+'px';
+ phone.style.height=Math.floor((logicalH+statusH+frame*2)*scale)+'px';
+ phone.style.padding=(frame*scale*.58)+'px';phone.style.borderWidth=Math.max(2,frame*scale*.42)+'px';
+ phone.style.borderRadius=(desktop?15:48)*scale+'px';
+ const screen=phone.querySelector('.screen'),bar=phone.querySelector('.screen-bar'),notch=phone.querySelector('.notch');
+ screen.style.borderRadius=(desktop?9:38)*scale+'px';
+ bar.style.height=statusH*scale+'px';bar.style.padding=(5*scale)+'px '+(20*scale)+'px';bar.style.fontSize=(12*scale)+'px';
+ notch.style.width=(105*scale)+'px';notch.style.height=(25*scale)+'px';notch.style.top=(15*scale)+'px';
+ shell.style.height='calc(100% - '+statusH*scale+'px)';
+ p.style.transform='none';p.style.transformOrigin='top left';p.style.width=logicalW+'px';p.style.maxWidth='none';p.style.minHeight=logicalH+'px';
+ const real=p.scrollHeight,fit=shell.clientWidth/Math.max(1,logicalW);
+ p.style.transform='scale('+fit+')';
+ const excess=real>shell.clientHeight/Math.max(.01,fit)+3;
+ $('fitnotice').textContent=excess?'Ajuste os blocos: conteúdo ultrapassa a tela real.':'Tela completa · proporções reais';
+ shell.style.overflowY=excess?'auto':'hidden';
+}window.addEventListener('resize',ajustarPrevia);document.addEventListener('load',e=>{if(e.target.tagName==='IMG'&&e.target.closest('#preview'))ajustarPrevia()},true);
 function button(parent,title,fn,cls='btn'){const b=document.createElement('button');b.className=cls;b.textContent=title;b.onclick=fn;parent.append(b);return b}
 function field(parent,label,obj,key,kind='text',opts=null,wide=false){const l=document.createElement('label');l.textContent=label;if(wide)l.className='wide';const e=document.createElement(kind==='select'?'select':kind==='textarea'?'textarea':'input');if(kind==='select'){for(const [v,t] of opts){const o=document.createElement('option');o.value=v;o.textContent=t;e.append(o)}}else if(kind!=='textarea'){e.type=kind;if(kind==='number'||kind==='range'){e.min=opts[0];e.max=opts[1]}}if(kind==='checkbox')e.checked=!!obj[key];else e.value=obj[key]??'';e.oninput=()=>change(()=>obj[key]=kind==='checkbox'?e.checked:kind==='number'||kind==='range'?Number(e.value):e.value,false);l.append(e);parent.append(l)}
 const choices=a=>a.map(x=>[x,x[0].toUpperCase()+x.slice(1)]);
