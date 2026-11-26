@@ -1831,6 +1831,36 @@ def politica_privacidade():
     return render_cf('politica_privacidade.html')
 
 
+@app.post('/admin-site/sso')
+def admin_site_sso():
+    """Resgata um código efêmero de uso único diretamente no Financeiro."""
+    import json
+    import re
+    from js import fetch, JSON
+    codigo = request.form.get('codigo', '')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{43}', codigo):
+        abort(403)
+    try:
+        options = {"method":"POST", "headers":{"Content-Type":"application/json"},
+                   "body":json.dumps({"codigo":codigo}), "redirect":"error"}
+        resp = run_sync(fetch("https://www.financeiro.coopexentregas.com.br/admin/site/sso/resgatar",
+                              JSON.parse(json.dumps(options))))
+        if not resp.ok:
+            abort(403)
+        dados = json.loads(run_sync(resp.text()))
+    except Exception:
+        abort(403)
+    if dados.get("ok") is not True or dados.get("destino") not in ("painel","card"):
+        abort(403)
+    session.clear()
+    session['site_admin_logado'] = True
+    session['site_admin_usuario'] = str(dados.get("usuario") or "Financeiro")[:100]
+    response = redirect(url_for('admin_dashboard' if dados["destino"] == "painel" else 'admin_card'), code=303)
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    return response
+
+
 @app.route('/admin-coopex', methods=['GET', 'POST'])
 @app.route('/admin-site', methods=['GET', 'POST'])
 def admin_login():
