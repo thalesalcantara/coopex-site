@@ -59,6 +59,12 @@ def instalar(app, get_config, set_config, db_run, rows, card_config_dict, arquiv
                     'oculto':b.get('oculto') is True})
             paginas.append({'id':pid,'nome':txt(pg.get('nome'),60) or 'Página','blocos':blocks})
         if not paginas:raise ValueError('Crie pelo menos uma página')
+        # Solicitação de entrega abre a área oficial integrada ao site.
+        for pg in paginas:
+            for b in pg['blocos']:
+                if b['tipo']=='botao' and re.search(r'solicit\w*\s+(?:uma\s+)?entrega',b['titulo'],re.I):
+                    b['url']='/area-do-cliente'
+                    b['acao']='link'
         return {'tema':theme,'paginas':paginas,'menu':escolha(d.get('menu'),('superior','inferior','nenhum'),'inferior')}
     def inicial():
         c=card_config_dict()
@@ -261,7 +267,7 @@ const $=id=>document.getElementById(id),copy=o=>JSON.parse(JSON.stringify(o)),ui
 const kinds={botao:'Botão / link',titulo:'Título',texto:'Texto',imagem:'Imagem',video:'Vídeo',divisor:'Divisor',espaco:'Espaçamento',faq:'Pergunta frequente',aviso:'Aviso',contato:'Contato',rede:'Rede social',contagem:'Contagem'};
 function status(t){$('status').textContent=t}
 function change(fn,redraw=true){past.push(copy(d));if(past.length>80)past.shift();future=[];fn();seq++;preview();if(redraw){menu();props()}status('Alterações não publicadas');clearTimeout(timer);timer=setTimeout(()=>save(false),1200)}
-function preview(){desenhar($('preview'),d,pid,true,(p,b)=>{pid=p;bid=b;aba='Elementos';subaba='Conteúdo';menu();props();preview()},(p,from,to)=>{if(from===to)return;change(()=>{const arr=d.paginas.find(x=>x.id===p).blocos,i=arr.findIndex(x=>x.id===from),j=arr.findIndex(x=>x.id===to);if(i>=0&&j>=0)arr.splice(j,0,arr.splice(i,1)[0])})},(p,b,w,h)=>change(()=>{const x=d.paginas.find(x=>x.id===p).blocos.find(x=>x.id===b);x.largura=Math.max(20,Math.min(100,w));x.altura=Math.max(16,Math.min(600,h))}));for(const n of $('preview').querySelectorAll('[data-bid]'))n.classList.toggle('selected',n.dataset.bid===bid);ajustarPrevia()}
+function preview(){for(const p of d.paginas)for(const b of p.blocos)if(b.tipo==='botao'&&/solicit\w*\s+(?:uma\s+)?entrega/i.test(b.titulo)){b.url='/area-do-cliente';b.acao='link'}desenhar($('preview'),d,pid,true,(p,b)=>{pid=p;bid=b;aba='Elementos';subaba='Conteúdo';menu();props();preview()},(p,from,to)=>{if(from===to)return;change(()=>{const arr=d.paginas.find(x=>x.id===p).blocos,i=arr.findIndex(x=>x.id===from),j=arr.findIndex(x=>x.id===to);if(i>=0&&j>=0)arr.splice(j,0,arr.splice(i,1)[0])})},(p,b,w,h)=>change(()=>{const x=d.paginas.find(x=>x.id===p).blocos.find(x=>x.id===b);x.largura=Math.max(20,Math.min(100,w));x.altura=Math.max(16,Math.min(600,h))}));for(const n of $('preview').querySelectorAll('[data-bid]'))n.classList.toggle('selected',n.dataset.bid===bid);ajustarPrevia()}
 function ajustarPrevia(){
  const phone=$('phone'),p=$('preview'),shell=$('screen-inner'),panel=phone.parentElement;
  const desktop=phone.classList.contains('desktop'),logicalW=desktop?Math.max(280,panel.clientWidth-36):(Number(phone.dataset.deviceWidth)||390),logicalH=desktop?Math.max(300,panel.clientHeight-50):(logicalW>=768?1024:844);
