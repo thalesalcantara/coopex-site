@@ -1671,8 +1671,85 @@ def _seo_service_page(slug):
 for _slug in SEO_SERVICES:
     app.add_url_rule('/'+_slug, endpoint='seo_service_'+_slug.replace('-','_'), view_func=lambda slug=_slug: _seo_service_page(slug), methods=['GET'])
 
+# Layout institucional: ocupação vertical responsiva e catálogo de serviços.
+_cx_layout_html = TEMPLATES["index.html"]
+_cx_services_section = """<section id="servicos" class="page-section"><div class="secao soft"><div class="container cx-services-layout">
+<div class="center cx-services-intro"><span class="tag azul">Soluções COOPEX</span><h2>Entregas e coletas para cada necessidade</h2><p>Atendimento a empresas e pessoas físicas em Natal e no Rio Grande do Norte. Escolha a solução ideal para sua operação.</p></div>
+<div class="cards cx-services-cards"><article class="card cx-service-card"><div class="cx-service-head"><div class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-2 12H5L3 8Zm4 0 2-5m8 5-2-5M9 12v4m6-4v4"/></svg></div><h3>Delivery para estabelecimentos</h3></div><p class="cx-service-audience">Restaurantes, pizzarias, hamburguerias e farmácias.</p><p>Apoio aos pedidos próprios, horários de pico e operação recorrente.</p><a class="cx-service-more" href="/delivery-natal">Conhecer serviço <span aria-hidden="true">›</span></a></article><article class="card cx-service-card"><div class="cx-service-head"><div class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7a4 4 0 1 0 0-8a4 4 0 0 0 0 8M4 22v-4a8 8 0 0 1 16 0v4"/></svg></div><h3>Entregador fixo</h3></div><p class="cx-service-audience">Profissionais escalados conforme a demanda do estabelecimento.</p><p>Turnos, horários e dimensionamento definidos em proposta comercial.</p><a class="cx-service-more" href="/motoboy-fixo">Conhecer serviço <span aria-hidden="true">›</span></a></article><article class="card cx-service-card"><div class="cx-service-head"><div class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-5 9 5v10l-9 5-9-5V7Zm0 0 9 5 9-5M12 12v10"/></svg></div><h3>Coletas e entregas avulsas</h3></div><p class="cx-service-audience">Documentos, pequenas encomendas e compras para empresas e pessoas físicas.</p><p>Informe os endereços e consulte o valor antes de solicitar.</p><a class="cx-service-more" href="/entregas-rapidas">Conhecer serviço <span aria-hidden="true">›</span></a></article><article class="card cx-service-card"><div class="cx-service-head"><div class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V4h14v17M9 8h1m4 0h1M9 12h1m4 0h1M10 21v-5h4v5"/></svg></div><h3>Serviço Office</h3></div><p class="cx-service-audience">Escritórios, cartórios, bancos e empresas.</p><p>Malotes, documentos, protocolos e deslocamentos entre unidades.</p><a class="cx-service-more" href="/entrega-documentos">Conhecer serviço <span aria-hidden="true">›</span></a></article><article class="card cx-service-card"><div class="cx-service-head"><div class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v5h5v10h-5v4H7v-4H2V8h5V3Z"/></svg></div><h3>Hospitais e laboratórios</h3></div><p class="cx-service-audience">Coletas programadas e apoio à logística de saúde.</p><p>Atendimento conforme requisitos técnicos, legais e condições do contrato.</p><a class="cx-service-more" href="/entregas-hospitalares">Conhecer serviço <span aria-hidden="true">›</span></a></article><article class="card cx-service-card"><div class="cx-service-head"><div class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4a2 2 0 1 0 0 4a2 2 0 0 0 0-4Zm14 12a2 2 0 1 0 0 4a2 2 0 0 0 0-4ZM5 8v5h14v3"/></svg></div><h3>Rotas e logística empresarial</h3></div><p class="cx-service-audience">Coletas e distribuição entre unidades, clientes e fornecedores.</p><p>Planejamento de rotas, horários e volumes compatíveis com a motocicleta.</p><a class="cx-service-more" href="/logistica-empresarial">Conhecer serviço <span aria-hidden="true">›</span></a></article></div>
+<div class="cx-services-bottom"><article class="cx-services-process"><h3>Como funciona</h3><div class="cx-services-steps"><span><b>1</b> Solicite</span><span><b>2</b> Confirme</span><span><b>3</b> Acompanhe</span></div><p>Cooperados identificados, suporte operacional e acompanhamento do pedido.</p></article><article class="cx-services-cta"><h3>Precisa de uma entrega ou de uma operação fixa?</h3><p>Consulte o valor da entrega ou converse com nossa equipe comercial.</p><div><a class="btn primary" href="https://www.financeiro.coopexentregas.com.br/cliente/">Solicitar entrega</a><a class="btn secondary" href="/contato">Proposta comercial</a></div></article></div>
+</div></div></section>"""
+_cx_layout_html, _cx_services_count = _seo_re.subn(r'<section\b[^>]*\bid="servicos"[^>]*>.*?</section>', lambda m: _cx_services_section, _cx_layout_html, count=1, flags=_seo_re.S)
+_cx_layout_html = _cx_layout_html.replace("</body>", """<style id="coopex-layout-final">
+/* Escopo: somente as abas institucionais; preservar Início e Área do Cliente. */
+body.prism.luminous #servicos .cx-services-layout{display:flex!important;flex-direction:column;gap:12px!important;min-width:0}
+body.prism.luminous #servicos .cx-services-intro{width:100%;max-width:none!important;margin:0!important}
+body.prism.luminous #servicos .cx-services-intro h2{font-size:clamp(25px,2.5vw,40px)!important;line-height:1.12!important;margin:5px 0!important}
+body.prism.luminous #servicos .cx-services-intro p{max-width:900px!important;margin:5px auto!important}
+body.prism.luminous #servicos .cx-services-cards{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important;align-items:stretch!important}
+body.prism.luminous #servicos .cx-service-card{display:flex!important;flex-direction:column;gap:6px;min-width:0!important;padding:clamp(12px,1.15vw,20px)!important}
+body.prism.luminous #servicos .cx-service-head{display:flex;align-items:center;gap:10px}
+body.prism.luminous #servicos .cx-service-head .card-icon{width:42px!important;height:42px!important;flex:0 0 42px;margin:0!important;display:grid;place-items:center}
+body.prism.luminous #servicos .cx-service-head svg{width:25px;height:25px}
+body.prism.luminous #servicos .cx-service-card h3{font-size:clamp(15px,1.2vw,20px)!important;margin:0!important;line-height:1.2!important}
+body.prism.luminous #servicos .cx-service-card p{font-size:clamp(12px,.95vw,15px)!important;line-height:1.45!important;margin:0!important;color:#305478!important}
+body.prism.luminous #servicos .cx-service-card .cx-service-audience{font-weight:700;color:#123c72!important}
+body.prism.luminous #servicos .cx-service-more{display:flex;justify-content:space-between;align-items:center;color:#0750b7!important;text-decoration:none;font-size:12px;font-weight:800;padding:7px 0 0;margin-top:auto;border-top:1px solid #ffffffc0}
+body.prism.luminous #servicos .cx-service-more:hover{text-decoration:underline}
+body.prism.luminous #servicos .cx-services-bottom{display:grid;grid-template-columns:1fr 1.2fr;gap:12px}
+body.prism.luminous #servicos .cx-services-bottom article{padding:12px 18px;border:1.5px solid #efffff;border-radius:22px;background:var(--glass);box-shadow:var(--edge);min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px}
+body.prism.luminous #servicos .cx-services-bottom h3{margin:0!important;font-size:16px!important;color:#102e67!important}
+body.prism.luminous #servicos .cx-services-bottom p{margin:0!important;font-size:12px!important;color:#305478!important}
+.cx-services-steps{display:flex;gap:9px;flex-wrap:wrap}
+.cx-services-steps span{display:flex;align-items:center;gap:5px;color:#173b68;font-size:12px;font-weight:700}
+.cx-services-steps b{display:grid;place-items:center;width:23px;height:23px;color:#fff;background:linear-gradient(135deg,#39abff,#0834b7);border-radius:8px}
+.cx-services-cta>div{display:flex;gap:8px;flex-wrap:wrap}
+body.prism.luminous #servicos .cx-services-cta .btn{font-size:12px!important;min-height:34px!important;padding:7px 14px!important}
+body.prism.luminous #servicos .seo-service-links{flex:0 0 auto!important;padding:6px 12px!important;margin:0 auto 8px!important}
+body.prism.luminous #servicos .seo-service-links summary{cursor:pointer;color:#164d89;font-size:12px;font-weight:800}
+body.prism.luminous #servicos .cx-seo-more-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+@media(min-width:1050px){
+html body.prism.luminous:not(.customer-embedded):has(main>:is(#sobre,#servicos,#anuncie,#trabalhe,#contato).active){display:flex!important;flex-direction:column!important;min-height:100dvh!important;height:auto!important;overflow-x:hidden!important;overflow-y:auto!important}
+html body.prism.luminous:not(.customer-embedded):has(main>:is(#sobre,#servicos,#anuncie,#trabalhe,#contato).active) main{flex:1 0 auto!important;display:flex!important;flex-direction:column!important;min-height:0!important;overflow:visible!important}
+html body.prism.luminous:not(.customer-embedded):has(main>:is(#sobre,#servicos,#anuncie,#trabalhe,#contato).active) :is(header.topo,footer.footer-royal){flex:0 0 auto!important}
+html body.prism.luminous:not(.customer-embedded) main>:is(#sobre,#servicos,#anuncie,#trabalhe,#contato).active{display:flex!important;flex:1 0 auto!important;flex-direction:column!important;min-height:0!important;height:auto!important;overflow:visible!important;padding:0!important;margin:0!important}
+html body.prism.luminous:not(.customer-embedded) main>:is(#sobre,#servicos,#anuncie,#trabalhe,#contato).active>.secao{display:flex!important;flex:1 0 auto!important;flex-direction:column!important;min-height:0!important;height:auto!important;overflow:visible!important;padding:8px 0 10px!important;gap:12px!important}
+html body.prism.luminous #sobre .two-col{display:grid!important;flex:1 0 auto!important;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)!important;align-items:stretch!important;margin-block:0!important}
+html body.prism.luminous #sobre .two-col>div:first-child{display:flex;flex-direction:column;justify-content:center;min-height:0!important}
+html body.prism.luminous #sobre .stats-modern{display:grid!important;grid-template-rows:repeat(3,minmax(min-content,1fr));align-items:stretch!important}
+html body.prism.luminous #sobre .info-grid-site{flex:1 0 auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;margin-block:0!important;min-height:0!important;height:auto!important;max-height:none!important;align-items:stretch!important}
+html body.prism.luminous #sobre .info-grid-site article{display:flex;flex-direction:column;justify-content:center;min-height:0!important;padding:clamp(14px,1.4vw,24px)!important}
+html body.prism.luminous #sobre .info-grid-site p{font-size:clamp(13px,1.03vw,16px)!important;line-height:1.6!important}
+html body.prism.luminous #anuncie .secao>.container{display:grid!important;flex:1 0 auto!important;grid-template-rows:auto minmax(min-content,1.15fr) minmax(min-content,.85fr) auto!important;gap:12px!important;min-height:0!important;height:auto!important}
+html body.prism.luminous #anuncie .center{margin:0 auto!important}
+html body.prism.luminous #anuncie :is(.bau-ads-grid,.anuncio-info-grid){margin-block:0!important;align-items:stretch!important;min-height:0!important}
+html body.prism.luminous #anuncie .bau-ad-card{display:flex!important;flex-direction:column;justify-content:center;gap:8px;min-height:0!important;height:auto!important}
+html body.prism.luminous #anuncie .bau-ad-card img{height:clamp(115px,20vh,210px)!important;max-height:none!important;object-fit:contain!important}
+html body.prism.luminous #anuncie .anuncio-info-grid article{display:flex;flex-direction:column;justify-content:center;min-height:0!important}
+html body.prism.luminous #anuncie .anuncio-cta{margin:0!important;min-height:0!important}
+html body.prism.luminous #trabalhe .trabalhe-grid{display:grid!important;flex:1 0 auto!important;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;align-items:stretch!important;height:auto!important;min-height:0!important;max-height:none!important;margin-block:0!important}
+html body.prism.luminous #trabalhe .work-info{grid-template-rows:minmax(min-content,1.1fr) minmax(min-content,.9fr) minmax(min-content,1fr)!important;min-height:0!important;align-items:stretch!important;align-content:stretch!important}
+html body.prism.luminous #trabalhe .work-info>div{margin-block:0!important;min-height:0!important;height:auto!important}
+html body.prism.luminous #trabalhe .work-intro{display:flex;flex-direction:column;justify-content:center}
+html body.prism.luminous #trabalhe .work-form{height:auto!important;min-height:0!important;max-height:none!important;align-self:stretch!important;align-content:space-between!important}
+html body.prism.luminous #contato .contato-grid{flex:1 0 auto!important;height:auto!important;min-height:0!important;max-height:none!important;grid-template-rows:auto minmax(min-content,1fr) minmax(100px,.32fr)!important;align-content:stretch!important}
+html body.prism.luminous #contato .contato-grid>div:first-child{display:flex;flex-direction:column;justify-content:center}
+html body.prism.luminous #contato .contact-list{flex:1 0 auto;align-content:stretch!important;grid-auto-rows:minmax(min-content,1fr)}
+html body.prism.luminous #contato .mapa-card{min-height:clamp(170px,24vh,280px)!important}
+html body.prism.luminous #contato .mapa-card iframe{flex:1 1 auto!important;height:100%!important;min-height:clamp(155px,22vh,260px)!important;max-height:none!important}
+html body.prism.luminous #contato .contact-message{justify-content:space-between!important;min-height:0!important}
+html body.prism.luminous #contato .contact-fields textarea{min-height:clamp(85px,15vh,180px)!important}
+html body.prism.luminous #contato .cx-contact-tools{align-self:stretch!important}
+html body.prism.luminous #contato .cx-contact-tile{height:100%!important;box-sizing:border-box!important}
+html body.prism.luminous #servicos .cx-services-layout{flex:1 0 auto!important;min-height:0!important}
+html body.prism.luminous #servicos .cx-services-cards{flex:1 0 auto!important;grid-template-rows:repeat(2,minmax(min-content,1fr))!important}
+}
+@media(max-width:1049px){body.prism.luminous #servicos .cx-services-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.prism.luminous #servicos .cx-services-bottom{grid-template-columns:1fr!important}}
+@media(max-width:680px){body.prism.luminous #servicos .cx-services-cards{grid-template-columns:minmax(0,1fr)!important}body.prism.luminous #servicos .cx-services-cta .btn{flex:1 1 auto}}
+</style></body>""", 1)
+TEMPLATES["index.html"] = _cx_layout_html
+
 # Discoverable links in the existing services section, no JavaScript dependency.
-_seo_links = '<div class="seo-service-links" style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0"><strong style="width:100%">Conheça nossas soluções de entrega</strong>'+''.join('<a style="padding:7px 12px;border-radius:12px;background:#e4f1ff;color:#164d89" href="/'+p['slug']+'">'+p['title']+'</a>' for p in SEO_SERVICES.values())+'</div>'
+_seo_links = '<details class="seo-service-links"><summary>Mais informações sobre nossos serviços e cobertura</summary><div class="cx-seo-more-links">'+''.join('<a style="padding:7px 12px;border-radius:12px;background:#e4f1ff;color:#164d89" href="/'+p['slug']+'">'+p['title']+'</a>' for p in SEO_SERVICES.values())+'</div></details>'
 # Put links inside the existing service section without changing the other sections.
 _seo_index = TEMPLATES['index.html']
 _seo_start = _seo_re.search(r'<section\b[^>]*\bid=["\']servicos["\'][^>]*>',_seo_index)
