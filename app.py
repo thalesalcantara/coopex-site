@@ -96,6 +96,13 @@ for _seo_name, _seo_html in list(TEMPLATES.items()):
         _seo_html = _seo_html.replace('</head>', '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"COOPEX Entregas","alternateName":"COOPEX","url":"https://www.coopexentregas.com.br/"}</script><meta property="og:site_name" content="COOPEX Entregas"></head>',1)
     TEMPLATES[_seo_name] = _seo_html
 
+# O menu institucional já está em português; preservar os rótulos contra tradução automática.
+_public_nav_html = TEMPLATES["index.html"]
+_public_nav_html = _public_nav_html.replace('<html lang="pt-BR">','<html lang="pt-BR" translate="no">',1)
+_public_nav_html = _public_nav_html.replace('</head>','<meta name="google" content="notranslate"></head>',1)
+_public_nav_html = _public_nav_html.replace('<nav class="links" id="mainNavigation"','<nav class="links notranslate" translate="no" id="mainNavigation"',1)
+_public_nav_html = _public_nav_html.replace('<span>Início</span>','<span class="notranslate" translate="no">Início</span>',1)
+TEMPLATES["index.html"] = _public_nav_html
 app.jinja_loader = DictLoader(TEMPLATES)
 app.config['SECRET_KEY'] = 'troque-esta-chave-no-cloudflare'
 app.config['MAX_CONTENT_LENGTH'] = 12 * 1024 * 1024
